@@ -2,6 +2,8 @@
 import { initializeApp } from "firebase/app";
 import { getAnalytics } from "firebase/analytics";
 import { getAuth } from "firebase/auth"
+import { getFirestore, collection, addDoc } from "firebase/firestore";
+
 // TODO: Add SDKs for Firebase products that you want to use
 // https://firebase.google.com/docs/web/setup#available-libraries
 
@@ -22,3 +24,24 @@ const app = initializeApp(firebaseConfig);
 const analytics = getAnalytics(app);
 const auth = getAuth(app);
 export {auth};
+
+const db = getFirestore();
+export {db};
+
+export async function sendDataToFirebase(username, first, last, email, password) {
+  try {
+    const docRef = await addDoc(collection(db, "users"), {
+      id: username,
+      first: first,
+      last: last,
+      email: email,
+      password: password,
+      points: 0
+    });
+    console.log("Document written with ID: ", docRef.id)
+  } catch (e) {
+    console.error("Error adding doc: ", e);
+  }
+  
+}
+
