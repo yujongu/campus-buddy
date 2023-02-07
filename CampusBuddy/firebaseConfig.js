@@ -28,7 +28,7 @@ export {auth};
 const db = getFirestore();
 export {db};
 
-export async function sendDataToFirebase(username, first, last, email, password) {
+export async function createUser(username, first, last, email, password) {
   try {
     const docRef = await addDoc(collection(db, "users"), {
       id: username,
