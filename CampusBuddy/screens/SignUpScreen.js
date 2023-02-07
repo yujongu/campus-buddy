@@ -1,5 +1,7 @@
 // Import React and Component
 import React, {useState, createRef} from 'react';
+import { createUser } from "../firebaseConfig";
+import HomeScreen from "../BottomTabContainer";
 import {
   StyleSheet,
   TextInput,
@@ -21,7 +23,7 @@ export default function SignUpScreen({ navigation, route })  {
   const [loading, setLoading] = useState(false);
   const [errortext, setErrortext] = useState('');
   const [
-    isRegistraionSuccess,
+    isRegistrationSuccess,
     setIsRegistraionSuccess
   ] = useState(false);
 
@@ -54,65 +56,20 @@ export default function SignUpScreen({ navigation, route })  {
     }
     //Show Loader
     setLoading(true);
-    var dataToSend = {
-      name: userName,
-      email: userEmail,
-      age: userAge,
-      address: userAddress,
-      password: userPassword,
-    };
-    var formBody = [];
-    for (var key in dataToSend) {
-      var encodedKey = encodeURIComponent(key);
-      var encodedValue = encodeURIComponent(dataToSend[key]);
-      formBody.push(encodedKey + '=' + encodedValue);
-    }
-    formBody = formBody.join('&');
 
-    fetch('http://localhost:3000/api/user/register', {
-      method: 'POST',
-      body: formBody,
-      headers: {
-        //Header Defination
-        'Content-Type':
-        'application/x-www-form-urlencoded;charset=UTF-8',
-      },
-    })
-      .then((response) => response.json())
-      .then((responseJson) => {
-        //Hide Loader
-        setLoading(false);
-        console.log(responseJson);
-        // If server response message same as Data Matched
-        if (responseJson.status === 'success') {
-          setIsRegistraionSuccess(true);
-          console.log(
-            'Registration Successful. Please Login to proceed'
-          );
-        } else {
-          setErrortext(responseJson.msg);
-        }
-      })
-      .catch((error) => {
-        //Hide Loader
-        setLoading(false);
-        console.error(error);
-      });
-  };
-  if (isRegistraionSuccess) {
-    return (
-      <View
-        style={{
-          flex: 1,
-          backgroundColor: '#FEF9F0',
-          justifyContent: 'center',
-        }}>
-        <Text style={styles.successTextStyle}>
-          Registration Successful
-        </Text>
-      </View>
-    );
+    try {
+        createUser(userId, userFirstName, userLastName, userEmail, userPassword);
+    } catch (e) {
+        setIsRegistraionSuccess(false);
+        console.error("Error creating user: ", e);
+    }
+    setIsRegistrationSuccess(true);
   }
+  if (isRegistrationSuccess) {
+    return (
+      HomeScreen()
+    );
+}
   return (
     <View style={{flex: 1, backgroundColor: '#FEF9F0'}}>
       <ScrollView
@@ -151,7 +108,7 @@ export default function SignUpScreen({ navigation, route })  {
           <View style={styles.SectionStyle}>
             <TextInput
               style={styles.inputStyle}
-              onChangeText={(UserFirstName) => setUserName(UserFirstName)}
+              onChangeText={(UserFirstName) => setUserFirstName(UserFirstName)}
               underlineColorAndroid="#f000"
               placeholder="Enter First Name"
               placeholderTextColor="#8b9cb5"
@@ -270,7 +227,7 @@ const styles = StyleSheet.create({
       fontSize: 14,
     },
     successTextStyle: {
-      color: 'white',
+      color: 'black',
       textAlign: 'center',
       fontSize: 18,
       padding: 30,
