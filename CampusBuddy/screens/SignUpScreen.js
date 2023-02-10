@@ -13,6 +13,7 @@ import {
   TouchableOpacity,
   ScrollView,
 } from 'react-native';
+import SignInScreen from './SignInScreen';
 
 export default function SignUpScreen({ navigation, route })  {
   const [userId, setUserId] = useState('');  
@@ -24,7 +25,7 @@ export default function SignUpScreen({ navigation, route })  {
   const [errortext, setErrortext] = useState('');
   const [
     isRegistrationSuccess,
-    setIsRegistraionSuccess
+    setIsRegistrationSuccess
   ] = useState(false);
 
   const firstNameInputRef = createRef();
@@ -60,14 +61,14 @@ export default function SignUpScreen({ navigation, route })  {
     try {
         createUser(userId, userFirstName, userLastName, userEmail, userPassword);
     } catch (e) {
-        setIsRegistraionSuccess(false);
+        setIsRegistrationSuccess(false);
         console.error("Error creating user: ", e);
     }
     setIsRegistrationSuccess(true);
   }
   if (isRegistrationSuccess) {
     return (
-      HomeScreen()
+      SignInScreen
     );
 }
   return (

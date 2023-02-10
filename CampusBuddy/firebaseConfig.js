@@ -2,7 +2,7 @@
 import { initializeApp } from "firebase/app";
 import { getAnalytics } from "firebase/analytics";
 import { getAuth } from "firebase/auth"
-import { getFirestore, collection, addDoc } from "firebase/firestore";
+import { getFirestore, collection, addDoc, getDocs } from "firebase/firestore";
 
 // TODO: Add SDKs for Firebase products that you want to use
 // https://firebase.google.com/docs/web/setup#available-libraries
@@ -45,3 +45,19 @@ export async function createUser(username, first, last, email, password) {
   
 }
 
+export async function authUser(username, password){
+  try{
+    const querySnapshot = await getDocs(collection(db, "users"));
+    querySnapshot.forEach((doc) => {
+      console.log(`${doc.id} => ${doc.data()}`);
+      if(doc.data()['id'] == username){
+        if(doc.data()['password'] == password){
+          return doc.data()['id'];
+        }
+      }
+    });
+    return null;
+  } catch(e){
+    console.error(e)
+  }
+}
