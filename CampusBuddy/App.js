@@ -28,6 +28,4 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
 });
-/* <Button title="test"
-onPress={() => sendDataToFirebase("lucyc998", "Lucy", "Cheng", "lucycheng9@gmail.com", "123")}
-/>*/
+
