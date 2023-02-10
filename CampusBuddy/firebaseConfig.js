@@ -1,7 +1,7 @@
 // Import the functions you need from the SDKs you need
 import { initializeApp } from "firebase/app";
 import { getAnalytics } from "firebase/analytics";
-import { getAuth } from "firebase/auth"
+import { getAuth, createUserWithEmailAndPassword } from "firebase/auth"
 import { getFirestore, collection, addDoc, getDocs } from "firebase/firestore";
 
 // TODO: Add SDKs for Firebase products that you want to use
@@ -38,26 +38,53 @@ export async function createUser(username, first, last, email, password) {
       password: password,
       points: 0
     });
+    auth.
     console.log("Document written with ID: ", docRef.id)
   } catch (e) {
     console.error("Error adding doc: ", e);
   }
+  createUserWithEmailAndPassword(auth, email, password)
+  .then((userCredential) => {
+    alert("Successfully added new user")
+  })
+  .catch((error) =>
+    alert(error)
+  )
   
 }
 
 export async function authUser(username, password){
+  var result = null;
   try{
     const querySnapshot = await getDocs(collection(db, "users"));
     querySnapshot.forEach((doc) => {
-      console.log(`${doc.id} => ${doc.data()}`);
       if(doc.data()['id'] == username){
         if(doc.data()['password'] == password){
-          return doc.data()['id'];
+          // console.log("Sign in success!")
+          result = doc.data()['id'];
         }
       }
     });
-    return null;
+    if(result == ""){
+      console.log("Failed sign in")
+      return null;
+    }else{
+      console.log("Sign in success!")
+      return result;
+    }
   } catch(e){
     console.error(e)
+  }
+}
+
+export async function addSchedule(user_token, data){
+  try {
+    const docRef = await addDoc(collection(db, "schedule"), {
+      id: user_token,
+      data: data
+    });
+    console.log("Document written with ID: ", docRef.id)
+  } catch (e) {
+    console.error("Error adding doc: ", e);
   }
 }

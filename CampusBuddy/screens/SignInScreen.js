@@ -1,25 +1,41 @@
 
 
-import React, { useState } from 'react';
-import { StyleSheet, View, Text, TextInput, TouchableOpacity } from 'react-native';
-import SignUpScreen from './SignUpScreen';
-import { authUser } from "../firebaseConfig";
+import { useState, createContext, useContext, useEffect } from "react";
+import { StyleSheet, View, Text, TextInput, TouchableOpacity, KeyboardAvoidingView } from 'react-native';
+import { auth } from "../firebaseConfig";
+import { signInWithEmailAndPassword, } from "firebase/auth"
+
+
+
 
 const SignInScreen = ({navigation}) => {
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
+    const [username, setUsername] = useState('');
+    const [password, setPassword] = useState('');
+  
+  useEffect(() => {
+    auth.onAuthStateChanged((user) => {
+      if(user){
+        navigation.navigate("Home")
+      }
+    })
+  }, [])
+
   const tomain= () => {
-    if(authUser(username, password) != null){
-        navigation.navigate('Home')
-    }else{
-        alert("Wrong password or username")
-    }
+    signInWithEmailAndPassword(auth, username, password)
+    .then((userCredential) => {
+      const user = userCredential.user;
+      console.log('Logged in with:', user.email)
+      }
+    )
+    .catch((error) => {
+      alert(error.message)
+    })
   }
   return (
-    <View style={styles.container}>
+    <KeyboardAvoidingView style={styles.container} behavior="padding">
       <Text style={styles.title}>Campus Buddy</Text>
       <View style={styles.formContainer}>
-        <Text style={styles.formLabel}>Username</Text>
+        <Text style={styles.formLabel}>Email</Text>
         <TextInput
           style={styles.formInput}
           value={username}
@@ -35,8 +51,11 @@ const SignInScreen = ({navigation}) => {
         <TouchableOpacity style={styles.loginButton} onPress={() => tomain()}>
           <Text style={styles.loginButtonText}>Login</Text>
         </TouchableOpacity>
+        <TouchableOpacity style={styles.loginButton} onPress={() => navigation.navigate('SignUp')}>
+          <Text style={styles.loginButtonText}>Register</Text>
+        </TouchableOpacity>
       </View>
-    </View>
+    </KeyboardAvoidingView>
   );
 };
 

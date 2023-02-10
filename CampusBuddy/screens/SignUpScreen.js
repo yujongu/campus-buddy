@@ -1,6 +1,7 @@
 // Import React and Component
 import React, {useState, createRef} from 'react';
 import { createUser } from "../firebaseConfig";
+import { auth } from '../firebaseConfig'
 import HomeScreen from "../BottomTabContainer";
 import {
   StyleSheet,
@@ -33,7 +34,7 @@ export default function SignUpScreen({ navigation, route })  {
   const emailInputRef = createRef();
   const passwordInputRef = createRef();
 
-  const handleSubmitButton = () => {
+  const handleSubmitButton = ({navigation}) => {
     setErrortext('');
     if (!userId) {
       alert('Please fill Username');
@@ -60,6 +61,7 @@ export default function SignUpScreen({ navigation, route })  {
 
     try {
         createUser(userId, userFirstName, userLastName, userEmail, userPassword);
+        navigation.navigate("Home")
     } catch (e) {
         setIsRegistrationSuccess(false);
         console.error("Error creating user: ", e);
