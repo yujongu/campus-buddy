@@ -2,7 +2,7 @@
 import { initializeApp } from "firebase/app";
 import { getAnalytics } from "firebase/analytics";
 import { getAuth, createUserWithEmailAndPassword } from "firebase/auth"
-import { getFirestore, collection, addDoc, getDocs } from "firebase/firestore";
+import { getFirestore, collection, addDoc, getDocs,doc, setDoc, getDoc } from "firebase/firestore";
 
 // TODO: Add SDKs for Firebase products that you want to use
 // https://firebase.google.com/docs/web/setup#available-libraries
@@ -45,7 +45,7 @@ export async function createUser(username, first, last, email, password) {
   }
   createUserWithEmailAndPassword(auth, email, password)
   .then((userCredential) => {
-    alert("Successfully added new user")
+    console.log("Successfully added new user")
   })
   .catch((error) =>
     alert(error)
@@ -54,13 +54,38 @@ export async function createUser(username, first, last, email, password) {
 }
 
 export async function addSchedule(user_token, data){
+  const docRef = doc(db, "schedule", user_token)
+  var res = []
   try {
-    const docRef = await addDoc(collection(db, "schedule"), {
-      id: user_token,
-      data: data
+    data.map(element => {
+      const str = {
+        data: element.endTime+
+        ','+element.location+
+        ","+element.startTime+
+        ","+element.title
+      }
+      res.push(str);
+    })
+    setDoc(docRef, {
+      things: res
     });
     console.log("Document written with ID: ", docRef.id)
   } catch (e) {
     console.error("Error adding doc: ", e);
   }
+}
+
+export async function userSchedule(user_token){
+  try{
+    const querySnapShot = await getDoc(doc(db, "schedule", user_token));
+    if(querySnapShot.exists()){
+      const result = querySnapShot.data();
+      return result;
+    }else{
+      return null;
+    }
+  }catch(error){
+    alert(error);
+  }
+  
 }

@@ -15,7 +15,7 @@ import * as DocumentPicker from 'expo-document-picker';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import TimeTableView, { genTimeBlock } from 'react-native-timetable';
 import { addSchedule } from '../firebaseConfig';
-import { auth, db } from '../firebaseConfig';
+import { auth, db, userSchedule } from '../firebaseConfig';
 import { 
   ref,
   onValue,
@@ -34,8 +34,22 @@ export default class App extends Component {
     }
   }
 
-  componentDidMount() {
-    
+  async componentDidMount() {
+    const res = await userSchedule(auth.currentUser?.uid);
+    const result = []
+    if(res != null){
+      res['things'].map(element => {
+        const sp = element.data.split(',');
+        const temp = {
+          title: sp[3],
+          startTime: new Date(sp[2]),
+          endTime: new Date(sp[0]),
+          location: sp[1]
+        }
+        result.push(temp);
+      })
+    }
+    this.setState({ list: result})
   }
 
   scrollViewRef = (ref) => {
