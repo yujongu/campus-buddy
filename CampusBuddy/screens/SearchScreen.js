@@ -1,83 +1,50 @@
 import { StatusBar } from "expo-status-bar";
 import { Component } from "react";
-import { Button, StyleSheet, Text, View, FlatList } from "react-native";
+import { Button, StyleSheet, Text, View, FlatList, TouchableOpacity } from "react-native";
 import { ListItem, SearchBar } from "react-native-elements";
+import { userList } from "../firebaseConfig";
+import Icon from 'react-native-vector-icons/Feather';
 
-const DATA = [
-  {
-    id: "1",
-    title: "Data Structures",
-  },
-  {
-    id: "2",
-    title: "STL",
-  },
-  {
-    id: "3",
-    title: "C++",
-  },
-  {
-    id: "4",
-    title: "Java",
-  },
-  {
-    id: "5",
-    title: "Python",
-  },
-  {
-    id: "6",
-    title: "CP",
-  },
-  {
-    id: "7",
-    title: "ReactJs",
-  },
-  {
-    id: "8",
-    title: "NodeJs",
-  },
-  {
-    id: "9",
-    title: "MongoDb",
-  },
-  {
-    id: "10",
-    title: "ExpressJs",
-  },
-  {
-    id: "11",
-    title: "PHP",
-  },
-  {
-    id: "12",
-    title: "MySql",
-  },
-];
 const Item = ({ title }) => {
   return (
     <View style={styles.item}>
-      <Text>{title}</Text>
+      <Text>
+        {title[1] + " " + title[3] + " (" + title[2] + ")"}
+        {'\n'}
+        {title[0]}
+      </Text>
+      <TouchableOpacity
+          activeOpacity={0.7}
+          onPress={() => alert(title[2])}
+          style={styles.touchableOpacityStyle}>
+          <Icon name="user-plus" size={25} />
+      </TouchableOpacity>
     </View>
   );
 };
 
-const renderItem = ({ item }) => <Item title={item.title} />;
+const renderItem = ({ item }) => <Item title={[item.email, item.first, item.id, item.last]} />;
 
 export default class SearchScreen extends Component {
   constructor(props) {
     super(props);
     this.state = {
       loading: false,
-      data: DATA,
+      data: null,
       error: null,
       searchValue: "",
+      arrayholder: ""
     };
-    this.arrayholder = DATA;
+  }
+
+  async componentDidMount() {
+    const res = await userList();
+    this.setState({data: res, arrayholder: res});
   }
 
   searchFunction = (text) => {
-    const updatedData = this.arrayholder.filter((item) => {
-      const item_data = `${item.title.toUpperCase()})`;
+    const updatedData = this.state.arrayholder.filter((item) => {
+      const item_data = `${item.id.toUpperCase()})`;
       const text_data = text.toUpperCase();
       return item_data.indexOf(text_data) > -1;
     });
@@ -95,11 +62,16 @@ export default class SearchScreen extends Component {
           onChangeText={(text) => this.searchFunction(text)}
           autoCorrect={false}
         />
-        <FlatList
-          data={this.state.data}
-          renderItem={renderItem}
-          keyExtractor={(item) => item.id}
-        />
+        {
+          this.state.searchValue === "" ?
+          <Text style={{alignSelf: "center", paddingTop: "10%"}}>Search username</Text>
+          :
+          <FlatList
+            data={this.state.data}
+            renderItem={renderItem}
+            keyExtractor={(item) => item.email}
+          />
+        }
       </View>
     );
   }
@@ -115,6 +87,8 @@ const styles = StyleSheet.create({
     padding: 20,
     marginVertical: 8,
     marginHorizontal: 16,
+    flexDirection: 'row',
+    justifyContent: 'space-between'
   },
 });
 
