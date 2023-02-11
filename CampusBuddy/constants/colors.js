@@ -17,4 +17,6 @@ export const Colors = {
   background: "#2F4858",
   darkGrey: "#373A36",
   grey: "#9D968D",
+  morningTimeColor: "#2C9FF3",
+  eveningTimeColor: "#F61818",
 };
