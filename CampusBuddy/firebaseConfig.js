@@ -53,30 +53,6 @@ export async function createUser(username, first, last, email, password) {
   
 }
 
-export async function authUser(username, password){
-  var result = null;
-  try{
-    const querySnapshot = await getDocs(collection(db, "users"));
-    querySnapshot.forEach((doc) => {
-      if(doc.data()['id'] == username){
-        if(doc.data()['password'] == password){
-          // console.log("Sign in success!")
-          result = doc.data()['id'];
-        }
-      }
-    });
-    if(result == ""){
-      console.log("Failed sign in")
-      return null;
-    }else{
-      console.log("Sign in success!")
-      return result;
-    }
-  } catch(e){
-    console.error(e)
-  }
-}
-
 export async function addSchedule(user_token, data){
   try {
     const docRef = await addDoc(collection(db, "schedule"), {

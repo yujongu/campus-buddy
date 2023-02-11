@@ -14,6 +14,14 @@ import {
 import * as DocumentPicker from 'expo-document-picker';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import TimeTableView, { genTimeBlock } from 'react-native-timetable';
+import { addSchedule } from '../firebaseConfig';
+import { auth, db } from '../firebaseConfig';
+import { 
+  ref,
+  onValue,
+  push,
+  update,
+  remove } from 'firebase/database';
 
 export default class App extends Component {
   constructor(props) {
@@ -24,6 +32,10 @@ export default class App extends Component {
       visible: false,
       list: []
     }
+  }
+
+  componentDidMount() {
+    
   }
 
   scrollViewRef = (ref) => {
@@ -132,8 +144,6 @@ export default class App extends Component {
           }
         }
       })
-      // this.setState({list: Array.from(new Set(this.state.list))})
-      // console.log(this.state.list)
       const uniqueArray = this.state.list.filter((value, index) => {
         const _value = JSON.stringify(value);
         return index === this.state.list.findIndex(obj => {
@@ -142,6 +152,7 @@ export default class App extends Component {
       });
       this.setState({list: uniqueArray})
       this.setState({visible: !this.state.visible})
+      addSchedule(auth.currentUser?.uid, this.state.list);
       })
       .catch((error) => {
         console.log(error);
