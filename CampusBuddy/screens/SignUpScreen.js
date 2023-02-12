@@ -34,7 +34,7 @@ export default function SignUpScreen({ navigation, route })  {
   const emailInputRef = createRef();
   const passwordInputRef = createRef();
 
-  const handleSubmitButton = ({navigation}) => {
+  const handleSubmitButton = async () => {
     setErrortext('');
     if (!userId) {
       alert('Please fill Username');
@@ -61,7 +61,12 @@ export default function SignUpScreen({ navigation, route })  {
 
     try {
         createUser(userId, userFirstName, userLastName, userEmail, userPassword);
-        navigation.navigate("Home")
+        
+        if(auth.currentUser?.uid != undefined){
+          navigation.navigate("Home")
+        }else{
+          navigation.navigate("SignIn")
+        }
     } catch (e) {
         setIsRegistrationSuccess(false);
         console.error("Error creating user: ", e);

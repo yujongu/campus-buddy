@@ -6,7 +6,7 @@ export default function ProfileScreen({ navigation, route }) {
   const handleSignOut = () => {
     signOut(auth)
     .then(() => {
-      navigation.replace("SignIn")
+      navigation.popToTop();
     })
   }
 

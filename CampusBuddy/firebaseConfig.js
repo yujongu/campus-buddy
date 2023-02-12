@@ -1,7 +1,7 @@
 // Import the functions you need from the SDKs you need
 import { initializeApp } from "firebase/app";
 import { getAnalytics } from "firebase/analytics";
-import { getAuth, createUserWithEmailAndPassword } from "firebase/auth"
+import { getAuth, createUserWithEmailAndPassword, } from "firebase/auth"
 import { getFirestore, collection, addDoc, getDocs,doc, setDoc, getDoc, QueryEndAtConstraint } from "firebase/firestore";
 import { async } from "@firebase/util";
 
@@ -32,26 +32,23 @@ export {db};
 export async function createUser(username, first, last, email, password) {
   createUserWithEmailAndPassword(auth, email, password)
   .then((userCredential) => {
-    console.log("Successfully added new user")
+    console.log("Successfully added new user " + userCredential.user.uid)
+    try {
+      const docRef = addDoc(collection(db, "users"), {
+        id: username,
+        first: first,
+        last: last,
+        email: email,
+        password: password,
+        points: 0
+      });
+    } catch (e) {
+      console.error("Error adding doc: ", e);
+    }
   })
-  .catch((error) =>
-  alert("creating user:" + error)
-  )
-  try {
-    const docRef = await addDoc(collection(db, "users"), {
-      id: username,
-      first: first,
-      last: last,
-      email: email,
-      password: password,
-      points: 0
-    });
-    auth.
-    console.log("Document written with ID: ", docRef.id)
-  } catch (e) {
-    console.error("Error adding doc: ", e);
-  }
-  
+  .catch((error) => {
+    alert("creating user:" + error)
+  })
 }
 
 export async function addSchedule(user_token, data){
@@ -96,7 +93,8 @@ export async function userList(){
   try{
     const querySnapShot = await getDocs(collection(db, "users"));
     querySnapShot.forEach((element) => {
-      result.push(element.data());
+      if(auth.currentUser?.email != element.data().email)
+        result.push(element.data());
     })
     return result;
   }catch(error){
@@ -104,7 +102,7 @@ export async function userList(){
   }
 }
 
-export async function friendList() {
+export async function friendList(user_token) {
   const querySnapShot = await getDoc(doc(db, "friend_list", user_token));
   if(querySnapShot.exists()){
     const result = querySnapShot.data();
@@ -112,22 +110,13 @@ export async function friendList() {
   }else{
     const docRef = doc(db, "friend_list", user_token)
     var res = []
-    try {
-      data.map(element => {
-        const str = {
-          data: element.endTime+
-          ','+element.location+
-          ","+element.startTime+
-          ","+element.title
-        }
-        res.push(str);
-      })
-      setDoc(docRef, {
-        things: res
-      });
-      console.log("Document written with ID: ", docRef.id)
-    } catch (e) {
-      console.error("Error adding doc: ", e);
-    }
+    setDoc(docRef, {
+      friends: res
+    })
+    return null;
   }
+}
+
+export async function addfriend(from_user, to_user){
+  auth.get
 }
