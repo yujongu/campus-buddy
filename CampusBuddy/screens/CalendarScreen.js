@@ -16,12 +16,7 @@ import Icon from 'react-native-vector-icons/FontAwesome';
 import TimeTableView, { genTimeBlock } from 'react-native-timetable';
 import { addSchedule } from '../firebaseConfig';
 import { auth, db, userSchedule } from '../firebaseConfig';
-import { 
-  ref,
-  onValue,
-  push,
-  update,
-  remove } from 'firebase/database';
+
 
 export default class App extends Component {
   constructor(props) {

@@ -10,8 +10,10 @@ import {
   getDoc,
   QueryEndAtConstraint, 
   updateDoc,
-  arrayUnion
+  arrayUnion,
+  onSnapshot
  } from "firebase/firestore";
+import { async } from "@firebase/util";
 
 
 // TODO: Add SDKs for Firebase products that you want to use
@@ -56,6 +58,10 @@ export async function createUser(username, first, last, email, password) {
       setDoc(doc(db, "requests", userCredential.user.email), {
         from_request: [],
         to_request: []
+      })
+      //initialize user friend list
+      setDoc(doc(db, "friend_list", userCredential.user.email), {
+        friends: []
       })
     } catch (e) {
       console.error("Error adding doc: ", e);
