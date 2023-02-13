@@ -4,7 +4,7 @@ import { Button, StyleSheet, Text, View } from "react-native";
 export default function NotificationScreen({ navigation, route }) {
   return (
     <View style={styles.container}>
-      <Text>This is notification Screen</Text>
+      <Text>lol</Text>
       <StatusBar style="auto" />
     </View>
   );

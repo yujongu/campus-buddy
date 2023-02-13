@@ -2,8 +2,14 @@ import { StatusBar } from "expo-status-bar";
 import { Component } from "react";
 import { Button, StyleSheet, Text, View, FlatList, TouchableOpacity } from "react-native";
 import { ListItem, SearchBar } from "react-native-elements";
-import { userList } from "../firebaseConfig";
+import { userList, to_request } from "../firebaseConfig";
+import { auth } from "../firebaseConfig";
 import Icon from 'react-native-vector-icons/Feather';
+
+const handleRequest = (email, user_ID) => {
+  to_request(auth.currentUser?.email, email, "friend");
+  alert("Sent a request to " + user_ID);
+}
 
 const Item = ({ title }) => {
   return (
@@ -15,7 +21,7 @@ const Item = ({ title }) => {
       </Text>
       <TouchableOpacity
           activeOpacity={0.7}
-          onPress={() => alert(title[2])}
+          onPress={() => handleRequest(title[0], title[2])}
           style={styles.touchableOpacityStyle}>
           <Icon name="user-plus" size={25} />
       </TouchableOpacity>
@@ -79,11 +85,11 @@ export default class SearchScreen extends Component {
 
 const styles = StyleSheet.create({
   container: {
-    marginTop: 30,
     padding: 2,
   },
   item: {
-    backgroundColor: "#f5f520",
+    borderBottomColor: 'black',
+    borderBottomWidth: 3,
     padding: 20,
     marginVertical: 8,
     marginHorizontal: 16,

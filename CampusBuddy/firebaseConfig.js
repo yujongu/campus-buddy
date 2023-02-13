@@ -2,8 +2,17 @@
 import { initializeApp } from "firebase/app";
 import { getAnalytics } from "firebase/analytics";
 import { getAuth, createUserWithEmailAndPassword, } from "firebase/auth"
-import { getFirestore, collection, addDoc, getDocs,doc, setDoc, getDoc, QueryEndAtConstraint } from "firebase/firestore";
-import { async } from "@firebase/util";
+import { 
+  getFirestore,
+  collection,
+  getDocs,doc,
+  setDoc, 
+  getDoc,
+  QueryEndAtConstraint, 
+  updateDoc,
+  arrayUnion
+ } from "firebase/firestore";
+
 
 // TODO: Add SDKs for Firebase products that you want to use
 // https://firebase.google.com/docs/web/setup#available-libraries
@@ -30,18 +39,24 @@ const db = getFirestore();
 export {db};
 
 export async function createUser(username, first, last, email, password) {
-  createUserWithEmailAndPassword(auth, email, password)
+  await createUserWithEmailAndPassword(auth, email, password)
   .then((userCredential) => {
     console.log("Successfully added new user " + userCredential.user.uid)
     try {
-      const docRef = addDoc(collection(db, "users"), {
+      //add user to db
+      setDoc(doc(db, "users", userCredential.user.uid), {
         id: username,
         first: first,
         last: last,
         email: email,
         password: password,
         points: 0
-      });
+      })
+      //initialize a user in db/requests
+      setDoc(doc(db, "requests", userCredential.user.email), {
+        from_request: [],
+        to_request: []
+      })
     } catch (e) {
       console.error("Error adding doc: ", e);
     }
@@ -117,6 +132,21 @@ export async function friendList(user_token) {
   }
 }
 
-export async function addfriend(from_user, to_user){
-  auth.get
+export async function to_request(own, to_user , type){
+  const docRef = doc(db, "requests", own)
+  const docRef_to = doc(db, 'requests', to_user)
+
+  if(type == "friend"){
+    try {
+      updateDoc(docRef, {
+        to_request: arrayUnion(to_user+"/"+type)
+      });
+      updateDoc(docRef_to, {
+        from_request: arrayUnion(own+"/"+type)
+      })
+      console.log("Successfully sent friend request: ", docRef.id)
+    } catch (e) {
+      console.error("Error adding doc: ", e);
+    }
+  }
 }
