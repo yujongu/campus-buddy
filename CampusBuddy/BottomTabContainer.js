@@ -7,6 +7,8 @@ import CalendarScreen from "./screens/CalendarScreen";
 import ProfileScreen from "./screens/ProfileScreen";
 import NotificationScreen from "./screens/NotificationScreen";
 import Ionicons from "react-native-vector-icons/Ionicons";
+import SignUpScreen from './screens/SignUpScreen';
+import SignInScreen from "./screens/SignInScreen";
 import MaterialCommunityIcons from "react-native-vector-icons/MaterialCommunityIcons";
 import FontAwesome from "react-native-vector-icons/FontAwesome";
 import { Colors } from "./constants/colors";

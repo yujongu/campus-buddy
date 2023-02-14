@@ -1,11 +1,19 @@
 import { StatusBar } from "expo-status-bar";
 import { Button, StyleSheet, Text, View } from "react-native";
-
+import { auth } from "../firebaseConfig"
+import {signOut} from "firebase/auth"
 export default function ProfileScreen({ navigation, route }) {
+  const handleSignOut = () => {
+    signOut(auth)
+    .then(() => {
+      navigation.popToTop();
+    })
+  }
+
   return (
     <View style={styles.container}>
-      <Text>This is profile screen</Text>
-      <StatusBar style="auto" />
+      <Text>{auth.currentUser?.uid}</Text>
+      <Button title="Sign Out" onPress={()=> handleSignOut()}/>
     </View>
   );
 }

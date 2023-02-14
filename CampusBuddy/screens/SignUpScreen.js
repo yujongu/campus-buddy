@@ -1,6 +1,7 @@
 // Import React and Component
 import React, {useState, createRef} from 'react';
 import { createUser } from "../firebaseConfig";
+import { auth } from '../firebaseConfig'
 import HomeScreen from "../BottomTabContainer";
 import {
   StyleSheet,
@@ -13,6 +14,7 @@ import {
   TouchableOpacity,
   ScrollView,
 } from 'react-native';
+import SignInScreen from './SignInScreen';
 
 export default function SignUpScreen({ navigation, route })  {
   const [userId, setUserId] = useState('');  
@@ -20,11 +22,12 @@ export default function SignUpScreen({ navigation, route })  {
   const [userLastName, setUserLastName] = useState('');
   const [userEmail, setUserEmail] = useState('');
   const [userPassword, setUserPassword] = useState('');
+  const [userConfirmPassword, setUserConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [errortext, setErrortext] = useState('');
   const [
     isRegistrationSuccess,
-    setIsRegistraionSuccess
+    setIsRegistrationSuccess
   ] = useState(false);
 
   const firstNameInputRef = createRef();
@@ -32,7 +35,7 @@ export default function SignUpScreen({ navigation, route })  {
   const emailInputRef = createRef();
   const passwordInputRef = createRef();
 
-  const handleSubmitButton = () => {
+  const handleSubmitButton = async () => {
     setErrortext('');
     if (!userId) {
       alert('Please fill Username');
@@ -54,20 +57,42 @@ export default function SignUpScreen({ navigation, route })  {
       alert('Please fill Password');
       return;
     }
+    if (!userConfirmPassword) {
+      alert('Please fill Confirm Password');
+      return;
+    }
+    if (!/\d/.test(userPassword)) {
+      alert('Password must contain at least one number');
+      return;
+    }
+    if(!/^(?=.*[!@#$%^&*])/.test(userPassword)) {
+      alert('Password must contain at least one special character');
+      return;
+    }
+    if(userPassword != userConfirmPassword) {
+      alert('Password must match with Confirm Password');
+      return;
+    }
     //Show Loader
     setLoading(true);
 
     try {
         createUser(userId, userFirstName, userLastName, userEmail, userPassword);
+        
+        if(auth.currentUser?.uid != undefined){
+          navigation.navigate("Home")
+        }else{
+          navigation.navigate("SignIn")
+        }
     } catch (e) {
-        setIsRegistraionSuccess(false);
+        setIsRegistrationSuccess(false);
         console.error("Error creating user: ", e);
     }
     setIsRegistrationSuccess(true);
   }
   if (isRegistrationSuccess) {
     return (
-      HomeScreen()
+      SignInScreen
     );
 }
   return (
@@ -163,6 +188,22 @@ export default function SignUpScreen({ navigation, route })  {
               placeholderTextColor="#8b9cb5"
               ref={passwordInputRef}
               returnKeyType="next"
+              secureTextEntry={true}
+              onSubmitEditing={Keyboard.dismiss}
+              blurOnSubmit={false}
+            />
+          </View>
+          <View style={styles.SectionStyle}>
+            <Text>Password should include upper, lower case, number, and special characteres. </Text>
+          </View>
+          <View style={styles.SectionStyle}>
+            <TextInput
+              style={styles.inputStyle}
+              onChangeText={(UserConfirmPassword) => setUserConfirmPassword(UserConfirmPassword)}
+              underlineColorAndroid="#f000"
+              placeholder="Enter Confirm Password"
+              placeholderTextColor="#8b9cb5"
+              returnKeyType="go"
               secureTextEntry={true}
               onSubmitEditing={Keyboard.dismiss}
               blurOnSubmit={false}
