@@ -10,6 +10,7 @@ import {
   Linking,
   TouchableOpacity,
   Modal,
+  FlatList,
 } from 'react-native';
 import * as DocumentPicker from 'expo-document-picker';
 import Icon from 'react-native-vector-icons/FontAwesome';
@@ -21,15 +22,16 @@ import { auth, db, userSchedule } from '../firebaseConfig';
 export default class App extends Component {
   constructor(props) {
     super(props);
-    this.numOfDays = 7;
-    this.pivotDate = genTimeBlock('mon');
     this.state = {
       visible: false,
+      //this is the list of schedules
       list: []
     }
   }
 
   async componentDidMount() {
+    // load the latest schedule from database.
+    // userSchedule returns the data from database (implemented in firebaseConfig.js)
     const res = await userSchedule(auth.currentUser?.uid);
     const result = []
     if(res != null){
@@ -47,36 +49,35 @@ export default class App extends Component {
     this.setState({ list: result})
   }
 
-  scrollViewRef = (ref) => {
-    this.timetableRef = ref;
-  };
-
-  onEventPress = (evt) => {
-    Alert.alert("onEventPress", JSON.stringify(evt));
-  };
-
+  //handles click on hover button
   clickHandler = () => {
     this.setState({visible: true})
   };
 
+  //open URL
   openURL = (url) => {
     Linking.openURL(url).catch((err) => console.error('An error occurred', err));
   }
 
+  //DocumentPicker opens local storage of mobile phone 
   openDocumentFile = async () =>{
     const res = await DocumentPicker.getDocumentAsync({}); 
     fetch(res.uri)
     .then(async (response) => {
+      //open downloaded schedule csv
       const resp = await response.text();
+      //parse content of CSV file
       var result = readString(resp,{header: true})
       result.data.forEach((product) => {
-        
+        //distinguish Miterm Examination and others because Midterm is not shown
+        //because the calendar is week-view
         if((product["Type"] == "Midterm Examination") && (product["Published End"] != null)){
           this.state.list.push(product["Type"] +";"+product["Name"]+";"+product["First Date"]+";"+product["Published Start"]+";"+product["Published End"]+";"+product["Location"])
         }else if(/[0-9]/.test(product["Published Start"])){
           const st = product["Published Start"].split(":");
           const ed = end= product["Published End"].split(":");
           var start, start_min, end, end_min;
+          //convert 08:30p --> 20:30
           if(product["Published Start"].lastIndexOf("a") > -1){
             start = st[0]
             start_min = st[1].replace("a", "")
@@ -141,8 +142,7 @@ export default class App extends Component {
                 location: product["Location"],
               })
             //Sunday
-            }else if(product["Day Of Week"][i] == 'U'){
-              
+            }else if(product["Day Of Week"][i] == 'U'){      
               this.state.list.push({
                 title: product["Name"] + " ("+product["Type"]+")",
                 startTime: genTimeBlock("SUN", start, start_min),
@@ -153,6 +153,7 @@ export default class App extends Component {
           }
         }
       })
+      //remove duplicates (idk but csv have duplicate schedules)
       const uniqueArray = this.state.list.filter((value, index) => {
         const _value = JSON.stringify(value);
         return index === this.state.list.findIndex(obj => {
@@ -206,17 +207,17 @@ export default class App extends Component {
           <Icon name="plus-circle" size={50} />
         </TouchableOpacity>
         <View style={styles.container}>
-          <TimeTableView
-            scrollViewRef={this.scrollViewRef}
-            events={this.state.list}
-            pivotTime={7}
-            pivotEndTime={24}
-            pivotDate={this.pivotDate}
-            nDays={this.numOfDays}
-            onEventPress={this.onEventPress}
-            headerStyle={styles.headerStyle}
-            formatDateHeader="dddd"
-            locale="en"
+          <FlatList 
+            data={this.state.list}
+            renderItem={(element) =>
+              <Text>
+                {element.item['title'] + " " + 
+                element.item['startTime'] + " "+
+                element.item['endTime'] + " " +
+                element.item['location']
+                }
+              </Text>
+            }
           />
         </View>
       </SafeAreaView>
