@@ -46,6 +46,7 @@ export default class App extends Component {
     this.state = {
       visible: false,
       list: [],
+      midterms: [],
       createEventVisible: false,
       openList: false,
       value: null,
@@ -130,7 +131,7 @@ export default class App extends Component {
             product["Type"] == "Midterm Examination" &&
             product["Published End"] != null
           ) {
-            this.state.list.push(
+            this.state.midterms.push(
               product["Type"] +
                 ";" +
                 product["Name"] +
