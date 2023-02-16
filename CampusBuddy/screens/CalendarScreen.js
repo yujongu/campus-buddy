@@ -317,11 +317,16 @@ export default class App extends Component {
               justifyContent: "center",
               alignItems: "center",
             }}>
-
+              
             <View style={styles.modal}>
+              <TouchableOpacity
+                onPress={() => this.setState({createEventVisible: false})}>
+                <View style={{paddingLeft:270, paddingTop:5}}>
+                  <Icon name="times" size={20} color="#2F4858" />
+                </View>
+              </TouchableOpacity>
               <View style={styles.row}>
-
-                <Text style = {styles.header_text}>Create Event</Text>
+                <Text style = {styles.header_text}>Create Event</Text> 
               </View>
               <View style={styles.row}>
               <TextInput 
@@ -332,7 +337,7 @@ export default class App extends Component {
               </TextInput>
               </View>
               <View style={styles.row}>
-                <View style={{flex:1, paddingTop:5}}>
+                <View style={{flex:1, paddingTop:10}}>
                   <Icon name="map-pin" size={20} color="#2F4858" />
                 </View>
                 <View style={{flex:8}}>
@@ -345,7 +350,7 @@ export default class App extends Component {
                 </View>
               </View>
               <View style={styles.row}>
-                <View style={{flex:1, paddingTop:5}}>
+                <View style={{flex:1, paddingTop:10}}>
                   <Icon name="repeat" size={20} color="#2F4858" />
                 </View>
                 <View style={{flex:8}}>
@@ -565,7 +570,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: "left",
     justifyContent: 'space-between',
-    margin: 15,
+    marginTop: 10,
+    marginBottom: 10,
+    marginLeft: 25,
+    marginRight: 25,
   },
   modal: {
     backgroundColor: 'white',
