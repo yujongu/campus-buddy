@@ -13,7 +13,10 @@ import {
   TouchableOpacity,
   Modal,
   Animated,
+  TextInput,
 } from "react-native";
+import DateTimePicker from '@react-native-community/datetimepicker';
+import DropDownPicker from 'react-native-dropdown-picker';
 import { Colors } from "../constants/colors";
 import * as DocumentPicker from "expo-document-picker";
 import Icon from "react-native-vector-icons/FontAwesome";
@@ -43,7 +46,17 @@ export default class App extends Component {
     this.state = {
       visible: false,
       list: [],
+      createEventVisible: false,
+      openList: false,
+      value: null,
+      repetitionItems: [
+        {label: 'Never', value: 0},
+        {label: 'Daily', value: 1},
+        {label: 'Weekly', value: 2},
+        {label: 'Monthly', value: 3},
+      ]
     };
+    
   }
 
   async componentDidMount() {
@@ -71,6 +84,30 @@ export default class App extends Component {
   onEventPress = (evt) => {
     Alert.alert("onEventPress", JSON.stringify(evt));
   };
+  
+  openCreateEvent = () => {
+    this.setState({ visible: false });
+    this.setState({ createEventVisible: true });
+  }
+  
+  /*setOpen = () => {
+    this.setState({
+      openList: true
+    });
+  }
+
+  setValue = (value) =>{
+    this.setState({
+      value: value
+    });
+  }
+
+  setItems = (items) =>{
+    this.setState({
+      repetitionItems: items
+    });
+  }*/
+  
 
   clickHandler = () => {
     this.setState({ visible: true });
@@ -234,14 +271,14 @@ export default class App extends Component {
             }}
           >
             <View
-              style={{ width: "90%", height: "70%", backgroundColor: "white" }}
+              style={styles.modalView}
             >
-              <Text style={styles.title}>
+              {/*<Text style={styles.title}>
                 1. Click the Button{"\n"}
                 2. Sign in to your University account{"\n"}
                 3. Click the menu --> Personal Schedule{"\n"}
                 4. Export --> Export CSV{"\n"}
-              </Text>
+          </Text>*/}
               <Button
                 title="Download schedule"
                 onPress={() =>
@@ -250,13 +287,83 @@ export default class App extends Component {
                   )
                 }
               />
-              <Text>{"\n"}</Text>
               <Button
                 title="Import schedule"
                 onPress={() => this.openDocumentFile()}
               />
+              <Button
+                title="Add event"
+                onPress={this.openCreateEvent}
+              />
+              <Button
+                title="Close modal"
+                onPress={() => {
+                  this.setState({ visible: !this.state.visible });
+                }}
+              />
             </View>
           </View>
+        </Modal>
+        <Modal
+          animationType="slide"
+          visible={this.state.createEventVisible}
+          transparent={true}
+          onRequestClose={() => {
+            this.setState({ visible: !this.state.createEventVisible });
+          }}
+        >
+         <View style={{
+              flex: 1,
+              justifyContent: "center",
+              alignItems: "center",
+            }}>
+
+            <View style={styles.modal}>
+              <View style={styles.row}>
+
+                <Text style = {styles.header_text}>Create Event</Text>
+              </View>
+              <View style={styles.row}>
+              <TextInput 
+                style={styles.titleInputStyle}
+                placeholder="Add title"
+                placeholderTextColor="#8b9cb5"
+              >
+              </TextInput>
+              </View>
+              <View style={styles.row}>
+                <View style={{flex:1, paddingTop:5}}>
+                  <Icon name="map-pin" size={20} color="#2F4858" />
+                </View>
+                <View style={{flex:8}}>
+                  <TextInput 
+                    style={styles.inputStyle}
+                    placeholder="Location"
+                    placeholderTextColor="#8b9cb5"
+                  >
+                  </TextInput>
+                </View>
+              </View>
+              <View style={styles.row}>
+                <View style={{flex:1, paddingTop:5}}>
+                  <Icon name="repeat" size={20} color="#2F4858" />
+                </View>
+                <View style={{flex:8}}>
+                </View>
+              </View>
+              <View style={styles.row}>
+                <Text style={{textAlign:"center", margin:5, paddingTop:7,color:"#2F4858"}}>Start</Text>
+                <DateTimePicker style={{margin:5}} mode="date" value={new Date()} />
+                <DateTimePicker style={{margin:5}} mode="time" value={new Date()} />
+              </View>
+              <View style={styles.row}>
+                <Text style={{textAlign:"center", margin:5, paddingTop:7, color:"#2F4858"}}>End</Text>
+                <DateTimePicker style={{margin:5}} mode="date" value={new Date()} />
+                <DateTimePicker style={{margin:5}} mode="time" value={new Date()} />
+              </View>
+            </View>
+
+        </View>
         </Modal>
         <TouchableOpacity
           activeOpacity={0.7}
@@ -443,5 +550,51 @@ const styles = StyleSheet.create({
     right: 30,
     bottom: 30,
     zIndex: 1,
+  },
+  modalView: {
+    position: "absolute",
+    width: 200,
+    right: 90,
+    bottom: 165,
+    backgroundColor: "white",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  row: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: "left",
+    justifyContent: 'space-between',
+    margin: 15,
+  },
+  modal: {
+    backgroundColor: 'white',
+    width: 300,
+    height: 450,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  header_text: {
+    color: "white",
+    flex: 1,
+    backgroundColor: "#2F4858",
+    fontSize: 20,
+    textAlign: 'center',
+  },
+  inputStyle: {
+    flex: 1,
+    color: 'black',
+    paddingLeft:10,
+    borderWidth: 1,
+    borderColor: "#8b9cb5",
+  },
+  titleInputStyle: {
+    flex: 1,
+    color: 'black',
+    height:50,
+    paddingLeft:10,
+    borderWidth: 1,
+    fontSize: 18,
+    borderColor: "#8b9cb5",
   },
 });
