@@ -239,8 +239,8 @@ export default class App extends Component {
               <Text style={styles.title}>
                 1. Click the Button{"\n"}
                 2. Sign in to your University account{"\n"}
-                3. Click the menu --> Personal Schedule{"\n"}
-                4. Export --> Export CSV{"\n"}
+                3. Click the menu --{">"} Personal Schedule{"\n"}
+                4. Export --{">"} Export CSV{"\n"}
               </Text>
               <Button
                 title="Download schedule"
