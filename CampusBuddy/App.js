@@ -15,6 +15,7 @@ const Stack = createNativeStackNavigator();
 export default function App() {
 
   return (
+    //<Text> Hello World! </Text>
       <NavigationContainer>
         <Stack.Navigator>
           <Stack.Screen
@@ -33,7 +34,9 @@ export default function App() {
             options={{ headerShown: false }}
           />
         </Stack.Navigator>
+
       </NavigationContainer>
+
   );
 }
 
