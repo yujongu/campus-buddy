@@ -90,7 +90,7 @@ export default class App extends Component {
     this.setState({ createEventVisible: true });
   }
   
-  /*setOpen = () => {
+  setOpen = () => {
     this.setState({
       openList: true
     });
@@ -102,11 +102,11 @@ export default class App extends Component {
     });
   }
 
-  setItems = (items) =>{
-    this.setState({
-      repetitionItems: items
-    });
-  }*/
+  setItems = (callback) =>{
+    this.setState(state => ({
+      repetitionItems: callback(state.items)
+    }));
+  }
   
 
   clickHandler = () => {
@@ -252,6 +252,7 @@ export default class App extends Component {
   };
 
   render() {
+    const { openList, value, repetitionItems } = this.state;
     return (
       <SafeAreaView style={{ flex: 1 }}>
         <Modal
@@ -354,6 +355,14 @@ export default class App extends Component {
                   <Icon name="repeat" size={20} color="#2F4858" />
                 </View>
                 <View style={{flex:8}}>
+                <DropDownPicker
+                    open={openList}
+                    value={value}
+                    items={repetitionItems}
+                    setOpen={()=>this.setOpen}
+                    setValue={()=>this.setValue}
+                    setItems={()=>this.setItems}
+                  />
                 </View>
               </View>
               <View style={styles.row}>
