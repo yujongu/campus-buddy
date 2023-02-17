@@ -46,6 +46,7 @@ export default class App extends Component {
     this.state = {
       visible: false,
       list: [],
+      midterms: [],
       createEventVisible: false,
       openList: false,
       value: null,
@@ -127,10 +128,12 @@ export default class App extends Component {
         var result = readString(resp, { header: true });
         result.data.forEach((product) => {
           if (
-            product["Type"] == "Midterm Examination" &&
+            (product["Type"] == "Midterm Examination" || 
+             product["Type"] == "Final Examination"
+            ) &&
             product["Published End"] != null
           ) {
-            this.state.list.push(
+            this.state.midterms.push(
               product["Type"] +
                 ";" +
                 product["Name"] +
