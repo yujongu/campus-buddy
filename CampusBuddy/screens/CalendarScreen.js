@@ -15,19 +15,36 @@ import {
   Animated,
   TextInput,
 } from "react-native";
-import DateTimePicker from '@react-native-community/datetimepicker';
-import DropDownPicker from 'react-native-dropdown-picker';
+import DateTimePicker from "@react-native-community/datetimepicker";
+import DropDownPicker from "react-native-dropdown-picker";
 import { Colors } from "../constants/colors";
 import * as DocumentPicker from "expo-document-picker";
 import Icon from "react-native-vector-icons/FontAwesome";
+import FeatherIcon from "react-native-vector-icons/Feather";
 import TimeTableView, { genTimeBlock } from "react-native-timetable";
 import { addSchedule } from "../firebaseConfig";
 import { auth, db, userSchedule } from "../firebaseConfig";
 import { ref, onValue, push, update, remove } from "firebase/database";
 import EventItem from "../components/ui/EventItem";
+import { IconButton } from "@react-native-material/core";
+
+const MonthName = [
+  "January",
+  "February",
+  "March",
+  "April",
+  "May",
+  "June",
+  "July",
+  "August",
+  "September",
+  "October",
+  "November",
+  "December",
+];
 
 const leftHeaderWidth = 50;
-const topHeaderHeight = 20;
+const topHeaderHeight = 40;
 const dailyWidth = (Dimensions.get("window").width - leftHeaderWidth) / 3;
 const dailyHeight = Dimensions.get("window").height / 10;
 
@@ -51,18 +68,25 @@ export default class App extends Component {
       openList: false,
       value: null,
       repetitionItems: [
-        {label: 'Never', value: 0},
-        {label: 'Daily', value: 1},
-        {label: 'Weekly', value: 2},
-        {label: 'Monthly', value: 3},
-      ]
+        { label: "Never", value: 0 },
+        { label: "Daily", value: 1 },
+        { label: "Weekly", value: 2 },
+        { label: "Monthly", value: 3 },
+      ],
+      // This is the starting date for the current calendar UI.
+      startDay: new Date(),
     };
-    
   }
 
   async componentDidMount() {
     const res = await userSchedule(auth.currentUser?.uid);
     const result = [];
+
+    //Set the calendar UI start date
+    let tempDate = new Date();
+    tempDate.setDate(tempDate.getDate() - tempDate.getDay());
+    this.setState({ startDay: tempDate });
+
     if (res != null) {
       res["things"].map((element) => {
         const sp = element.data.split(",");
@@ -85,12 +109,12 @@ export default class App extends Component {
   onEventPress = (evt) => {
     Alert.alert("onEventPress", JSON.stringify(evt));
   };
-  
+
   openCreateEvent = () => {
     this.setState({ visible: false });
     this.setState({ createEventVisible: true });
-  }
-  
+  };
+
   /*setOpen = () => {
     this.setState({
       openList: true
@@ -108,7 +132,6 @@ export default class App extends Component {
       repetitionItems: items
     });
   }*/
-  
 
   clickHandler = () => {
     this.setState({ visible: true });
@@ -127,10 +150,10 @@ export default class App extends Component {
         const resp = await response.text();
         var result = readString(resp, { header: true });
         result.data.forEach((product) => {
+          console.log(product);
           if (
-            (product["Type"] == "Midterm Examination" || 
-             product["Type"] == "Final Examination"
-            ) &&
+            (product["Type"] == "Midterm Examination" ||
+              product["Type"] == "Final Examination") &&
             product["Published End"] != null
           ) {
             this.state.midterms.push(
@@ -253,6 +276,21 @@ export default class App extends Component {
         console.log(error);
       });
   };
+  goPrevWeek = () => {
+    let tempDate = this.state.startDay;
+    tempDate.setDate(tempDate.getDate() - 7);
+    this.setState({ startDay: tempDate });
+  };
+  goNextWeek = () => {
+    let tempDate = this.state.startDay;
+    tempDate.setDate(tempDate.getDate() + 7);
+    this.setState({ startDay: tempDate });
+  };
+  getNextDay = (daysAfter) => {
+    let temp = new Date(this.state.startDay);
+    temp.setDate(temp.getDate() + daysAfter);
+    return temp.getDate();
+  };
 
   render() {
     return (
@@ -273,9 +311,7 @@ export default class App extends Component {
               alignItems: "center",
             }}
           >
-            <View
-              style={styles.modalView}
-            >
+            <View style={styles.modalView}>
               {/*<Text style={styles.title}>
                 1. Click the Button{"\n"}
                 2. Sign in to your University account{"\n"}
@@ -294,10 +330,7 @@ export default class App extends Component {
                 title="Import schedule"
                 onPress={() => this.openDocumentFile()}
               />
-              <Button
-                title="Add event"
-                onPress={this.openCreateEvent}
-              />
+              <Button title="Add event" onPress={this.openCreateEvent} />
               <Button
                 title="Close modal"
                 onPress={() => {
@@ -315,63 +348,95 @@ export default class App extends Component {
             this.setState({ visible: !this.state.createEventVisible });
           }}
         >
-         <View style={{
+          <View
+            style={{
               flex: 1,
               justifyContent: "center",
               alignItems: "center",
-            }}>
-              
+            }}
+          >
             <View style={styles.modal}>
               <TouchableOpacity
-                onPress={() => this.setState({createEventVisible: false})}>
-                <View style={{paddingLeft:270, paddingTop:5}}>
+                onPress={() => this.setState({ createEventVisible: false })}
+              >
+                <View style={{ paddingLeft: 270, paddingTop: 5 }}>
                   <Icon name="times" size={20} color="#2F4858" />
                 </View>
               </TouchableOpacity>
               <View style={styles.row}>
-                <Text style = {styles.header_text}>Create Event</Text> 
+                <Text style={styles.header_text}>Create Event</Text>
               </View>
               <View style={styles.row}>
-              <TextInput 
-                style={styles.titleInputStyle}
-                placeholder="Add title"
-                placeholderTextColor="#8b9cb5"
-              >
-              </TextInput>
+                <TextInput
+                  style={styles.titleInputStyle}
+                  placeholder="Add title"
+                  placeholderTextColor="#8b9cb5"
+                ></TextInput>
               </View>
               <View style={styles.row}>
-                <View style={{flex:1, paddingTop:10}}>
+                <View style={{ flex: 1, paddingTop: 10 }}>
                   <Icon name="map-pin" size={20} color="#2F4858" />
                 </View>
-                <View style={{flex:8}}>
-                  <TextInput 
+                <View style={{ flex: 8 }}>
+                  <TextInput
                     style={styles.inputStyle}
                     placeholder="Location"
                     placeholderTextColor="#8b9cb5"
-                  >
-                  </TextInput>
+                  ></TextInput>
                 </View>
               </View>
               <View style={styles.row}>
-                <View style={{flex:1, paddingTop:10}}>
+                <View style={{ flex: 1, paddingTop: 10 }}>
                   <Icon name="repeat" size={20} color="#2F4858" />
                 </View>
-                <View style={{flex:8}}>
-                </View>
+                <View style={{ flex: 8 }}></View>
               </View>
               <View style={styles.row}>
-                <Text style={{textAlign:"center", margin:5, paddingTop:7,color:"#2F4858"}}>Start</Text>
-                <DateTimePicker style={{margin:5}} mode="date" value={new Date()} />
-                <DateTimePicker style={{margin:5}} mode="time" value={new Date()} />
+                <Text
+                  style={{
+                    textAlign: "center",
+                    margin: 5,
+                    paddingTop: 7,
+                    color: "#2F4858",
+                  }}
+                >
+                  Start
+                </Text>
+                <DateTimePicker
+                  style={{ margin: 5 }}
+                  mode="date"
+                  value={new Date()}
+                />
+                <DateTimePicker
+                  style={{ margin: 5 }}
+                  mode="time"
+                  value={new Date()}
+                />
               </View>
               <View style={styles.row}>
-                <Text style={{textAlign:"center", margin:5, paddingTop:7, color:"#2F4858"}}>End</Text>
-                <DateTimePicker style={{margin:5}} mode="date" value={new Date()} />
-                <DateTimePicker style={{margin:5}} mode="time" value={new Date()} />
+                <Text
+                  style={{
+                    textAlign: "center",
+                    margin: 5,
+                    paddingTop: 7,
+                    color: "#2F4858",
+                  }}
+                >
+                  End
+                </Text>
+                <DateTimePicker
+                  style={{ margin: 5 }}
+                  mode="date"
+                  value={new Date()}
+                />
+                <DateTimePicker
+                  style={{ margin: 5 }}
+                  mode="time"
+                  value={new Date()}
+                />
               </View>
             </View>
-
-        </View>
+          </View>
         </Modal>
         <TouchableOpacity
           activeOpacity={0.7}
@@ -380,20 +445,20 @@ export default class App extends Component {
         >
           <Icon name="plus-circle" size={50} />
         </TouchableOpacity>
-        {/* <View style={styles.container}>
-          <TimeTableView
-            scrollViewRef={this.scrollViewRef}
-            events={this.state.list}
-            pivotTime={7}
-            pivotEndTime={24}
-            pivotDate={this.pivotDate}
-            nDays={this.numOfDays}
-            onEventPress={this.onEventPress}
-            headerStyle={styles.headerStyle}
-            formatDateHeader="dddd"
-            locale="en"
+        {/* Month Header Bar */}
+        <View style={styles.monthHeaderContainer}>
+          <IconButton
+            onPress={this.goPrevWeek}
+            icon={(props) => <FeatherIcon name="arrow-left" {...props} />}
           />
-        </View> */}
+          <Text style={{ fontSize: 20 }}>
+            {MonthName[this.state.startDay.getMonth()]}
+          </Text>
+          <IconButton
+            onPress={this.goNextWeek}
+            icon={(props) => <FeatherIcon name="arrow-right" {...props} />}
+          />
+        </View>
         <View style={{ flexDirection: "row" }}>
           {/* This is the left vertical header */}
           <ScrollViewVerticallySynced
@@ -412,13 +477,35 @@ export default class App extends Component {
                 }}
               >
                 <View style={styles.daysContainer}>
-                  <Text style={styles.days}>Sun</Text>
-                  <Text style={styles.days}>Mon</Text>
-                  <Text style={styles.days}>Tues</Text>
-                  <Text style={styles.days}>Wed</Text>
-                  <Text style={styles.days}>Thur</Text>
-                  <Text style={styles.days}>Fri</Text>
-                  <Text style={styles.days}>Sat</Text>
+                  <View style={styles.daysWithDate}>
+                    <Text style={styles.days}>Sun</Text>
+                    {/* <Text style={styles.date}>2</Text> */}
+                    <Text style={styles.date}>{this.getNextDay(0)}</Text>
+                  </View>
+                  <View style={styles.daysWithDate}>
+                    <Text style={styles.days}>Mon</Text>
+                    <Text style={styles.date}>{this.getNextDay(1)}</Text>
+                  </View>
+                  <View style={styles.daysWithDate}>
+                    <Text style={styles.days}>Tues</Text>
+                    <Text style={styles.date}>{this.getNextDay(2)}</Text>
+                  </View>
+                  <View style={styles.daysWithDate}>
+                    <Text style={styles.days}>Wed</Text>
+                    <Text style={styles.date}>{this.getNextDay(3)}</Text>
+                  </View>
+                  <View style={styles.daysWithDate}>
+                    <Text style={styles.days}>Thur</Text>
+                    <Text style={styles.date}>{this.getNextDay(4)}</Text>
+                  </View>
+                  <View style={styles.daysWithDate}>
+                    <Text style={styles.days}>Fri</Text>
+                    <Text style={styles.date}>{this.getNextDay(5)}</Text>
+                  </View>
+                  <View style={styles.daysWithDate}>
+                    <Text style={styles.days}>Sat</Text>
+                    <Text style={styles.date}>{this.getNextDay(6)}</Text>
+                  </View>
                 </View>
               </View>
               {/* This is the vertically scrolling content. */}
@@ -504,7 +591,7 @@ const populateRows = (name, eventList) =>
           }}
         >
           {/* Horizontal Guide Line in the background */}
-          <View
+          {/* <View
             style={{
               position: "absolute",
               left: 0,
@@ -515,7 +602,7 @@ const populateRows = (name, eventList) =>
               zIndex: 1,
               elevation: 1,
             }}
-          />
+          /> */}
 
           {eventList.map((event) => {
             return index == event.startTime.getHours() ? (
@@ -544,12 +631,27 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
+  monthHeaderContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingLeft: 10,
+    paddingRight: 10,
+  },
   daysContainer: {
     flexDirection: "row",
   },
-  days: {
+  daysWithDate: {
     width: dailyWidth,
+    flexDirection: "column",
+    alignItems: "center",
+  },
+  days: {
     textAlign: "center",
+    fontSize: 16,
+  },
+  date: {
+    fontSize: 12,
   },
   touchableOpacityStyle: {
     position: "absolute",
@@ -570,16 +672,16 @@ const styles = StyleSheet.create({
   },
   row: {
     flex: 1,
-    flexDirection: 'row',
+    flexDirection: "row",
     alignItems: "left",
-    justifyContent: 'space-between',
+    justifyContent: "space-between",
     marginTop: 10,
     marginBottom: 10,
     marginLeft: 25,
     marginRight: 25,
   },
   modal: {
-    backgroundColor: 'white',
+    backgroundColor: "white",
     width: 300,
     height: 450,
     justifyContent: "center",
@@ -590,20 +692,20 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#2F4858",
     fontSize: 20,
-    textAlign: 'center',
+    textAlign: "center",
   },
   inputStyle: {
     flex: 1,
-    color: 'black',
-    paddingLeft:10,
+    color: "black",
+    paddingLeft: 10,
     borderWidth: 1,
     borderColor: "#8b9cb5",
   },
   titleInputStyle: {
     flex: 1,
-    color: 'black',
-    height:50,
-    paddingLeft:10,
+    color: "black",
+    height: 50,
+    paddingLeft: 10,
     borderWidth: 1,
     fontSize: 18,
     borderColor: "#8b9cb5",
