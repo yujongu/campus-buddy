@@ -27,7 +27,7 @@ export default function HomeScreen() {
             let iconName;
             iconName = focused ? "post" : "post-outline";
             return (
-              <MaterialCommunityIcons name={iconName} color={color} size={26} />
+              <MaterialCommunityIcons name={iconName} color={color} size={30} />
             );
           },
           tabBarActiveTintColor: Colors.primary,
@@ -42,7 +42,7 @@ export default function HomeScreen() {
           tabBarIcon: ({ focused, color, size }) => {
             let iconName;
             iconName = focused ? "search" : "search-outline";
-            return <Ionicons name={iconName} color={color} size={26} />;
+            return <Ionicons name={iconName} color={color} size={30} />;
           },
           tabBarActiveTintColor: Colors.primary,
           tabBarInactiveTintColor: Colors.darkGrey,
@@ -57,11 +57,12 @@ export default function HomeScreen() {
             let iconName;
             iconName = focused ? "calendar-month" : "calendar-month-outline";
             return (
-              <MaterialCommunityIcons name={iconName} color={color} size={26} />
+              <MaterialCommunityIcons name={iconName} color={color} size={30} />
             );
           },
           tabBarActiveTintColor: Colors.primary,
           tabBarInactiveTintColor: Colors.darkGrey,
+          headerShown: false,
         }}
       />
       <Tab.Screen
@@ -88,7 +89,7 @@ export default function HomeScreen() {
             iconName = focused
               ? "notifications-circle"
               : "notifications-circle-outline";
-            return <Ionicons name={iconName} color={color} size={26} />;
+            return <Ionicons name={iconName} color={color} size={34} />;
           },
           tabBarActiveTintColor: Colors.primary,
           tabBarInactiveTintColor: Colors.darkGrey,

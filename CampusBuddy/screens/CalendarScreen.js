@@ -128,7 +128,9 @@ export default class App extends Component {
         var result = readString(resp, { header: true });
         result.data.forEach((product) => {
           if (
-            (product["Type"] == "Midterm Examination" || product["Type"] == "Final Examination") &&
+            (product["Type"] == "Midterm Examination" || 
+             product["Type"] == "Final Examination"
+            ) &&
             product["Published End"] != null
           ) {
             this.state.midterms.push(
@@ -516,7 +518,6 @@ const populateRows = (name, eventList) =>
           />
 
           {eventList.map((event) => {
-            console.log(event.startTime.getHours())
             return index == event.startTime.getHours() ? (
               <EventItem
                 category="School Courses"

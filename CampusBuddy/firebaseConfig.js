@@ -10,10 +10,8 @@ import {
   getDoc,
   QueryEndAtConstraint, 
   updateDoc,
-  arrayUnion,
-  onSnapshot
+  arrayUnion
  } from "firebase/firestore";
-import { async } from "@firebase/util";
 
 
 // TODO: Add SDKs for Firebase products that you want to use
@@ -107,6 +105,24 @@ export async function userSchedule(user_token){
     alert("userSchedule: "+error);
   }
   
+}
+
+export async function addEvent(user_token, title, start, end, category, point_value, color, repetition){
+  const docRef = doc(db, "event", user_token)
+  try {
+    setDoc(docRef, {
+      title: title,
+      start: start,
+      end: end,
+      category: category,
+      point_value: point_value,
+      color: color,
+      repetition: repetition
+    });
+    console.log("Event doc written with ID: ", docRef.id)
+  } catch (e) {
+    console.error("Error adding event: ", e);
+  }
 }
 
 export async function userList(){
