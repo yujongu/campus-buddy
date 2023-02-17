@@ -516,6 +516,7 @@ const populateRows = (name, eventList) =>
           />
 
           {eventList.map((event) => {
+            console.log(event.startTime.getHours())
             return index == event.startTime.getHours() ? (
               <EventItem
                 category="School Courses"
