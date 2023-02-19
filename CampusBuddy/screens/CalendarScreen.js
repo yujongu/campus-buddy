@@ -27,6 +27,8 @@ import { auth, db, userSchedule } from "../firebaseConfig";
 import { ref, onValue, push, update, remove } from "firebase/database";
 import EventItem from "../components/ui/EventItem";
 import { IconButton } from "@react-native-material/core";
+import { async } from "@firebase/util";
+import TopHeaderDays from "../components/ui/TopHeaderDays";
 
 const MonthName = [
   "January",
@@ -44,7 +46,7 @@ const MonthName = [
 ];
 
 const leftHeaderWidth = 50;
-const topHeaderHeight = 40;
+const topHeaderHeight = 60;
 const dailyWidth = (Dimensions.get("window").width - leftHeaderWidth) / 3;
 const dailyHeight = Dimensions.get("window").height / 10;
 
@@ -64,6 +66,7 @@ export default class App extends Component {
       visible: false,
       list: [],
       midterms: [],
+      holidays: [],
       createEventVisible: false,
       openList: false,
       value: null,
@@ -100,6 +103,8 @@ export default class App extends Component {
       });
     }
     this.setState({ list: result });
+
+    this.getHolidays(this.state.startDay.getFullYear());
   }
 
   scrollViewRef = (ref) => {
@@ -276,20 +281,61 @@ export default class App extends Component {
         console.log(error);
       });
   };
+
+  //navigate through calendar ui
   goPrevWeek = () => {
+    let currYear = this.state.startDay.getFullYear();
     let tempDate = this.state.startDay;
     tempDate.setDate(tempDate.getDate() - 7);
+    if (tempDate.getFullYear() != currYear) {
+      this.getHolidays(tempDate.getFullYear());
+    }
     this.setState({ startDay: tempDate });
   };
   goNextWeek = () => {
+    let currYear = this.state.startDay.getFullYear();
     let tempDate = this.state.startDay;
     tempDate.setDate(tempDate.getDate() + 7);
+    if (tempDate.getFullYear() != currYear) {
+      this.getHolidays(tempDate.getFullYear());
+    }
     this.setState({ startDay: tempDate });
   };
-  getNextDay = (daysAfter) => {
-    let temp = new Date(this.state.startDay);
-    temp.setDate(temp.getDate() + daysAfter);
-    return temp.getDate();
+  // getNextDay = (daysAfter) => {
+  //   let temp = new Date(this.state.startDay);
+  //   temp.setDate(temp.getDate() + daysAfter);
+  //   return temp;
+  // };
+  // getHoliday = (cDate) => {
+  //   let temp = this.state.holidays;
+  //   let dayName = "";
+  //   if (temp != undefined) {
+  //     let monthString = cDate.getMonth() + 1;
+  //     if (monthString < 10) {
+  //       monthString = "0" + monthString;
+  //     }
+  //     let nDate =
+  //       cDate.getFullYear() + "-" + monthString + "-" + cDate.getDate();
+  //     temp.forEach((holiday) => {
+  //       if (holiday.date == nDate) {
+  //         dayName = holiday.localName;
+  //       }
+  //     });
+  //   }
+  //   return dayName;
+  // };
+
+  //fetch public holiday
+  getHolidays = async (year) => {
+    try {
+      const response = await fetch(
+        `https://date.nager.at/api/v3/PublicHolidays/${year}/US`
+      );
+      const resp = await response.json();
+      this.setState({ holidays: resp });
+    } catch (error) {
+      console.error(error);
+    }
   };
 
   render() {
@@ -477,35 +523,90 @@ export default class App extends Component {
                 }}
               >
                 <View style={styles.daysContainer}>
-                  <View style={styles.daysWithDate}>
+                  <TopHeaderDays
+                    day={0}
+                    holidays={this.state.holidays}
+                    startDay={this.state.startDay}
+                  />
+                  <TopHeaderDays
+                    day={1}
+                    holidays={this.state.holidays}
+                    startDay={this.state.startDay}
+                  />
+                  <TopHeaderDays
+                    day={2}
+                    holidays={this.state.holidays}
+                    startDay={this.state.startDay}
+                  />
+                  <TopHeaderDays
+                    day={3}
+                    holidays={this.state.holidays}
+                    startDay={this.state.startDay}
+                  />
+                  <TopHeaderDays
+                    day={4}
+                    holidays={this.state.holidays}
+                    startDay={this.state.startDay}
+                  />
+                  <TopHeaderDays
+                    day={5}
+                    holidays={this.state.holidays}
+                    startDay={this.state.startDay}
+                  />
+                  <TopHeaderDays
+                    day={6}
+                    holidays={this.state.holidays}
+                    startDay={this.state.startDay}
+                  />
+                  {/* <View style={styles.daysWithDate}>
                     <Text style={styles.days}>Sun</Text>
-                    {/* <Text style={styles.date}>2</Text> */}
-                    <Text style={styles.date}>{this.getNextDay(0)}</Text>
+                    <Text style={styles.date}>
+                      {this.getNextDay(0).getDate()}
+                    </Text>
+                    <Text>{this.getHoliday(this.getNextDay(0))}</Text>
                   </View>
                   <View style={styles.daysWithDate}>
                     <Text style={styles.days}>Mon</Text>
-                    <Text style={styles.date}>{this.getNextDay(1)}</Text>
+                    <Text style={styles.date}>
+                      {this.getNextDay(1).getDate()}
+                    </Text>
+                    <Text>{this.getHoliday(this.getNextDay(1))}</Text>
                   </View>
                   <View style={styles.daysWithDate}>
                     <Text style={styles.days}>Tues</Text>
-                    <Text style={styles.date}>{this.getNextDay(2)}</Text>
+                    <Text style={styles.date}>
+                      {this.getNextDay(2).getDate()}
+                    </Text>
+                    <Text>{this.getHoliday(this.getNextDay(2))}</Text>
                   </View>
                   <View style={styles.daysWithDate}>
                     <Text style={styles.days}>Wed</Text>
-                    <Text style={styles.date}>{this.getNextDay(3)}</Text>
+                    <Text style={styles.date}>
+                      {this.getNextDay(3).getDate()}
+                    </Text>
+                    <Text>{this.getHoliday(this.getNextDay(3))}</Text>
                   </View>
                   <View style={styles.daysWithDate}>
                     <Text style={styles.days}>Thur</Text>
-                    <Text style={styles.date}>{this.getNextDay(4)}</Text>
+                    <Text style={styles.date}>
+                      {this.getNextDay(4).getDate()}
+                    </Text>
+                    <Text>{this.getHoliday(this.getNextDay(4))}</Text>
                   </View>
                   <View style={styles.daysWithDate}>
                     <Text style={styles.days}>Fri</Text>
-                    <Text style={styles.date}>{this.getNextDay(5)}</Text>
+                    <Text style={styles.date}>
+                      {this.getNextDay(5).getDate()}
+                    </Text>
+                    <Text>{this.getHoliday(this.getNextDay(5))}</Text>
                   </View>
                   <View style={styles.daysWithDate}>
                     <Text style={styles.days}>Sat</Text>
-                    <Text style={styles.date}>{this.getNextDay(6)}</Text>
-                  </View>
+                    <Text style={styles.date}>
+                      {this.getNextDay(6).getDate()}
+                    </Text>
+                    <Text>{this.getHoliday(this.getNextDay(6))}</Text>
+                  </View> */}
                 </View>
               </View>
               {/* This is the vertically scrolling content. */}
@@ -562,7 +663,6 @@ const populateRows = (name, eventList) =>
           key={`${name}-${index}`}
           style={{
             height: dailyHeight,
-            // backgroundColor: index % 2 === 0 ? Colors.fourth : "white",
             flex: 1,
             alignItems: "center",
             justifyContent: "center",
@@ -585,7 +685,6 @@ const populateRows = (name, eventList) =>
           key={`${name}-${index}`}
           style={{
             height: dailyHeight,
-            // backgroundColor: index % 2 === 0 ? "blue" : "white",
             flex: 1,
             flexDirection: "row",
           }}
