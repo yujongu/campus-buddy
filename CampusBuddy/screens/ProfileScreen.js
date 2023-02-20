@@ -1,6 +1,10 @@
 import { StatusBar } from "expo-status-bar";
 import { Button, StyleSheet, Text, TextInput, View, Modal, TouchableOpacity, FlatList, ActivityIndicator } from "react-native";
 import { auth, db, userSchedule } from "../firebaseConfig"
+import { Button, StyleSheet, Text, TextInput, View } from "react-native";
+import { auth, db } from "../firebaseConfig"
+import { EmailAuthProvider } from "firebase/auth";
+import { signInWithEmailAndPassword } from "firebase/auth";
 import { signOut } from "firebase/auth"
 import { updateDoc, doc } from "firebase/firestore";
 import { useState, useEffect } from "react";
@@ -12,6 +16,7 @@ export default function ProfileScreen({ navigation, route }) {
   const [visible, setVisible] = useState(false);
   const [list, setList] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [password, setPassword] = useState("");
 
   const handleSignOut = () => {
     signOut(auth)
@@ -26,13 +31,34 @@ export default function ProfileScreen({ navigation, route }) {
     const userDocRef = doc(db, "users", auth.currentUser.uid);
     updateDoc(userDocRef, { id: newId })
       .then(() => {
-        console.log("Id updated successfully.");
+        console.log("username updated successfully.");
       })
       .catch((error) => {
-        console.error("Error updating id:", error);
+        console.error("Error updating username:", error);
       });
   }
 
+  const handleDeleteAccount = () => {
+    const user = auth.currentUser;
+    const credential = EmailAuthProvider.credential(user.email, password);
+  
+    signInWithEmailAndPassword(auth, user.email, password)
+      .then((userCredential) => {
+        userCredential.user.delete()
+          .then(() => {
+            // Account deleted successfully
+            navigation.popToTop();
+          })
+          .catch((error) => {
+            alert("Wrong password entered");
+            console.error("Error deleting account:", error);
+          });
+      })
+      .catch((error) => {
+        alert("Wrong password entered");
+        console.error("Error reauthenticating user:", error);
+      });
+  };
   useEffect(() => {
     const subscriber = onSnapshot(doc(db, "friend_list", auth.currentUser?.email), (doc) => {
       setList(doc.data()['friends'])
@@ -100,17 +126,26 @@ export default function ProfileScreen({ navigation, route }) {
       <Text>{auth.currentUser?.uid}</Text>
       <TextInput
         style={styles.input}
-        placeholder="Enter new Id"
+        placeholder="Enter new Username"
         value={newId}
         onChangeText={(text) => setNewId(text)}
       />
       <Text>Current Id: {id}</Text>
-      <Button title="Change Id" onPress={handleChangeId} />
+      <Button title="Change Username" onPress={handleChangeId} />
       <Button title="Sign Out" onPress={handleSignOut} />
       <Button title="Friend list" onPress={() => setVisible(true)} />
+      <TextInput
+        style={styles.input}
+        placeholder="Enter Password"
+        value={password}
+        onChangeText={(text) => setPassword(text)}
+        secureTextEntry={true}
+      />
+      <Button title="Delete Account" onPress={handleDeleteAccount} />
     </View>
   );
 }
+
 
 const styles = StyleSheet.create({
   container: {
