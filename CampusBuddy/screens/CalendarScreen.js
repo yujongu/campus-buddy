@@ -155,7 +155,7 @@ export default class App extends Component {
         const resp = await response.text();
         var result = readString(resp, { header: true });
         result.data.forEach((product) => {
-          console.log(product);
+          console.log(product["Name"]);
           if (
             (product["Type"] == "Midterm Examination" ||
               product["Type"] == "Final Examination") &&
@@ -174,18 +174,21 @@ export default class App extends Component {
                 ";" +
                 product["Location"]
             );
-          } else if (/[0-9]/.test(product["Published Start"])) {
-            const st = product["Published Start"].split(":");
-            const ed = (end = product["Published End"].split(":"));
+          } else if ((/[0-9]/.test(product["Published Start"]) || (product["Published Start"] == "noon"))) {
+            const st = product["Published Start"] == "noon" ? 12:product["Published Start"].split(":");
+            const ed = (product["Published End"].split(":"));
             var start, start_min, end, end_min;
             if (product["Published Start"].lastIndexOf("a") > -1) {
               start = st[0];
               start_min = st[1].replace("a", "");
-            } else if (product["Published End"].lastIndexOf("p") > -1) {
+            } else if (product["Published Start"].lastIndexOf("p") > -1) {
               st[0] != "12"
                 ? (start = parseInt(st[0], 10) + 12)
                 : (start = parseInt(st[0], 10));
               start_min = st[1].replace("p", "");
+            } else{
+              start = st;
+              start_min = 0;
             }
             if (product["Published End"].lastIndexOf("a") > -1) {
               end = ed[0];
