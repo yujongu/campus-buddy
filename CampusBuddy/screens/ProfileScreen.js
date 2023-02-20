@@ -1,14 +1,13 @@
 import { StatusBar } from "expo-status-bar";
-import { Button, StyleSheet, Text, TextInput, View, Modal, TouchableOpacity, FlatList, ActivityIndicator } from "react-native";
+import { Button, StyleSheet, Text, TextInput, View, Modal, Alert, TouchableOpacity, FlatList, ActivityIndicator } from "react-native";
 import { auth, db, userSchedule } from "../firebaseConfig"
 import { Button, StyleSheet, Text, TextInput, View } from "react-native";
 import { auth, db } from "../firebaseConfig"
 import { EmailAuthProvider } from "firebase/auth";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { signOut } from "firebase/auth"
-import { updateDoc, doc } from "firebase/firestore";
+import { updateDoc, doc, arrayRemove, onSnapshot, arrayUnion } from "firebase/firestore";
 import { useState, useEffect } from "react";
-import { onSnapshot } from "firebase/firestore";
 
 export default function ProfileScreen({ navigation, route }) {
   const [newId, setNewId] = useState("");
@@ -61,8 +60,13 @@ export default function ProfileScreen({ navigation, route }) {
   };
   useEffect(() => {
     const subscriber = onSnapshot(doc(db, "friend_list", auth.currentUser?.email), (doc) => {
-      setList(doc.data()['friends'])
-      setLoading(false)
+      if(doc.data()['friends'] !== undefined){
+        setList(doc.data()['friends'])
+        setLoading(false)
+      }else{
+        setList(["No friends yet"])
+        setLoading(false)
+      }
     })
     const userDocRef = doc(db, "users", auth.currentUser.uid);
     const unsubscribe = onSnapshot(userDocRef, (doc) => {
@@ -76,13 +80,31 @@ export default function ProfileScreen({ navigation, route }) {
       unsubscribe();
     };
   }, []);
+  const removeFriend = (item) => {
+    const me = doc(db, "friend_list", auth.currentUser?.email)
+    const friend = doc(db, "friend_list", item)
+    try{
+      updateDoc(me, {
+        friends: arrayRemove(item)
+      })
+      updateDoc(friend, {
+        friends: arrayRemove(auth.currentUser?.email)
+      })
+      alert(item+" has been unfriended")
+    } catch (e) {
+      console.error("Cancel friend: ", e);
+    }
+  }
 
   const renderItem = (item) =>{
     return (
       <View style={styles.item}>
         <Text style={{color: 'black', fontSize: 15}}>{item}</Text>
         <View style={{flexDirection: "row"}}>
-          <TouchableOpacity onPress={() => alert("Unfriended")}>
+          <TouchableOpacity onPress={() => Alert.alert("Unfriend", "Do you really want to friend?", [
+            {text: 'Yes', onPress: () => removeFriend(item)},
+            {text: 'Cancel', style: 'cancel'}
+          ], {cancelable: false})}>
             <Text>Unfriend</Text>
           </TouchableOpacity>
         </View>
