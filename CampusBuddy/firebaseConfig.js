@@ -2,6 +2,7 @@
 import { initializeApp } from "firebase/app";
 import { getAnalytics } from "firebase/analytics";
 import { getAuth, createUserWithEmailAndPassword, } from "firebase/auth"
+import { EmailAuthProvider, credential } from "firebase/auth";
 import { 
   getFirestore,
   collection,
@@ -33,10 +34,8 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const analytics = getAnalytics(app);
 const auth = getAuth(app);
-export {auth};
-
 const db = getFirestore();
-export {db};
+export { auth, db };
 
 export async function createUser(username, first, last, email, password) {
   await createUserWithEmailAndPassword(auth, email, password)
