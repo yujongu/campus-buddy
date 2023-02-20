@@ -35,8 +35,13 @@ export default function ProfileScreen({ navigation, route }) {
 
   useEffect(() => {
     const subscriber = onSnapshot(doc(db, "friend_list", auth.currentUser?.email), (doc) => {
-      setList(doc.data()['friends'])
-      setLoading(false)
+      if(doc.data()['friends'] !== undefined){
+        setList(doc.data()['friends'])
+        setLoading(false)
+      }else{
+        setList(["No friends yet"])
+        setLoading(false)
+      }
     })
     const userDocRef = doc(db, "users", auth.currentUser.uid);
     const unsubscribe = onSnapshot(userDocRef, (doc) => {
