@@ -103,7 +103,7 @@ export default function SignUpScreen({ navigation, route })  {
           justifyContent: 'center',
           alignContent: 'center',
         }}>
-        <KeyboardAvoidingView enabled>
+        <KeyboardAvoidingView enabled behavior="padding">
             <View style={{alignItems: 'center'}}>
                 <Image
                 source={require('../assets/campus-buddy.png')}
