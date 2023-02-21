@@ -3,7 +3,7 @@ import { auth, db } from "../firebaseConfig";
 import { async } from "@firebase/util";
 import { StatusBar } from "expo-status-bar";
 import { Component, useEffect, useState } from "react";
-import { Button, StyleSheet, Text, TouchableOpacity, View, ActivityIndicator } from "react-native";
+import { Button, Alert, StyleSheet, Text, TouchableOpacity, View, ActivityIndicator } from "react-native";
 import { FlatList } from "react-native";
 import Icon from 'react-native-vector-icons/AntDesign'
 
@@ -40,7 +40,7 @@ export default class NotificationScreen extends Component{
       updateDoc(remove_alert, {
         from_request: arrayRemove(user+"/"+"friend")
       })
-      alert("Now you guys are friends")
+      Alert.alert("Accepted","Now you guys are friends")
     } catch (e) {
       console.error("Adding friend: ", e);
     }
@@ -56,7 +56,7 @@ export default class NotificationScreen extends Component{
       updateDoc(remove_to, {
         from_request: arrayRemove(auth.currentUser?.email+"/"+"friend")
       })
-      alert("You rejected the friend request")
+      Alert.alert("Rejected","You rejected the friend request")
     } catch (e) {
       console.error("Cancel friend: ", e);
     }

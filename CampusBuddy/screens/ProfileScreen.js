@@ -1,5 +1,5 @@
 import { StatusBar } from "expo-status-bar";
-import { Button, StyleSheet, Text, TextInput, View, Modal, Alert, TouchableOpacity, FlatList, ActivityIndicator } from "react-native";
+import { Button, StyleSheet, Text, Pressable, TextInput, View, Modal, Alert, TouchableOpacity, FlatList, ActivityIndicator } from "react-native";
 import { auth, db, userSchedule } from "../firebaseConfig"
 import { signOut } from "firebase/auth"
 import { updateDoc, doc, arrayRemove, onSnapshot, arrayUnion } from "firebase/firestore";
@@ -9,7 +9,7 @@ export default function ProfileScreen({ navigation, route }) {
   const [newId, setNewId] = useState("");
   const [id, setId] = useState("");
   const [visible, setVisible] = useState(false);
-  const [list, setList] = useState([]);
+  const [list, setList] = useState(["No friends"]);
   const [loading, setLoading] = useState(true);
 
   const handleSignOut = () => {
@@ -34,7 +34,7 @@ export default function ProfileScreen({ navigation, route }) {
 
   useEffect(() => {
     const subscriber = onSnapshot(doc(db, "friend_list", auth.currentUser?.email), (doc) => {
-      if(doc.data()['friends'] !== undefined){
+      if(doc.data()['friends'] !== null){
         setList(doc.data()['friends'])
         setLoading(false)
       }else{
@@ -104,7 +104,7 @@ export default function ProfileScreen({ navigation, route }) {
               alignItems: "center",
             }}
           >
-            <View style={{width: '70%', height:'70%', backgroundColor: 'blue'}}>
+            <View style={{width: '70%', height:'70%', backgroundColor: 'white'}}>
               {
                 loading ?
                 <ActivityIndicator />
@@ -116,6 +116,12 @@ export default function ProfileScreen({ navigation, route }) {
                   }
                 />
               }
+            <Pressable
+                style={[styles.button, styles.buttonClose]}
+                onPress={() => setVisible(!visible)}
+            >
+                <Text style={styles.textStyle}>Close</Text>
+            </Pressable> 
             </View>
           </View>
       </Modal>
@@ -159,5 +165,18 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
     flexDirection: 'row',
     justifyContent: 'space-between'
+  },
+  button: {
+    borderRadius: 20,
+    padding: 10,
+    elevation: 2
+  },
+  textStyle: {
+    color: "white",
+    fontWeight: "bold",
+    textAlign: "center"
+  },
+  buttonClose: {
+    backgroundColor: "#2196F3",
   },
 });
