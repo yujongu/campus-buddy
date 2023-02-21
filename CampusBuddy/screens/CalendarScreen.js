@@ -17,6 +17,7 @@ import {
 } from "react-native";
 import DateTimePicker from '@react-native-community/datetimepicker';
 import DropDownPicker from 'react-native-dropdown-picker';
+import ColorWheel from "../components/ui/ColorWheel";
 import { Colors } from "../constants/colors";
 import * as DocumentPicker from "expo-document-picker";
 import Icon from "react-native-vector-icons/FontAwesome";
@@ -48,6 +49,7 @@ export default class App extends Component {
       list: [],
       midterms: [],
       createEventVisible: false,
+      colorPicker: null,
       openList: false,
       value: null,
       repetitionItems: [
@@ -55,7 +57,7 @@ export default class App extends Component {
         {label: 'Daily', value: 1},
         {label: 'Weekly', value: 2},
         {label: 'Monthly', value: 3},
-      ]
+      ],
     };
     
   }
@@ -255,7 +257,11 @@ export default class App extends Component {
   };
 
   render() {
-    const { openList, value, repetitionItems } = this.state;
+    const { openList, value, repetitionItems, colorPicker } = this.state;
+    if (colorPicker) {
+      const { Component } = colorPicker
+      return <Component />
+    }
     return (
       <SafeAreaView style={{ flex: 1 }}>
         <Modal
@@ -333,6 +339,13 @@ export default class App extends Component {
                 <Text style = {styles.header_text}>Create Event</Text> 
               </View>
               <View style={styles.row}>
+              <TouchableOpacity
+                onPress={() => this.setState({colorPicker: ColorWheel})}
+              >
+                <View style={{paddingTop:5, paddingRight:5}}>
+                  <Icon name="square" size={40} color="#2F4858" />
+                </View>
+              </TouchableOpacity>
               <TextInput 
                 style={styles.titleInputStyle}
                 placeholder="Add title"
