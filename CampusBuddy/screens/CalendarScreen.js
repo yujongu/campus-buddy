@@ -15,6 +15,7 @@ import {
   Animated,
   TextInput,
 } from "react-native";
+import { SelectList } from "react-native-dropdown-select-list";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import DropDownPicker from "react-native-dropdown-picker";
 import { Colors } from "../constants/colors";
@@ -22,13 +23,14 @@ import * as DocumentPicker from "expo-document-picker";
 import Icon from "react-native-vector-icons/FontAwesome";
 import FeatherIcon from "react-native-vector-icons/Feather";
 import TimeTableView, { genTimeBlock } from "react-native-timetable";
-import { addSchedule } from "../firebaseConfig";
+import { addSchedule, userList } from "../firebaseConfig";
 import { auth, db, userSchedule } from "../firebaseConfig";
-import { ref, onValue, push, update, remove } from "firebase/database";
 import EventItem from "../components/ui/EventItem";
 import { IconButton } from "@react-native-material/core";
 import { async } from "@firebase/util";
 import TopHeaderDays from "../components/ui/TopHeaderDays";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { doc, onSnapshot, updateDoc } from "firebase/firestore";
 
 const MonthName = [
   "January",
@@ -67,7 +69,10 @@ export default class App extends Component {
       list: [],
       midterms: [],
       holidays: [],
+      holidayCountryList: [],
+      selectedCountryCode: "",
       createEventVisible: false,
+      holidaySettingVisible: false,
       openList: false,
       value: null,
       repetitionItems: [
@@ -103,8 +108,20 @@ export default class App extends Component {
       });
     }
     this.setState({ list: result });
+    const userDocRef = doc(db, "users", auth.currentUser.uid);
+    onSnapshot(userDocRef, (doc) => {
+      if (doc.exists()) {
+        if (
+          doc.data().holidayNationPref !== null &&
+          doc.data().holidayNationPref !== ""
+        ) {
+          let cPref = doc.data().holidayNationPref;
 
-    this.getHolidays(this.state.startDay.getFullYear());
+          this.setState({ selectedCountryCode: cPref });
+          this.getHolidays(cPref, this.state.startDay.getFullYear());
+        }
+      }
+    });
   }
 
   scrollViewRef = (ref) => {
@@ -118,6 +135,12 @@ export default class App extends Component {
   openCreateEvent = () => {
     this.setState({ visible: false });
     this.setState({ createEventVisible: true });
+  };
+
+  setHolidaySettings = () => {
+    this.setState({ visible: false });
+    this.getCountries();
+    this.setState({ holidaySettingVisible: true });
   };
 
   /*setOpen = () => {
@@ -174,9 +197,15 @@ export default class App extends Component {
                 ";" +
                 product["Location"]
             );
-          } else if ((/[0-9]/.test(product["Published Start"]) || (product["Published Start"] == "noon"))) {
-            const st = product["Published Start"] == "noon" ? 12:product["Published Start"].split(":");
-            const ed = (product["Published End"].split(":"));
+          } else if (
+            /[0-9]/.test(product["Published Start"]) ||
+            product["Published Start"] == "noon"
+          ) {
+            const st =
+              product["Published Start"] == "noon"
+                ? 12
+                : product["Published Start"].split(":");
+            const ed = product["Published End"].split(":");
             var start, start_min, end, end_min;
             if (product["Published Start"].lastIndexOf("a") > -1) {
               start = st[0];
@@ -186,7 +215,7 @@ export default class App extends Component {
                 ? (start = parseInt(st[0], 10) + 12)
                 : (start = parseInt(st[0], 10));
               start_min = st[1].replace("p", "");
-            } else{
+            } else {
               start = st;
               start_min = 0;
             }
@@ -290,8 +319,11 @@ export default class App extends Component {
     let currYear = this.state.startDay.getFullYear();
     let tempDate = this.state.startDay;
     tempDate.setDate(tempDate.getDate() - 7);
-    if (tempDate.getFullYear() != currYear) {
-      this.getHolidays(tempDate.getFullYear());
+    if (
+      tempDate.getFullYear() != currYear &&
+      this.state.selectedCountryCode != null
+    ) {
+      this.getHolidays(this.state.selectedCountryCode, tempDate.getFullYear());
     }
     this.setState({ startDay: tempDate });
   };
@@ -299,46 +331,59 @@ export default class App extends Component {
     let currYear = this.state.startDay.getFullYear();
     let tempDate = this.state.startDay;
     tempDate.setDate(tempDate.getDate() + 7);
-    if (tempDate.getFullYear() != currYear) {
-      this.getHolidays(tempDate.getFullYear());
+    if (
+      tempDate.getFullYear() != currYear &&
+      this.state.selectedCountryCode != null
+    ) {
+      this.getHolidays(this.state.selectedCountryCode, tempDate.getFullYear());
     }
     this.setState({ startDay: tempDate });
   };
-  // getNextDay = (daysAfter) => {
-  //   let temp = new Date(this.state.startDay);
-  //   temp.setDate(temp.getDate() + daysAfter);
-  //   return temp;
-  // };
-  // getHoliday = (cDate) => {
-  //   let temp = this.state.holidays;
-  //   let dayName = "";
-  //   if (temp != undefined) {
-  //     let monthString = cDate.getMonth() + 1;
-  //     if (monthString < 10) {
-  //       monthString = "0" + monthString;
-  //     }
-  //     let nDate =
-  //       cDate.getFullYear() + "-" + monthString + "-" + cDate.getDate();
-  //     temp.forEach((holiday) => {
-  //       if (holiday.date == nDate) {
-  //         dayName = holiday.localName;
-  //       }
-  //     });
-  //   }
-  //   return dayName;
-  // };
 
   //fetch public holiday
-  getHolidays = async (year) => {
+  getHolidays = async (countryCode, year) => {
     try {
       const response = await fetch(
-        `https://date.nager.at/api/v3/PublicHolidays/${year}/US`
+        `https://date.nager.at/api/v3/PublicHolidays/${year}/${countryCode}`
       );
       const resp = await response.json();
       this.setState({ holidays: resp });
     } catch (error) {
+      console.error("Error at getHolidays\n" + error);
+    }
+  };
+  getCountries = async () => {
+    try {
+      const response = await fetch(
+        `https://date.nager.at/api/v3/AvailableCountries`
+      );
+      const resp = await response.json();
+      let nList = [];
+      for (let i in resp) {
+        nList.push({ key: resp[i].countryCode, value: resp[i].name });
+      }
+      this.setState({ holidayCountryList: nList });
+    } catch (error) {
       console.error(error);
     }
+  };
+
+  storeData = async (value) => {
+    this.setState({ selectedCountryCode: value });
+    this.getHolidays(value, this.state.startDay.getFullYear());
+    await updateDoc(doc(db, "users", auth.currentUser.uid), {
+      holidayNationPref: value,
+    });
+    this.setState({ holidaySettingVisible: false });
+  };
+
+  removeData = async () => {
+    this.setState({ selectedCountryCode: "" });
+    this.setState({ holidays: [] });
+    await updateDoc(doc(db, "users", auth.currentUser.uid), {
+      holidayNationPref: "",
+    });
+    this.setState({ holidaySettingVisible: false });
   };
 
   render() {
@@ -380,6 +425,10 @@ export default class App extends Component {
                 onPress={() => this.openDocumentFile()}
               />
               <Button title="Add event" onPress={this.openCreateEvent} />
+              <Button
+                title="Holiday settings"
+                onPress={this.setHolidaySettings}
+              />
               <Button
                 title="Close modal"
                 onPress={() => {
@@ -487,6 +536,81 @@ export default class App extends Component {
             </View>
           </View>
         </Modal>
+
+        <Modal
+          animationType="slide"
+          transparent={true}
+          // visible={false}
+          visible={this.state.holidaySettingVisible}
+          // onRequestClose={() => {
+          //   this.setState({
+          //     holidaySettingVisible: !this.state.holidaySettingVisible,
+          //   });
+          // }}
+        >
+          <View
+            style={{
+              flex: 1,
+              flexDirection: "column",
+              justifyContent: "center",
+              alignItems: "center",
+            }}
+          >
+            <View
+              style={{
+                backgroundColor: "white",
+                width: 300,
+                height: 450,
+                borderRadius: 20,
+                justifyContent: "space-between",
+              }}
+            >
+              <View>
+                <TouchableOpacity
+                  onPress={() =>
+                    this.setState({ holidaySettingVisible: false })
+                  }
+                >
+                  <View style={{ paddingLeft: 260, paddingTop: 10 }}>
+                    <Icon name="times" size={20} color="#2F4858" />
+                  </View>
+                </TouchableOpacity>
+
+                <View style={{ marginRight: 10, marginLeft: 10 }}>
+                  <Text>Country</Text>
+                  <SelectList
+                    setSelected={(val) =>
+                      this.setState({ selectedCountry: val })
+                    }
+                    data={this.state.holidayCountryList}
+                  />
+                  <View style={{ marginTop: 15, flexDirection: "row" }}>
+                    <Text style={{ fontWeight: "bold", marginRight: 10 }}>
+                      Current Selected Option:
+                    </Text>
+                    <Text>{this.state.selectedCountryCode}</Text>
+                  </View>
+                </View>
+              </View>
+
+              <View
+                style={{
+                  flexDirection: "row",
+                  justifyContent: "space-between",
+                  marginLeft: 10,
+                  marginRight: 10,
+                }}
+              >
+                <Button
+                  onPress={() => this.storeData(this.state.selectedCountry)}
+                  title="Save"
+                />
+                <Button title="Hide holidays" onPress={this.removeData} />
+              </View>
+            </View>
+          </View>
+        </Modal>
+
         <TouchableOpacity
           activeOpacity={0.7}
           onPress={this.clickHandler}
@@ -561,55 +685,6 @@ export default class App extends Component {
                     holidays={this.state.holidays}
                     startDay={this.state.startDay}
                   />
-                  {/* <View style={styles.daysWithDate}>
-                    <Text style={styles.days}>Sun</Text>
-                    <Text style={styles.date}>
-                      {this.getNextDay(0).getDate()}
-                    </Text>
-                    <Text>{this.getHoliday(this.getNextDay(0))}</Text>
-                  </View>
-                  <View style={styles.daysWithDate}>
-                    <Text style={styles.days}>Mon</Text>
-                    <Text style={styles.date}>
-                      {this.getNextDay(1).getDate()}
-                    </Text>
-                    <Text>{this.getHoliday(this.getNextDay(1))}</Text>
-                  </View>
-                  <View style={styles.daysWithDate}>
-                    <Text style={styles.days}>Tues</Text>
-                    <Text style={styles.date}>
-                      {this.getNextDay(2).getDate()}
-                    </Text>
-                    <Text>{this.getHoliday(this.getNextDay(2))}</Text>
-                  </View>
-                  <View style={styles.daysWithDate}>
-                    <Text style={styles.days}>Wed</Text>
-                    <Text style={styles.date}>
-                      {this.getNextDay(3).getDate()}
-                    </Text>
-                    <Text>{this.getHoliday(this.getNextDay(3))}</Text>
-                  </View>
-                  <View style={styles.daysWithDate}>
-                    <Text style={styles.days}>Thur</Text>
-                    <Text style={styles.date}>
-                      {this.getNextDay(4).getDate()}
-                    </Text>
-                    <Text>{this.getHoliday(this.getNextDay(4))}</Text>
-                  </View>
-                  <View style={styles.daysWithDate}>
-                    <Text style={styles.days}>Fri</Text>
-                    <Text style={styles.date}>
-                      {this.getNextDay(5).getDate()}
-                    </Text>
-                    <Text>{this.getHoliday(this.getNextDay(5))}</Text>
-                  </View>
-                  <View style={styles.daysWithDate}>
-                    <Text style={styles.days}>Sat</Text>
-                    <Text style={styles.date}>
-                      {this.getNextDay(6).getDate()}
-                    </Text>
-                    <Text>{this.getHoliday(this.getNextDay(6))}</Text>
-                  </View> */}
                 </View>
               </View>
               {/* This is the vertically scrolling content. */}
