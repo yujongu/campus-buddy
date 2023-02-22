@@ -1,17 +1,19 @@
 import { StatusBar } from "expo-status-bar";
-import { Button, StyleSheet, Text, TextInput, View, Modal, TouchableOpacity, FlatList, ActivityIndicator } from "react-native";
+import { Button, StyleSheet, Text, Pressable, TextInput, View, Modal, Alert, TouchableOpacity, FlatList, ActivityIndicator } from "react-native";
 import { auth, db, userSchedule } from "../firebaseConfig"
+import { EmailAuthProvider } from "firebase/auth";
+import { signInWithEmailAndPassword } from "firebase/auth";
 import { signOut } from "firebase/auth"
-import { updateDoc, doc } from "firebase/firestore";
+import { updateDoc, doc, arrayRemove, onSnapshot, arrayUnion } from "firebase/firestore";
 import { useState, useEffect } from "react";
-import { onSnapshot } from "firebase/firestore";
 
 export default function ProfileScreen({ navigation, route }) {
   const [newId, setNewId] = useState("");
   const [id, setId] = useState("");
   const [visible, setVisible] = useState(false);
-  const [list, setList] = useState([]);
+  const [list, setList] = useState(["No friends"]);
   const [loading, setLoading] = useState(true);
+  const [password, setPassword] = useState("");
 
   const handleSignOut = () => {
     signOut(auth)
@@ -26,17 +28,43 @@ export default function ProfileScreen({ navigation, route }) {
     const userDocRef = doc(db, "users", auth.currentUser.uid);
     updateDoc(userDocRef, { id: newId })
       .then(() => {
-        console.log("Id updated successfully.");
+        console.log("username updated successfully.");
       })
       .catch((error) => {
-        console.error("Error updating id:", error);
+        console.error("Error updating username:", error);
       });
   }
 
+  const handleDeleteAccount = () => {
+    const user = auth.currentUser;
+    const credential = EmailAuthProvider.credential(user.email, password);
+  
+    signInWithEmailAndPassword(auth, user.email, password)
+      .then((userCredential) => {
+        userCredential.user.delete()
+          .then(() => {
+            // Account deleted successfully
+            navigation.popToTop();
+          })
+          .catch((error) => {
+            alert("Wrong password entered");
+            console.error("Error deleting account:", error);
+          });
+      })
+      .catch((error) => {
+        alert("Wrong password entered");
+        console.error("Error reauthenticating user:", error);
+      });
+  };
   useEffect(() => {
     const subscriber = onSnapshot(doc(db, "friend_list", auth.currentUser?.email), (doc) => {
-      setList(doc.data()['friends'])
-      setLoading(false)
+      if(doc.data()['friends'] !== null){
+        setList(doc.data()['friends'])
+        setLoading(false)
+      }else{
+        setList(["No friends yet"])
+        setLoading(false)
+      }
     })
     const userDocRef = doc(db, "users", auth.currentUser.uid);
     const unsubscribe = onSnapshot(userDocRef, (doc) => {
@@ -50,13 +78,31 @@ export default function ProfileScreen({ navigation, route }) {
       unsubscribe();
     };
   }, []);
+  const removeFriend = (item) => {
+    const me = doc(db, "friend_list", auth.currentUser?.email)
+    const friend = doc(db, "friend_list", item)
+    try{
+      updateDoc(me, {
+        friends: arrayRemove(item)
+      })
+      updateDoc(friend, {
+        friends: arrayRemove(auth.currentUser?.email)
+      })
+      alert(item+" has been unfriended")
+    } catch (e) {
+      console.error("Cancel friend: ", e);
+    }
+  }
 
   const renderItem = (item) =>{
     return (
       <View style={styles.item}>
         <Text style={{color: 'black', fontSize: 15}}>{item}</Text>
         <View style={{flexDirection: "row"}}>
-          <TouchableOpacity onPress={() => alert("Unfriended")}>
+          <TouchableOpacity onPress={() => Alert.alert("Unfriend", "Do you really want to friend?", [
+            {text: 'Yes', onPress: () => removeFriend(item)},
+            {text: 'Cancel', style: 'cancel'}
+          ], {cancelable: false})}>
             <Text>Unfriend</Text>
           </TouchableOpacity>
         </View>
@@ -82,7 +128,7 @@ export default function ProfileScreen({ navigation, route }) {
               alignItems: "center",
             }}
           >
-            <View style={{width: '70%', height:'70%', backgroundColor: 'blue'}}>
+            <View style={{width: '70%', height:'70%', backgroundColor: 'white'}}>
               {
                 loading ?
                 <ActivityIndicator />
@@ -94,23 +140,38 @@ export default function ProfileScreen({ navigation, route }) {
                   }
                 />
               }
+            <Pressable
+                style={[styles.button, styles.buttonClose]}
+                onPress={() => setVisible(!visible)}
+            >
+                <Text style={styles.textStyle}>Close</Text>
+            </Pressable> 
             </View>
           </View>
       </Modal>
       <Text>{auth.currentUser?.uid}</Text>
       <TextInput
         style={styles.input}
-        placeholder="Enter new Id"
+        placeholder="Enter new Username"
         value={newId}
         onChangeText={(text) => setNewId(text)}
       />
       <Text>Current Id: {id}</Text>
-      <Button title="Change Id" onPress={handleChangeId} />
+      <Button title="Change Username" onPress={handleChangeId} />
       <Button title="Sign Out" onPress={handleSignOut} />
       <Button title="Friend list" onPress={() => setVisible(true)} />
+      <TextInput
+        style={styles.input}
+        placeholder="Enter Password"
+        value={password}
+        onChangeText={(text) => setPassword(text)}
+        secureTextEntry={true}
+      />
+      <Button title="Delete Account" onPress={handleDeleteAccount} />
     </View>
   );
 }
+
 
 const styles = StyleSheet.create({
   container: {
@@ -137,5 +198,18 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
     flexDirection: 'row',
     justifyContent: 'space-between'
+  },
+  button: {
+    borderRadius: 20,
+    padding: 10,
+    elevation: 2
+  },
+  textStyle: {
+    color: "white",
+    fontWeight: "bold",
+    textAlign: "center"
+  },
+  buttonClose: {
+    backgroundColor: "#2196F3",
   },
 });
