@@ -3,6 +3,8 @@ import React, {useState, createRef} from 'react';
 import { createUser } from "../firebaseConfig";
 import { auth } from '../firebaseConfig'
 import HomeScreen from "../BottomTabContainer";
+import { SHA256 } from 'crypto-js';
+
 import {
   StyleSheet,
   TextInput,
@@ -34,6 +36,7 @@ export default function SignUpScreen({ navigation, route })  {
   const lastNameInputRef = createRef();
   const emailInputRef = createRef();
   const passwordInputRef = createRef();
+
 
   const handleSubmitButton = async () => {
     setErrortext('');
@@ -73,12 +76,24 @@ export default function SignUpScreen({ navigation, route })  {
       alert('Password must match with Confirm Password');
       return;
     }
+    if (!/[a-z]/.test(userPassword) || !/[A-Z]/.test(userPassword)) {
+      alert('Password must contain both upper and lower case letters');
+      return;
+    }
+    if(userPassword.length < 8 || userPassword.length > 16) {
+      alert('Password must be between 8 and 16 characters');
+      return;
+    }
+
+    const hashedPassword = SHA256(userPassword).toString();
+
     //Show Loader
     setLoading(true);
 
     try {
-        createUser(userId, userFirstName, userLastName, userEmail, userPassword);
-        
+
+        createUser(userId, userFirstName, userLastName, userEmail, hashedPassword);
+
         if(auth.currentUser?.uid != undefined){
           navigation.navigate("Home")
         }else{
@@ -194,7 +209,7 @@ export default function SignUpScreen({ navigation, route })  {
             />
           </View>
           <View style={styles.SectionStyle}>
-            <Text>Password should include upper, lower case, number, and special characteres. </Text>
+            <Text>Password should include upper, lower case, number, and special characteres. Length must be in 8-16 characters. </Text>
           </View>
           <View style={styles.SectionStyle}>
             <TextInput
