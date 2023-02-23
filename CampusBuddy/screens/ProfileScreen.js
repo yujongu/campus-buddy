@@ -6,6 +6,7 @@ import { signInWithEmailAndPassword } from "firebase/auth";
 import { signOut } from "firebase/auth"
 import { updateDoc, doc, arrayRemove, onSnapshot, arrayUnion } from "firebase/firestore";
 import { useState, useEffect } from "react";
+import { SHA256 } from 'crypto-js';
 
 export default function ProfileScreen({ navigation, route }) {
   const [newId, setNewId] = useState("");
@@ -22,7 +23,7 @@ export default function ProfileScreen({ navigation, route }) {
       })
   }
 
-  
+
 
   const handleChangeId = () => {
     const userDocRef = doc(db, "users", auth.currentUser.uid);
@@ -37,23 +38,30 @@ export default function ProfileScreen({ navigation, route }) {
 
   const handleDeleteAccount = () => {
     const user = auth.currentUser;
-    const credential = EmailAuthProvider.credential(user.email, password);
+    const hashedPassword = SHA256(password).toString(); // Store this in the database
+
+    const credential = EmailAuthProvider.credential(user.email, hashedPassword);
   
-    signInWithEmailAndPassword(auth, user.email, password)
+    signInWithEmailAndPassword(auth, user.email, hashedPassword)
       .then((userCredential) => {
         userCredential.user.delete()
           .then(() => {
             // Account deleted successfully
             navigation.popToTop();
+            alert("Successfully deleted")
           })
           .catch((error) => {
             alert("Wrong password entered");
             console.error("Error deleting account:", error);
+            console.log(password);
+            console.log(hashedPassword);
           });
       })
       .catch((error) => {
         alert("Wrong password entered");
         console.error("Error reauthenticating user:", error);
+        console.log(password);
+        console.log(hashedPassword);
       });
   };
   useEffect(() => {
