@@ -13,7 +13,8 @@ export default class TopHeaderDays extends React.Component {
   getHoliday = (cDate, holidays) => {
     let temp = holidays;
     let dayName = "";
-    if (temp != undefined) {
+
+    if (temp != undefined && temp.length != undefined) {
       let monthString = cDate.getMonth() + 1;
       if (monthString < 10) {
         monthString = "0" + monthString;
