@@ -105,7 +105,11 @@ export default function ProfileScreen({ navigation, route }) {
   const renderItem = (item) =>{
     return (
       <View style={styles.item}>
-        <Text style={{color: 'black', fontSize: 15}}>{item}</Text>
+        <TouchableOpacity onPress={(() => navigation.navigate("user_profile", {
+          email: item
+        }))}>
+          <Text style={{color: 'black', fontSize: 15}}>{item}</Text>
+        </TouchableOpacity>
         <View style={{flexDirection: "row"}}>
           <TouchableOpacity onPress={() => Alert.alert("Unfriend", "Do you really want to friend?", [
             {text: 'Yes', onPress: () => removeFriend(item)},
