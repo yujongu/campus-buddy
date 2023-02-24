@@ -3,6 +3,7 @@ import { initializeApp } from "firebase/app";
 import { getAnalytics } from "firebase/analytics";
 import { getAuth, createUserWithEmailAndPassword, } from "firebase/auth"
 import { EmailAuthProvider, credential } from "firebase/auth";
+import { query, where} from 'firebase/firestore';
 import { 
   getFirestore,
   collection,
@@ -38,6 +39,10 @@ const db = getFirestore();
 export { auth, db };
 
 export async function createUser(username, first, last, email, password) {
+  const querySnapshot = await getDocs(query(collection(db, 'users'), where('id', '==', username)));
+  if (!querySnapshot.empty) {
+    throw new Error('Username already exists');
+  }
   await createUserWithEmailAndPassword(auth, email, password)
   .then((userCredential) => {
     console.log("Successfully added new user " + userCredential.user.uid)
@@ -106,21 +111,18 @@ export async function userSchedule(user_token){
   
 }
 
-export async function addEvent(user_token, title, startDate, startTime, endDate, endTime, location, category, point_value, color, repetition){
-  const docRef = doc(db, "events", user_token)
+export async function addEvent(user_token, title, start, end, category, point_value, color, repetition){
+  const docRef = doc(db, "event", user_token)
   try {
     setDoc(docRef, {
       title: title,
-      startDate: startDate,
-      startTime: startTime,
-      endDate: endDate,
-      endTime: endTime,
-      location: location,
+      start: start,
+      end: end,
       category: category,
       point_value: point_value,
       color: color,
       repetition: repetition
-    }, { merge: true });
+    });
     console.log("Event doc written with ID: ", docRef.id)
   } catch (e) {
     console.error("Error adding event: ", e);

@@ -4,6 +4,8 @@ import { useState, createContext, useContext, useEffect } from "react";
 import { StyleSheet, View, Text, TextInput, TouchableOpacity, KeyboardAvoidingView } from 'react-native';
 import { auth } from "../firebaseConfig";
 import { signInWithEmailAndPassword, } from "firebase/auth"
+import { SHA256 } from 'crypto-js';
+import { EmailAuthProvider } from "firebase/auth";
 
 
 
@@ -11,6 +13,7 @@ import { signInWithEmailAndPassword, } from "firebase/auth"
 const SignInScreen = ({navigation}) => {
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
+
   
   useEffect(() => {
     auth.onAuthStateChanged((user) => {
@@ -21,7 +24,9 @@ const SignInScreen = ({navigation}) => {
   }, [])
 
   const tomain= () => {
-    signInWithEmailAndPassword(auth, username, password)
+    const user = auth.currentUser;
+    const hashedPassword = SHA256(password).toString(); // Store this in the database
+    signInWithEmailAndPassword(auth, username, hashedPassword)
     .then((userCredential) => {
       const user = userCredential.user;
       console.log('Logged in with:', user.email)

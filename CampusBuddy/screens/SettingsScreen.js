@@ -14,23 +14,46 @@ import {
   ScrollView,
   Button,
 } from 'react-native';
-import { updateDoc, doc, arrayRemove, onSnapshot, arrayUnion } from "firebase/firestore";
+import { updateDoc, doc, arrayRemove, collection, where, getDoc,getDocs,query, onSnapshot, arrayUnion } from "firebase/firestore";
 
 export default function SettingsScreen({ navigation, route })  {
   const [newId, setNewId] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [id, setId] = useState("");
 
-  const handleChangeId = () => {
-    const userDocRef = doc(db, "users", auth.currentUser.uid);
-    updateDoc(userDocRef, { id: newId })
-      .then(() => {
-        console.log("username updated successfully.");
-      })
-      .catch((error) => {
-        console.error("Error updating username:", error);
-      });
-  }
+  // const handleChangeId = () => {
+  //   const userDocRef = doc(db, "users", auth.currentUser.uid);
+  //   updateDoc(userDocRef, { id: newId })
+  //     .then(() => {
+  //       console.log("username updated successfully.");
+  //     })
+  //     .catch((error) => {
+  //       console.error("Error updating username:", error);
+  //     });
+  // }
+
+  const handleChangeId = async () => {
+    try {
+      const userDocRef = doc(db, 'users', auth.currentUser.uid);
+      const userDocSnap = await getDoc(userDocRef);
+      const userData = userDocSnap.data();
+  
+  
+      // Check if new id already exists
+      const querySnapshot = await getDocs(query(collection(db, 'users'), where('id', '==', newId)));
+      if (!querySnapshot.empty) {
+        alert('Username already exists');
+        return;
+      }
+  
+      await updateDoc(userDocRef, { id: newId });
+      console.log('username updated successfully.');
+      alert('Username updated successfully');
+    } catch (error) {
+      console.error('Error updating username:', error);
+    }
+  };
+
   const handleChangePassword = () => {
     const userDocRef = doc(db, "users", auth.currentUser.uid);
     updateDoc(userDocRef, { password: newPassword })
