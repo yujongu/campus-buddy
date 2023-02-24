@@ -171,7 +171,7 @@ export default function ProfileScreen({ navigation, route }) {
       <Text>Current Id: {id}</Text>
       <Button title="Change Username" onPress={handleChangeId} />
       <Button title="Sign Out" onPress={handleSignOut} />
-      <Button title="Friend list" onPress={() => setVisible(true)} />
+      <Button title="Friend list" onPress={() => setVisible(!visible)} />
       <TextInput
         style={styles.input}
         placeholder="Enter Password"
