@@ -15,15 +15,10 @@ import {
   Animated,
   TextInput,
 } from "react-native";
-<<<<<<< HEAD
 import DateTimePicker from '@react-native-community/datetimepicker';
 import DropDownPicker from 'react-native-dropdown-picker';
-import ColorWheel from "../components/ui/ColorWheel";
-=======
+import {ColorWheel} from "../components/ui/ColorWheel";
 import { SelectList } from "react-native-dropdown-select-list";
-import DateTimePicker from "@react-native-community/datetimepicker";
-import DropDownPicker from "react-native-dropdown-picker";
->>>>>>> 051d805519313cd9a63fabed17c0bed64836846e
 import { Colors } from "../constants/colors";
 import * as DocumentPicker from "expo-document-picker";
 import Icon from "react-native-vector-icons/FontAwesome";
@@ -78,18 +73,9 @@ export default class App extends Component {
       holidayCountryList: [],
       selectedCountryCode: "",
       createEventVisible: false,
-<<<<<<< HEAD
-      colorPicker: null,
-      openList: false,
-      value: null,
-      repetitionItems: [
-        {label: 'Never', value: 0},
-        {label: 'Daily', value: 1},
-        {label: 'Weekly', value: 2},
-        {label: 'Monthly', value: 3},
-      ],
-=======
       holidaySettingVisible: false,
+      colorPicker: false,
+      eventColor: "#8b9cb5",
       openList: false,
       value: null,
       repetitionItems: [
@@ -98,9 +84,9 @@ export default class App extends Component {
         { label: "Weekly", value: 2 },
         { label: "Monthly", value: 3 },
       ],
+      repetition: 0,
       // This is the starting date for the current calendar UI.
       startDay: new Date(),
->>>>>>> 051d805519313cd9a63fabed17c0bed64836846e
     };
   }
 
@@ -153,12 +139,12 @@ export default class App extends Component {
   openCreateEvent = () => {
     this.setState({ visible: false });
     this.setState({ createEventVisible: true });
-<<<<<<< HEAD
-  }
-  
-  setOpen = () => {
-=======
   };
+
+  updateColor = (color) => {
+    this.setState({eventColor: color})
+    this.setState({colorPicker: false})
+  }
 
   setHolidaySettings = () => {
     this.setState({ visible: false });
@@ -166,33 +152,33 @@ export default class App extends Component {
     this.setState({ holidaySettingVisible: true });
   };
 
-  /*setOpen = () => {
->>>>>>> 051d805519313cd9a63fabed17c0bed64836846e
+  setOpen = () => {
     this.setState({
-      openList: true
+      openList: !this.state.openList
     });
   }
 
   setValue = (value) =>{
     this.setState({
-      value: value
+      repetition: value
+    });
+    this.setState({
+      openList: false
     });
   }
 
-<<<<<<< HEAD
-  setItems = (callback) =>{
-    this.setState(state => ({
-      repetitionItems: callback(state.items)
-    }));
-  }
-  
-=======
   setItems = (items) =>{
     this.setState({
       repetitionItems: items
     });
-  }*/
->>>>>>> 051d805519313cd9a63fabed17c0bed64836846e
+  }
+
+  setRepetition = (rep) => {
+    this.setState({ repetition: rep });
+    this.setState({
+      openList: false
+    });
+  }
 
   clickHandler = () => {
     this.setState({ visible: true });
@@ -420,10 +406,10 @@ export default class App extends Component {
   };
 
   render() {
-    const { openList, value, repetitionItems, colorPicker } = this.state;
+    const { openList, value, repetitionItems, colorPicker, eventColor } = this.state;
     if (colorPicker) {
-      const { Component } = colorPicker
-      return <Component />
+      console.log("colorpicked")
+      return <ColorWheel updateColor={this.updateColor}/>
     }
     return (
       <SafeAreaView style={{ flex: 1 }}>
@@ -503,12 +489,11 @@ export default class App extends Component {
                 <Text style={styles.header_text}>Create Event</Text>
               </View>
               <View style={styles.row}>
-<<<<<<< HEAD
               <TouchableOpacity
-                onPress={() => this.setState({colorPicker: ColorWheel})}
+                onPress={() => this.setState({colorPicker: true})}
               >
-                <View style={{paddingTop:5, paddingRight:5}}>
-                  <Icon name="square" size={40} color="#2F4858" />
+                <View style={{paddingTop:5, paddingRight:15}}>
+                  <Icon name="square" size={40} color={eventColor} />
                 </View>
               </TouchableOpacity>
               <TextInput 
@@ -517,13 +502,6 @@ export default class App extends Component {
                 placeholderTextColor="#8b9cb5"
               >
               </TextInput>
-=======
-                <TextInput
-                  style={styles.titleInputStyle}
-                  placeholder="Add title"
-                  placeholderTextColor="#8b9cb5"
-                ></TextInput>
->>>>>>> 051d805519313cd9a63fabed17c0bed64836846e
               </View>
               <View style={styles.row}>
                 <View style={{ flex: 1, paddingTop: 10 }}>
@@ -541,20 +519,18 @@ export default class App extends Component {
                 <View style={{ flex: 1, paddingTop: 10 }}>
                   <Icon name="repeat" size={20} color="#2F4858" />
                 </View>
-<<<<<<< HEAD
                 <View style={{flex:8}}>
+                {/*dropdown selection does not work :(*/}
                 <DropDownPicker
                     open={openList}
                     value={value}
                     items={repetitionItems}
-                    setOpen={()=>this.setOpen}
-                    setValue={()=>this.setValue}
-                    setItems={()=>this.setItems}
+                    placeholder={value}
+                    setValue={this.setValue}
+                    setItems={this.setItems}
+                    onPress={this.setOpen}
                   />
                 </View>
-=======
-                <View style={{ flex: 8 }}></View>
->>>>>>> 051d805519313cd9a63fabed17c0bed64836846e
               </View>
               <View style={styles.row}>
                 <Text
