@@ -161,6 +161,13 @@ export default function ProfileScreen({ navigation, route }) {
       <Button title="Settings" onPress={() => navigation.navigate("Settings")} />
       <Button title="Sign Out" onPress={handleSignOut} />
       <Button title="Friend list" onPress={() => setVisible(!visible)} />
+      <TextInput
+        style={styles.input}
+        placeholder="Enter Password"
+        value={password}
+        onChangeText={(text) => setPassword(text)}
+        secureTextEntry={true}
+      />
       <Button title="Delete Account" onPress={handleDeleteAccount} />
     </View>
   );
