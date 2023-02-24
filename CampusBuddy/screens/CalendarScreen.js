@@ -18,7 +18,6 @@ import {
 } from "react-native";
 import DateTimePicker from '@react-native-community/datetimepicker';
 import DropDownPicker from 'react-native-dropdown-picker';
-import DatePicker from 'react-native-date-picker'
 import {ColorWheel} from "../components/ui/ColorWheel";
 import { SelectList } from "react-native-dropdown-select-list";
 import { Colors } from "../constants/colors";
