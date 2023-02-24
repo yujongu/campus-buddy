@@ -105,7 +105,11 @@ export default function ProfileScreen({ navigation, route }) {
   const renderItem = (item) =>{
     return (
       <View style={styles.item}>
-        <Text style={{color: 'black', fontSize: 15}}>{item}</Text>
+        <TouchableOpacity onPress={(() => navigation.navigate("user_profile", {
+          email: item
+        }))}>
+          <Text style={{color: 'black', fontSize: 15}}>{item}</Text>
+        </TouchableOpacity>
         <View style={{flexDirection: "row"}}>
           <TouchableOpacity onPress={() => Alert.alert("Unfriend", "Do you really want to friend?", [
             {text: 'Yes', onPress: () => removeFriend(item)},
@@ -161,7 +165,7 @@ export default function ProfileScreen({ navigation, route }) {
       <Text>Current Id: {id}</Text>
       <Button title="Change Username" onPress={handleChangeId} />
       <Button title="Sign Out" onPress={handleSignOut} />
-      <Button title="Friend list" onPress={() => setVisible(true)} />
+      <Button title="Friend list" onPress={() => setVisible(!visible)} />
       <TextInput
         style={styles.input}
         placeholder="Enter Password"
