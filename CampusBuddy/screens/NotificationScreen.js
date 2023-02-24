@@ -22,8 +22,10 @@ export default class NotificationScreen extends Component{
     const docRef = doc(db, "friend_list", auth.currentUser?.email)
     const docRef_to = doc(db, "friend_list", user)
     const remove_alert = doc(db, "requests", auth.currentUser?.email)
-    const remove_to = doc(db, "request", user)
+    const remove_to = doc(db, "requests", user)
     try {
+      console.log(user)
+      console.log(auth.currentUser?.email)
       //add to own friend list
       updateDoc(docRef, {
         friends: arrayUnion(user)
@@ -32,13 +34,13 @@ export default class NotificationScreen extends Component{
       updateDoc(docRef_to, {
         friends: arrayUnion(auth.currentUser?.email)
       })
-      //remove notification on current user
+      //remove to_request from user who sent the request
       updateDoc(remove_to, {
-        from_request: arrayRemove(auth.currentUser?.email+"/"+"friend")
+        to_request: arrayRemove(auth.currentUser?.email+"/"+"friend")
       })
-      //remove to_request from from_user
+      //remove from_request from target user
       updateDoc(remove_alert, {
-        to_request: arrayRemove(user+"/"+"friend")
+        from_request: arrayRemove(user+"/"+"friend")
       })
       Alert.alert("Accepted","Now you guys are friends")
     } catch (e) {
@@ -51,10 +53,10 @@ export default class NotificationScreen extends Component{
     const remove_to = doc(db, "requests", user)
     try{
       updateDoc(remove_alert, {
-        to_request: arrayRemove(user+"/"+"friend")
+        from_request: arrayRemove(user+"/"+"friend")
       })
       updateDoc(remove_to, {
-        from_request: arrayRemove(auth.currentUser?.email+"/"+"friend")
+        to_request: arrayRemove(auth.currentUser?.email+"/"+"friend")
       })
       Alert.alert("Rejected","You rejected the friend request")
     } catch (e) {
