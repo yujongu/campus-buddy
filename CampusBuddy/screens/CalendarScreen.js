@@ -15,22 +15,24 @@ import {
   Animated,
   TextInput,
 } from "react-native";
+import DateTimePicker from '@react-native-community/datetimepicker';
+import DropDownPicker from 'react-native-dropdown-picker';
+import DatePicker from 'react-native-date-picker'
+import {ColorWheel} from "../components/ui/ColorWheel";
 import { SelectList } from "react-native-dropdown-select-list";
-import DateTimePicker from "@react-native-community/datetimepicker";
-import DropDownPicker from "react-native-dropdown-picker";
 import { Colors } from "../constants/colors";
 import * as DocumentPicker from "expo-document-picker";
 import Icon from "react-native-vector-icons/FontAwesome";
 import FeatherIcon from "react-native-vector-icons/Feather";
 import TimeTableView, { genTimeBlock } from "react-native-timetable";
-import { addSchedule, userList } from "../firebaseConfig";
+import { addSchedule, userList, addEvent } from "../firebaseConfig";
 import { auth, db, userSchedule } from "../firebaseConfig";
 import EventItem from "../components/ui/EventItem";
 import { IconButton } from "@react-native-material/core";
 import { async } from "@firebase/util";
 import TopHeaderDays from "../components/ui/TopHeaderDays";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { doc, onSnapshot, updateDoc } from "firebase/firestore";
+import { doc, onSnapshot, updateDoc, getDoc, Timestamp } from "firebase/firestore";
 
 const MonthName = [
   "January",
@@ -69,10 +71,15 @@ export default class App extends Component {
       list: [],
       midterms: [],
       holidays: [],
+      testlist: [],
       holidayCountryList: [],
       selectedCountryCode: "",
       createEventVisible: false,
       holidaySettingVisible: false,
+      title: "",
+      location: "",
+      colorPicker: false,
+      eventColor: "#8b9cb5",
       openList: false,
       value: null,
       repetitionItems: [
@@ -81,6 +88,12 @@ export default class App extends Component {
         { label: "Weekly", value: 2 },
         { label: "Monthly", value: 3 },
       ],
+      openDate: false,
+      repetition: 0,
+      startDate: null,
+      startTime: null,
+      endDate: null,
+      endTime: null,
       // This is the starting date for the current calendar UI.
       startDay: new Date(),
     };
@@ -124,6 +137,68 @@ export default class App extends Component {
     });
   }
 
+  convertDay = (day) => {
+    var dayStr = "";
+    switch(day){
+      case "0":
+        dayStr = "SUN";
+        break;
+      case "1":
+        dayStr = "MON";
+        break;
+      case "2":
+        dayStr = "TUE";
+        break;
+      case "3":
+        dayStr = "WED";
+        break;
+      case "4":
+        dayStr = "THU";
+        break;
+      case "5":
+        dayStr= "FRI";
+        break;
+      case "6":
+        dayStr= "SAT";
+        break;    
+    }
+    return dayStr;
+  }
+  submitEvent = (eventColor) => {
+    addEvent(auth.currentUser?.uid, this.title,this.startDate, this.startTime, this.endDate, this.endTime, this.location, "test", 10, eventColor, 0);
+    this.state.list.push({
+      title: this.title,
+      startTime: genTimeBlock(this.convertDay(this.startDate), parseInt(this.startTime.substring(0,2), 10 ), parseInt(this.startTime.substring(4,6), 10 )),
+      endTime: genTimeBlock(this.convertDay(this.endDate), parseInt(this.endTime.substring(0,2), 10 ), parseInt(this.endTime.substring(4,6), 10 )),
+      location: this.location,
+      color: eventColor,
+    });
+  }
+  setTitle =(title) => {
+    this.title=title;
+  };
+
+  setLocation =(location) => {
+    this.location = location;
+  };
+  
+  setStartDate =(date) => {
+    this.startDate = date;
+  }
+
+  setStartTime =(time) => {
+    this.startTime= time;
+  };
+
+  setEndDate =(date) => {
+    this.endDate = date;
+  }
+
+  setEndTime =(time) => {
+    this.endTime= time;
+  };
+
+  
   scrollViewRef = (ref) => {
     this.timetableRef = ref;
   };
@@ -137,21 +212,34 @@ export default class App extends Component {
     this.setState({ createEventVisible: true });
   };
 
+  updateColor = (color) => {
+    this.setState({eventColor: color})
+    this.setState({colorPicker: false})
+  }
+
   setHolidaySettings = () => {
     this.setState({ visible: false });
     this.getCountries();
     this.setState({ holidaySettingVisible: true });
   };
 
-  /*setOpen = () => {
+  setOpen = () => {
     this.setState({
-      openList: true
+      openList: !this.state.openList
+    });
+  }
+  setDateOpen = () => {
+    this.setState({
+      openDate: !this.state.openList
     });
   }
 
   setValue = (value) =>{
     this.setState({
-      value: value
+      repetition: value
+    });
+    this.setState({
+      openList: false
     });
   }
 
@@ -159,7 +247,14 @@ export default class App extends Component {
     this.setState({
       repetitionItems: items
     });
-  }*/
+  }
+
+  setRepetition = (rep) => {
+    this.setState({ repetition: rep });
+    this.setState({
+      openList: false
+    });
+  }
 
   clickHandler = () => {
     this.setState({ visible: true });
@@ -170,6 +265,21 @@ export default class App extends Component {
       console.error("An error occurred", err)
     );
   };
+
+  addEventToCalendar = async () => {
+    const querySnapShot = await getDoc(doc(db, "events", auth.currentUser?.uid));
+    if(querySnapShot.exists()){
+      const result = querySnapShot.data();
+      console.log(result["start"].toDate())
+      this.state.testlist.push({
+        title: result["title"],
+        startTime: result["start"],
+        endTime: result["end"],
+        location: result["location"],
+      });
+      console.log(this.state.list)
+    }
+  }
 
   openDocumentFile = async () => {
     const res = await DocumentPicker.getDocumentAsync({});
@@ -236,6 +346,7 @@ export default class App extends Component {
                   startTime: genTimeBlock("MON", start, start_min),
                   endTime: genTimeBlock("MON", end, end_min),
                   location: product["Location"],
+                  color: "#D1FF96",
                 });
                 //Tuesday
               } else if (
@@ -248,6 +359,7 @@ export default class App extends Component {
                   startTime: genTimeBlock("TUE", start, start_min),
                   endTime: genTimeBlock("TUE", end, end_min),
                   location: product["Location"],
+                  color: "#D1FF96",
                 });
                 //Wednesday
               } else if (product["Day Of Week"][i] == "W") {
@@ -256,6 +368,7 @@ export default class App extends Component {
                   startTime: genTimeBlock("WED", start, start_min),
                   endTime: genTimeBlock("WED", end, end_min),
                   location: product["Location"],
+                  color: "#D1FF96",
                 });
                 //Thursday
               } else if (
@@ -267,6 +380,7 @@ export default class App extends Component {
                   startTime: genTimeBlock("THU", start, start_min),
                   endTime: genTimeBlock("THU", end, end_min),
                   location: product["Location"],
+                  color: "#D1FF96",
                 });
                 //Friday
               } else if (product["Day Of Week"][i] == "F") {
@@ -275,6 +389,7 @@ export default class App extends Component {
                   startTime: genTimeBlock("FRI", start, start_min),
                   endTime: genTimeBlock("FRI", end, end_min),
                   location: product["Location"],
+                  color: "#D1FF96",
                 });
                 //Saterday
               } else if (product["Day Of Week"][i] == "S") {
@@ -283,6 +398,7 @@ export default class App extends Component {
                   startTime: genTimeBlock("SAT", start, start_min),
                   endTime: genTimeBlock("SAT", end, end_min),
                   location: product["Location"],
+                  color: "#D1FF96",
                 });
                 //Sunday
               } else if (product["Day Of Week"][i] == "U") {
@@ -291,6 +407,7 @@ export default class App extends Component {
                   startTime: genTimeBlock("SUN", start, start_min),
                   endTime: genTimeBlock("SUN", end, end_min),
                   location: product["Location"],
+                  color: "#D1FF96",
                 });
               }
             }
@@ -387,6 +504,11 @@ export default class App extends Component {
   };
 
   render() {
+    const { title, location, openList, repetitionItems, colorPicker, eventColor, startDay, startDate, startTime, endDate, endTime, repetition, openDate } = this.state;
+    if (colorPicker) {
+      console.log("colorpicked")
+      return <ColorWheel updateColor={this.updateColor}/>
+    }
     return (
       <SafeAreaView style={{ flex: 1 }}>
         <Modal
@@ -465,11 +587,20 @@ export default class App extends Component {
                 <Text style={styles.header_text}>Create Event</Text>
               </View>
               <View style={styles.row}>
-                <TextInput
-                  style={styles.titleInputStyle}
-                  placeholder="Add title"
-                  placeholderTextColor="#8b9cb5"
-                ></TextInput>
+              <TouchableOpacity
+                onPress={() => this.setState({colorPicker: true})}
+              >
+                <View style={{paddingTop:5, paddingRight:15}}>
+                  <Icon name="square" size={40} color={eventColor} />
+                </View>
+              </TouchableOpacity>
+              <TextInput 
+                style={styles.titleInputStyle}
+                placeholder="Add title"
+                placeholderTextColor="#8b9cb5"
+                onChangeText={(text) => this.setTitle(text)}
+              >
+              </TextInput>
               </View>
               <View style={styles.row}>
                 <View style={{ flex: 1, paddingTop: 10 }}>
@@ -480,6 +611,7 @@ export default class App extends Component {
                     style={styles.inputStyle}
                     placeholder="Location"
                     placeholderTextColor="#8b9cb5"
+                    onChangeText={(text) => this.setLocation(text)}
                   ></TextInput>
                 </View>
               </View>
@@ -487,7 +619,18 @@ export default class App extends Component {
                 <View style={{ flex: 1, paddingTop: 10 }}>
                   <Icon name="repeat" size={20} color="#2F4858" />
                 </View>
-                <View style={{ flex: 8 }}></View>
+                <View style={{flex:8}}>
+                {/*dropdown selection does not work :(*/}
+                <DropDownPicker
+                    open={openList}
+                    value={repetition}
+                    items={repetitionItems}
+                    placeholder={"Never"}
+                    setValue={this.setValue}
+                    setItems={this.setItems}
+                    onPress={this.setOpen}
+                  />
+                </View>
               </View>
               <View style={styles.row}>
                 <Text
@@ -500,15 +643,37 @@ export default class App extends Component {
                 >
                   Start
                 </Text>
-                <DateTimePicker
-                  style={{ margin: 5 }}
-                  mode="date"
-                  value={new Date()}
+                <TextInput
+                  placeholder={"Day"}
+                  placeholderTextColor="#8b9cb5"
+                  style={{
+                    color: "black",
+                    borderWidth: 1,
+                    borderColor: "#8b9cb5",
+                    marginLeft: 10,
+                    marginTop:5,
+                    width:50,
+                    height:30,
+                    textAlign: 'center',
+                  }}
+                  value={startDate}
+                  onChangeText={(text) => this.setStartDate(text)}
                 />
-                <DateTimePicker
-                  style={{ margin: 5 }}
-                  mode="time"
-                  value={new Date()}
+                <TextInput
+                  placeholder={"Time"}
+                  placeholderTextColor="#8b9cb5"
+                  style={{
+                    color: "black",
+                    borderWidth: 1,
+                    borderColor: "#8b9cb5",
+                    marginLeft: 10,
+                    marginTop:5,
+                    width:100,
+                    height:30,
+                    textAlign: 'center',
+                  }}
+                  value={startTime}
+                  onChangeText={(text) => this.setStartTime(text)}
                 />
               </View>
               <View style={styles.row}>
@@ -522,17 +687,40 @@ export default class App extends Component {
                 >
                   End
                 </Text>
-                <DateTimePicker
-                  style={{ margin: 5 }}
-                  mode="date"
-                  value={new Date()}
+                <TextInput
+                  placeholder={"Day"}
+                  placeholderTextColor="#8b9cb5"
+                  style={{
+                    color: "black",
+                    borderWidth: 1,
+                    borderColor: "#8b9cb5",
+                    marginLeft: 10,
+                    marginTop:5,
+                    width:50,
+                    height:30,
+                    textAlign: 'center',
+                  }}
+                  value={endDate}
+                  onChangeText={(text) => this.setEndDate(text)}
                 />
-                <DateTimePicker
-                  style={{ margin: 5 }}
-                  mode="time"
-                  value={new Date()}
+                <TextInput
+                  placeholder={"Time"}
+                  placeholderTextColor="#8b9cb5"
+                  style={{
+                    color: "black",
+                    borderWidth: 1,
+                    borderColor: "#8b9cb5",
+                    marginLeft: 10,
+                    marginTop:5,
+                    width:100,
+                    height:30,
+                    textAlign: 'center',
+                  }}
+                  value={endTime}
+                  onChangeText={(text) => this.setEndTime(text)}
                 />
               </View>
+              <Button title="Create new event" onPress={()=>this.submitEvent(eventColor)} />
             </View>
           </View>
         </Modal>
@@ -726,9 +914,26 @@ class ScrollViewVerticallySynced extends React.Component {
         showsVerticalScrollIndicator={false}
       >
         {populateRows(name, eventList)}
+       {displayEvents()}
+        
       </ScrollView>
     );
   }
+}
+
+const displayEvents = () => {
+  return (
+    <EventItem
+    category="School Courses"
+    day={5}
+    startTime={genTimeBlock("FRI", 3, 30)}
+    endTime={genTimeBlock("FRI", 5, 30)}
+    title={"test"}
+    location={"test"}
+    color={"#8b9cb5"}
+  />
+  )
+  
 }
 
 // If name is Time, populate the hours 0 ~ 24.
@@ -790,6 +995,7 @@ const populateRows = (name, eventList) =>
                 endTime={new Date(event.endTime)}
                 title={event.title}
                 location={event.location}
+                color={event.color}
               />
             ) : (
               <EventItem category="Empty" />

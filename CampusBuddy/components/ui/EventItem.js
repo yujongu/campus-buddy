@@ -19,9 +19,10 @@ export default class EventItem extends React.Component {
     let duration = 60 * hourDiff + minuteDiff;
     return duration / 60;
   }
+  
 
   render() {
-    const { category, day, startTime, endTime, title, location, host } =
+    const { category, day, startTime, endTime, title, location, host, color } =
       this.props;
     let nHeight =
       category == "Empty"
@@ -59,7 +60,7 @@ export default class EventItem extends React.Component {
           marginRight: dailyWidth * 0.05,
           borderRadius: 10,
           zIndex: 2,
-          backgroundColor: "#D1FF96",
+          backgroundColor: color == null ? "#D1FF96" : color,
         }}
       >
         <Text style={{ fontSize: 16 }}>{title}</Text>
@@ -68,3 +69,4 @@ export default class EventItem extends React.Component {
     );
   }
 }
+
