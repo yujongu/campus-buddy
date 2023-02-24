@@ -32,6 +32,12 @@ import { async } from "@firebase/util";
 import TopHeaderDays from "../components/ui/TopHeaderDays";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { doc, onSnapshot, updateDoc } from "firebase/firestore";
+import { createAppContainer } from "react-navigation";
+//import { createStackNavigator } from '@react-navigation/stack';
+import CompareScreen from '../screens/CompareScreen';
+//import { useNavigation } from "react-router-dom";
+
+//const navigation = useNavigation();
 
 const MonthName = [
   "January",
@@ -52,6 +58,8 @@ const leftHeaderWidth = 50;
 const topHeaderHeight = 60;
 const dailyWidth = (Dimensions.get("window").width - leftHeaderWidth) / 3;
 const dailyHeight = Dimensions.get("window").height / 10;
+
+
 
 export default class App extends Component {
   constructor(props) {
@@ -333,6 +341,11 @@ export default class App extends Component {
       });
   };
 
+  exportDocumentFile = () => {
+    // exporting file as
+    
+  };
+
   //navigate through calendar ui
   goPrevWeek = () => {
     let currYear = this.state.startDay.getFullYear();
@@ -455,7 +468,12 @@ export default class App extends Component {
               />
               <Button
                 title="Compare schedule"
+                onPress = {() => navigation.navigate('Compare Screen')}
                 ></Button>
+              <Button
+                title="Export schedule"
+                onPress={() => this.exportDocumentFile()}>
+                </Button>
               <Button
                 title="Close modal"
                 onPress={() => {

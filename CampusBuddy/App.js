@@ -10,7 +10,9 @@ import SignInScreen from "./screens/SignInScreen";
 import SignUpScreen from "./screens/SignUpScreen";
 import User_profile from "./screens/User_profileScreen";
 import SettingsScreen from './screens/SettingsScreen';
+import CompareScreen from './screens/CompareScreen';
 import { auth } from './firebaseConfig';
+
 
 const Stack = createNativeStackNavigator();
 
@@ -45,6 +47,11 @@ export default function App() {
             component={SettingsScreen}
             options={{headerShown: false}}
           />
+          <Stack.Screen
+            name = "Compare Screen"
+            component = {CompareScreen}
+            options = {{headerShown: false}}>
+          </Stack.Screen>
         </Stack.Navigator>
 
       </NavigationContainer>
