@@ -2,6 +2,7 @@
 import { initializeApp } from "firebase/app";
 import { getAnalytics } from "firebase/analytics";
 import { getAuth, createUserWithEmailAndPassword, } from "firebase/auth"
+import { EmailAuthProvider, credential } from "firebase/auth";
 import { 
   getFirestore,
   collection,
@@ -33,10 +34,8 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const analytics = getAnalytics(app);
 const auth = getAuth(app);
-export {auth};
-
 const db = getFirestore();
-export {db};
+export { auth, db };
 
 export async function createUser(username, first, last, email, password) {
   await createUserWithEmailAndPassword(auth, email, password)
@@ -56,6 +55,10 @@ export async function createUser(username, first, last, email, password) {
       setDoc(doc(db, "requests", userCredential.user.email), {
         from_request: [],
         to_request: []
+      })
+      //initialize user friend list
+      setDoc(doc(db, "friend_list", userCredential.user.email), {
+        friends: []
       })
     } catch (e) {
       console.error("Error adding doc: ", e);
@@ -101,6 +104,24 @@ export async function userSchedule(user_token){
     alert("userSchedule: "+error);
   }
   
+}
+
+export async function addEvent(user_token, title, start, end, category, point_value, color, repetition){
+  const docRef = doc(db, "event", user_token)
+  try {
+    setDoc(docRef, {
+      title: title,
+      start: start,
+      end: end,
+      category: category,
+      point_value: point_value,
+      color: color,
+      repetition: repetition
+    });
+    console.log("Event doc written with ID: ", docRef.id)
+  } catch (e) {
+    console.error("Error adding event: ", e);
+  }
 }
 
 export async function userList(){
