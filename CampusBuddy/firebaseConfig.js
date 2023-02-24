@@ -12,7 +12,8 @@ import {
   getDoc,
   QueryEndAtConstraint, 
   updateDoc,
-  arrayUnion
+  arrayUnion,
+  addDoc,
  } from "firebase/firestore";
 
 
@@ -111,19 +112,31 @@ export async function userSchedule(user_token){
   
 }
 
-export async function addEvent(user_token, title, start, end, category, point_value, color, repetition){
-  const docRef = doc(db, "event", user_token)
+export async function addEvent(user_token, title, startDate, startTime, endDate, endTime, location, category, point_value, color, repetition){
+  const docRef = doc(db, "events", user_token)
+  const data={
+    title: title,
+    startDate: startDate,
+    startTime: startTime,
+    endDate: endDate,
+    endTime: endTime,
+    location: location,
+    category: category,
+    point_value: point_value,
+    color: color,
+    repetition: repetition
+  }  
   try {
-    setDoc(docRef, {
-      title: title,
-      start: start,
-      end: end,
-      category: category,
-      point_value: point_value,
-      color: color,
-      repetition: repetition
-    });
-    console.log("Event doc written with ID: ", docRef.id)
+    const querySnapShot = await getDoc(doc(db, "events", user_token));
+    if(!querySnapShot.exists()){
+      setDoc(docRef, {
+        event: []
+      })
+    }
+  
+    updateDoc(docRef,
+        {event: arrayUnion(data)})
+      console.log("Event doc written with ID: ", docRef.id);
   } catch (e) {
     console.error("Error adding event: ", e);
   }
