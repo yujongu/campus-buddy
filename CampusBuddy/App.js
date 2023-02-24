@@ -9,6 +9,7 @@ import HomeScreen from "./BottomTabContainer";
 import SignInScreen from "./screens/SignInScreen";
 import SignUpScreen from "./screens/SignUpScreen";
 import User_profile from "./screens/User_profileScreen";
+import SettingsScreen from './screens/SettingsScreen';
 import { auth } from './firebaseConfig';
 
 const Stack = createNativeStackNavigator();
@@ -36,6 +37,11 @@ export default function App() {
           <Stack.Screen
             name="user_profile"
             component={User_profile}
+            options={{headerShown: false}}
+          />
+          <Stack.Screen
+            name="Settings"
+            component={SettingsScreen}
             options={{headerShown: false}}
           />
         </Stack.Navigator>

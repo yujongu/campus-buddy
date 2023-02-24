@@ -162,23 +162,11 @@ export default function ProfileScreen({ navigation, route }) {
           </View>
       </Modal>
       <Text>{auth.currentUser?.uid}</Text>
-      <TextInput
-        style={styles.input}
-        placeholder="Enter new Username"
-        value={newId}
-        onChangeText={(text) => setNewId(text)}
-      />
+  
       <Text>Current Id: {id}</Text>
-      <Button title="Change Username" onPress={handleChangeId} />
+      <Button title="Settings" onPress={() => navigation.navigate("Settings")} />
       <Button title="Sign Out" onPress={handleSignOut} />
       <Button title="Friend list" onPress={() => setVisible(!visible)} />
-      <TextInput
-        style={styles.input}
-        placeholder="Enter Password"
-        value={password}
-        onChangeText={(text) => setPassword(text)}
-        secureTextEntry={true}
-      />
       <Button title="Delete Account" onPress={handleDeleteAccount} />
     </View>
   );
