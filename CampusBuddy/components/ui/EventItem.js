@@ -23,11 +23,12 @@ export default class EventItem extends React.Component {
   render() {
     const { category, day, startTime, endTime, title, location, host } =
       this.props;
-
     let nHeight =
       category == "Empty"
         ? 0
         : dailyHeight * this.calculateEventHeight(startTime, endTime);
+
+    let startHeight = category == "Empty" ? 0 : 30 - startTime.getMinutes();
 
     return category == "Empty" ? (
       <View
@@ -48,7 +49,7 @@ export default class EventItem extends React.Component {
         style={{
           position: "absolute",
           left: day * dailyWidth,
-          top: dailyHeight,
+          top: dailyHeight - startHeight,
           width: dailyWidth * 0.9,
           height: nHeight,
           justifyContent: "center",
