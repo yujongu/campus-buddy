@@ -14,6 +14,7 @@ import {
   Modal,
   Animated,
   TextInput,
+  KeyboardAvoidingView
 } from "react-native";
 import DateTimePicker from '@react-native-community/datetimepicker';
 import DropDownPicker from 'react-native-dropdown-picker';
@@ -720,7 +721,8 @@ export default class App extends Component {
                   onChangeText={(text) => this.setEndTime(text)}
                 />
               </View>
-              <Button title="Create new event" onPress={()=>this.submitEvent(eventColor)} />
+              <Button title="Create new event" onPress={()=>{this.submitEvent(eventColor), this.setState({createEventVisible: false})}
+               } />
             </View>
           </View>
         </Modal>
@@ -922,7 +924,7 @@ class ScrollViewVerticallySynced extends React.Component {
 }
 
 const displayEvents = () => {
-  return (
+ /* return (
     <EventItem
     category="School Courses"
     day={5}
@@ -932,7 +934,7 @@ const displayEvents = () => {
     location={"test"}
     color={"#8b9cb5"}
   />
-  )
+  )*/
   
 }
 
@@ -1065,10 +1067,11 @@ const styles = StyleSheet.create({
   },
   modal: {
     backgroundColor: "white",
-    width: 300,
+    width: 350,
     height: 450,
     justifyContent: "center",
     alignItems: "center",
+    bottom:100,
   },
   header_text: {
     color: "white",
