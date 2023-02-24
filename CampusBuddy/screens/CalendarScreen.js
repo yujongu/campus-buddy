@@ -435,7 +435,7 @@ export default class App extends Component {
                 2. Sign in to your University account{"\n"}
                 3. Click the menu --> Personal Schedule{"\n"}
                 4. Export --> Export CSV{"\n"}
-          </Text>*/}
+                </Text>*/}
               <Button
                 title="Download schedule"
                 onPress={() =>
@@ -453,6 +453,9 @@ export default class App extends Component {
                 title="Holiday settings"
                 onPress={this.setHolidaySettings}
               />
+              <Button
+                title="Compare schedule"
+                ></Button>
               <Button
                 title="Close modal"
                 onPress={() => {

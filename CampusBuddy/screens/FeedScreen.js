@@ -4,7 +4,7 @@ import { Button, StyleSheet, Text, View } from "react-native";
 export default function FeedScreen({ navigation, route }) {
   return (
     <View style={styles.container}>
-      <Text>This is feed screen</Text>
+      <Text>This is feed screen.</Text>
       <StatusBar style="auto" />
     </View>
   );
