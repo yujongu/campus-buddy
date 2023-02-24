@@ -38,7 +38,7 @@ export default class NotificationScreen extends Component{
       })
       //remove to_request from from_user
       updateDoc(remove_alert, {
-        from_request: arrayRemove(user+"/"+"friend")
+        to_request: arrayRemove(user+"/"+"friend")
       })
       Alert.alert("Accepted","Now you guys are friends")
     } catch (e) {
@@ -51,7 +51,7 @@ export default class NotificationScreen extends Component{
     const remove_to = doc(db, "requests", user)
     try{
       updateDoc(remove_alert, {
-        from_request: arrayRemove(user+"/"+"friend")
+        to_request: arrayRemove(user+"/"+"friend")
       })
       updateDoc(remove_to, {
         from_request: arrayRemove(auth.currentUser?.email+"/"+"friend")
