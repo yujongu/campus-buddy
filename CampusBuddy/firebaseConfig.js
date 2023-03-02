@@ -55,7 +55,9 @@ export async function createUser(username, first, last, email, password) {
         last: last,
         email: email,
         password: password,
-        points: 0
+        points: 0,
+        points_privacy: false,
+        calendar_privacy: false
       })
       //initialize a user in db/requests
       setDoc(doc(db, "requests", userCredential.user.email), {

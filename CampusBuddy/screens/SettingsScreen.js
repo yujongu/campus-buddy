@@ -7,9 +7,7 @@ import {
   TextInput,
   View,
   Text,
-  Image,
-  KeyboardAvoidingView,
-  Keyboard,
+  Switch,
   TouchableOpacity,
   ScrollView,
   Button,
@@ -20,6 +18,31 @@ export default function SettingsScreen({ navigation, route })  {
   const [newId, setNewId] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [id, setId] = useState("");
+  const [isCalendarPublic, setCalendar] = useState(false);
+  const [isPointsPublic, setPoints] = useState(false);
+  const toggleCalendarSwitch = () => {
+    setCalendar(previousState => !previousState);
+    const userDocRef = doc(db, "users", auth.currentUser.uid);
+    updateDoc(userDocRef, { calendar_privacy: isCalendarPublic })
+      .then(() => {
+        console.log("Calendar privacy updated successfully.");
+      })
+      .catch((error) => {
+        console.error("Error updating calendar privacy:", error);
+      });
+  }
+
+  const togglePointsSwitch = () => {
+    setPoints(previousState => !previousState);
+    const userDocRef = doc(db, "users", auth.currentUser.uid);
+    updateDoc(userDocRef, { points_privacy: isPointsPublic })
+      .then(() => {
+        console.log("Points privacy updated successfully.");
+      })
+      .catch((error) => {
+        console.error("Error updating points privacy:", error);
+      });
+  }
 
   // const handleChangeId = () => {
   //   const userDocRef = doc(db, "users", auth.currentUser.uid);
@@ -64,11 +87,14 @@ export default function SettingsScreen({ navigation, route })  {
         console.error("Error updating password:", error);
       });
   }
+
   useEffect(() => {
     const userDocRef = doc(db, "users", auth.currentUser.uid);
     const unsubscribe = onSnapshot(userDocRef, (doc) => {
       if (doc.exists()) {
         setId(doc.data().id);
+        setCalendar(doc.data().calendar_privacy);
+        setCalendar(doc.data().points_privacy);
       } else {
         console.log("No such document!");
       }
@@ -140,7 +166,56 @@ export default function SettingsScreen({ navigation, route })  {
           <Text style={styles.buttonTextStyle}>Save</Text>
         </TouchableOpacity>
         </View>
-
+        <View style={{
+          flexDirection: "row",
+          alignItems: "center",
+          paddingLeft: 20
+          }}>
+          <Text style={{
+            paddingTop:30,
+            paddingBottom:5,
+            paddingLeft:40,
+            paddingRight: 10,
+            fontSize: 12}}
+            >
+            Calendar Public:
+          </Text>
+          <Switch
+            trackColor={{false: '#767577', true: '#477A74'}}
+            thumbColor={isCalendarPublic ? '#DFE0DF' : '#f4f3f4'}
+            ios_backgroundColor="#3e3e3e"
+            onValueChange={toggleCalendarSwitch}
+            value={isCalendarPublic}
+            style={{
+              marginTop:20,
+            }}
+          />
+        </View>
+        <View style={{
+          flexDirection: "row",
+          alignItems: "center",
+          paddingLeft: 35
+          }}>
+          <Text style={{
+            paddingTop:30,
+            paddingBottom:5,
+            paddingLeft:40,
+            paddingRight: 10,
+            fontSize: 12}}
+            >
+            Points Public:
+          </Text>
+          <Switch
+            trackColor={{false: '#767577', true: '#477A74'}}
+            thumbColor={isPointsPublic ? '#DFE0DF' : '#f4f3f4'}
+            ios_backgroundColor="#3e3e3e"
+            onValueChange={togglePointsSwitch}
+            value={isPointsPublic}
+            style={{
+              marginTop:20,
+            }}
+          />
+        </View>
         <TouchableOpacity
           style={styles.buttonStyle}
           activeOpacity={0.5}
