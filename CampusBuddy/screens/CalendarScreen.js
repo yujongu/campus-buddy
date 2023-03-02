@@ -26,7 +26,7 @@ import Icon from "react-native-vector-icons/FontAwesome";
 import FeatherIcon from "react-native-vector-icons/Feather";
 import TimeTableView, { genTimeBlock } from "react-native-timetable";
 import { addSchedule, userList, addEvent } from "../firebaseConfig";
-import { auth, db, userSchedule } from "../firebaseConfig";
+import { auth, db, userSchedule, getUserEvents } from "../firebaseConfig";
 import EventItem from "../components/ui/EventItem";
 import { IconButton } from "@react-native-material/core";
 import { async } from "@firebase/util";
@@ -102,7 +102,7 @@ export default class App extends Component {
   async componentDidMount() {
     const res = await userSchedule(auth.currentUser?.uid);
     const result = [];
-
+    
     //Set the calendar UI start date
     let tempDate = new Date();
     tempDate.setDate(tempDate.getDate() - tempDate.getDay());
@@ -120,6 +120,22 @@ export default class App extends Component {
         result.push(temp);
       });
     }
+    
+    // Getting events from database
+    const events = await getUserEvents(auth.currentUser?.uid);
+    if (events != null) {
+      for (let i = 0; i < events["event"].length; i++) {
+        const temp = {
+          title: events["event"][i]["title"],
+          startTime: genTimeBlock(this.convertDay( events["event"][i]["startDate"]), parseInt( events["event"][i]["startTime"].substring(0,2), 10 ), parseInt( events["event"][i]["startTime"].substring(4,6), 10 )),
+          endTime: genTimeBlock(this.convertDay( events["event"][i]["endDate"]), parseInt( events["event"][i]["endTime"].substring(0,2), 10 ), parseInt( events["event"][i]["endTime"].substring(4,6), 10 )),
+          location: events["event"][i]["location"],
+          color: events["event"][i]["color"],
+        }
+        result.push(temp);
+      }
+    }
+
     this.setState({ list: result });
     const userDocRef = doc(db, "users", auth.currentUser.uid);
     onSnapshot(userDocRef, (doc) => {
@@ -164,6 +180,7 @@ export default class App extends Component {
     }
     return dayStr;
   }
+  
   submitEvent = (eventColor) => {
     addEvent(auth.currentUser?.uid, this.title,this.startDate, this.startTime, this.endDate, this.endTime, this.location, "test", 10, eventColor, 0);
     this.state.list.push({
@@ -528,12 +545,7 @@ export default class App extends Component {
             }}
           >
             <View style={styles.modalView}>
-              {/*<Text style={styles.title}>
-                1. Click the Button{"\n"}
-                2. Sign in to your University account{"\n"}
-                3. Click the menu --> Personal Schedule{"\n"}
-                4. Export --> Export CSV{"\n"}
-          </Text>*/}
+              {/* Modal for calendar options */}
               <Button
                 title="Download schedule"
                 onPress={() =>
@@ -560,6 +572,7 @@ export default class App extends Component {
             </View>
           </View>
         </Modal>
+        {/* Create event modal */}
         <Modal
           animationType="slide"
           visible={this.state.createEventVisible}
@@ -583,10 +596,12 @@ export default class App extends Component {
                   <Icon name="times" size={20} color="#2F4858" />
                 </View>
               </TouchableOpacity>
+              {/* Creating a new View component with styles.row for each row in the modal for formatting */}
               <View style={styles.row}>
                 <Text style={styles.header_text}>Create Event</Text>
               </View>
               <View style={styles.row}>
+              {/* New row for color picker and title input */}
               <TouchableOpacity
                 onPress={() => this.setState({colorPicker: true})}
               >
@@ -807,7 +822,7 @@ export default class App extends Component {
         >
           <Icon name="plus-circle" size={50} />
         </TouchableOpacity>
-        {/* Month Header Bar */}
+        
         <View style={styles.monthHeaderContainer}>
           <IconButton
             onPress={this.goPrevWeek}
@@ -915,7 +930,6 @@ class ScrollViewVerticallySynced extends React.Component {
         showsVerticalScrollIndicator={false}
       >
         {populateRows(name, eventList)}
-       {displayEvents()}
         
       </ScrollView>
     );

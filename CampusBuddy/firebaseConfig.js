@@ -144,6 +144,20 @@ export async function addEvent(user_token, title, startDate, startTime, endDate,
   }
 }
 
+export async function getUserEvents(user_token){
+  try{
+    const querySnapShot = await getDoc(doc(db, "events", user_token));
+    if(querySnapShot.exists()){
+      const result = querySnapShot.data();
+      return result;
+    }else{
+      return null;
+    }
+  }catch(error){
+    alert("Error getting user events: "+error);
+  }
+  
+}
 export async function userList(){
   var result = [];
   try{
