@@ -19,7 +19,6 @@ export default class EventItem extends React.Component {
     let duration = 60 * hourDiff + minuteDiff;
     return duration / 60;
   }
-  
 
   render() {
     const { category, day, startTime, endTime, title, location, host, color } =
@@ -69,4 +68,3 @@ export default class EventItem extends React.Component {
     );
   }
 }
-

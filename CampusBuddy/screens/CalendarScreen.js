@@ -14,11 +14,11 @@ import {
   Modal,
   Animated,
   TextInput,
-  KeyboardAvoidingView
+  KeyboardAvoidingView,
 } from "react-native";
-import DateTimePicker from '@react-native-community/datetimepicker';
-import DropDownPicker from 'react-native-dropdown-picker';
-import {ColorWheel} from "../components/ui/ColorWheel";
+import DateTimePicker from "@react-native-community/datetimepicker";
+import DropDownPicker from "react-native-dropdown-picker";
+import { ColorWheel } from "../components/ui/ColorWheel";
 import { SelectList } from "react-native-dropdown-select-list";
 import { Colors } from "../constants/colors";
 import * as DocumentPicker from "expo-document-picker";
@@ -32,7 +32,13 @@ import { IconButton } from "@react-native-material/core";
 import { async } from "@firebase/util";
 import TopHeaderDays from "../components/ui/TopHeaderDays";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { doc, onSnapshot, updateDoc, getDoc, Timestamp } from "firebase/firestore";
+import {
+  doc,
+  onSnapshot,
+  updateDoc,
+  getDoc,
+  Timestamp,
+} from "firebase/firestore";
 
 const MonthName = [
   "January",
@@ -100,14 +106,14 @@ export default class App extends Component {
   }
 
   async componentDidMount() {
-    const res = await userSchedule(auth.currentUser?.uid);
-    const result = [];
-    
     //Set the calendar UI start date
     let tempDate = new Date();
     tempDate.setDate(tempDate.getDate() - tempDate.getDay());
     this.setState({ startDay: tempDate });
 
+    // Getting schedules from database
+    const res = await userSchedule(auth.currentUser?.uid);
+    const result = [];
     if (res != null) {
       res["things"].map((element) => {
         const sp = element.data.split(",");
@@ -120,18 +126,26 @@ export default class App extends Component {
         result.push(temp);
       });
     }
-    
+
     // Getting events from database
     const events = await getUserEvents(auth.currentUser?.uid);
     if (events != null) {
       for (let i = 0; i < events["event"].length; i++) {
         const temp = {
           title: events["event"][i]["title"],
-          startTime: genTimeBlock(this.convertDay( events["event"][i]["startDate"]), parseInt( events["event"][i]["startTime"].substring(0,2), 10 ), parseInt( events["event"][i]["startTime"].substring(4,6), 10 )),
-          endTime: genTimeBlock(this.convertDay( events["event"][i]["endDate"]), parseInt( events["event"][i]["endTime"].substring(0,2), 10 ), parseInt( events["event"][i]["endTime"].substring(4,6), 10 )),
+          startTime: genTimeBlock(
+            this.convertDay(events["event"][i]["startDate"]),
+            parseInt(events["event"][i]["startTime"].substring(0, 2), 10),
+            parseInt(events["event"][i]["startTime"].substring(3, 5), 10)
+          ),
+          endTime: genTimeBlock(
+            this.convertDay(events["event"][i]["endDate"]),
+            parseInt(events["event"][i]["endTime"].substring(0, 2), 10),
+            parseInt(events["event"][i]["endTime"].substring(3, 5), 10)
+          ),
           location: events["event"][i]["location"],
           color: events["event"][i]["color"],
-        }
+        };
         result.push(temp);
       }
     }
@@ -155,7 +169,7 @@ export default class App extends Component {
 
   convertDay = (day) => {
     var dayStr = "";
-    switch(day){
+    switch (day) {
       case "0":
         dayStr = "SUN";
         break;
@@ -172,50 +186,69 @@ export default class App extends Component {
         dayStr = "THU";
         break;
       case "5":
-        dayStr= "FRI";
+        dayStr = "FRI";
         break;
       case "6":
-        dayStr= "SAT";
-        break;    
+        dayStr = "SAT";
+        break;
     }
     return dayStr;
-  }
-  
+  };
+
   submitEvent = (eventColor) => {
-    addEvent(auth.currentUser?.uid, this.title,this.startDate, this.startTime, this.endDate, this.endTime, this.location, "test", 10, eventColor, 0);
+    addEvent(
+      auth.currentUser?.uid,
+      this.title,
+      this.startDate,
+      this.startTime,
+      this.endDate,
+      this.endTime,
+      this.location,
+      "test",
+      10,
+      eventColor,
+      0
+    );
     this.state.list.push({
       title: this.title,
-      startTime: genTimeBlock(this.convertDay(this.startDate), parseInt(this.startTime.substring(0,2), 10 ), parseInt(this.startTime.substring(4,6), 10 )),
-      endTime: genTimeBlock(this.convertDay(this.endDate), parseInt(this.endTime.substring(0,2), 10 ), parseInt(this.endTime.substring(4,6), 10 )),
+      startTime: genTimeBlock(
+        this.convertDay(this.startDate),
+        parseInt(this.startTime.substring(0, 2), 10),
+        parseInt(this.startTime.substring(4, 6), 10)
+      ),
+      endTime: genTimeBlock(
+        this.convertDay(this.endDate),
+        parseInt(this.endTime.substring(0, 2), 10),
+        parseInt(this.endTime.substring(4, 6), 10)
+      ),
       location: this.location,
       color: eventColor,
     });
-  }
-  setTitle =(title) => {
-    this.title=title;
+  };
+  setTitle = (title) => {
+    this.title = title;
   };
 
-  setLocation =(location) => {
+  setLocation = (location) => {
     this.location = location;
   };
-  
-  setStartDate =(date) => {
+
+  setStartDate = (date) => {
     this.startDate = date;
-  }
-
-  setStartTime =(time) => {
-    this.startTime= time;
   };
 
-  setEndDate =(date) => {
+  setStartTime = (time) => {
+    this.startTime = time;
+  };
+
+  setEndDate = (date) => {
     this.endDate = date;
-  }
-
-  setEndTime =(time) => {
-    this.endTime= time;
   };
 
-  
+  setEndTime = (time) => {
+    this.endTime = time;
+  };
+
   scrollViewRef = (ref) => {
     this.timetableRef = ref;
   };
@@ -230,9 +263,9 @@ export default class App extends Component {
   };
 
   updateColor = (color) => {
-    this.setState({eventColor: color})
-    this.setState({colorPicker: false})
-  }
+    this.setState({ eventColor: color });
+    this.setState({ colorPicker: false });
+  };
 
   setHolidaySettings = () => {
     this.setState({ visible: false });
@@ -242,36 +275,36 @@ export default class App extends Component {
 
   setOpen = () => {
     this.setState({
-      openList: !this.state.openList
+      openList: !this.state.openList,
     });
-  }
+  };
   setDateOpen = () => {
     this.setState({
-      openDate: !this.state.openList
+      openDate: !this.state.openList,
     });
-  }
+  };
 
-  setValue = (value) =>{
+  setValue = (value) => {
     this.setState({
-      repetition: value
+      repetition: value,
     });
     this.setState({
-      openList: false
+      openList: false,
     });
-  }
+  };
 
-  setItems = (items) =>{
+  setItems = (items) => {
     this.setState({
-      repetitionItems: items
+      repetitionItems: items,
     });
-  }
+  };
 
   setRepetition = (rep) => {
     this.setState({ repetition: rep });
     this.setState({
-      openList: false
+      openList: false,
     });
-  }
+  };
 
   clickHandler = () => {
     this.setState({ visible: true });
@@ -284,19 +317,21 @@ export default class App extends Component {
   };
 
   addEventToCalendar = async () => {
-    const querySnapShot = await getDoc(doc(db, "events", auth.currentUser?.uid));
-    if(querySnapShot.exists()){
+    const querySnapShot = await getDoc(
+      doc(db, "events", auth.currentUser?.uid)
+    );
+    if (querySnapShot.exists()) {
       const result = querySnapShot.data();
-      console.log(result["start"].toDate())
+      console.log(result["start"].toDate());
       this.state.testlist.push({
         title: result["title"],
         startTime: result["start"],
         endTime: result["end"],
         location: result["location"],
       });
-      console.log(this.state.list)
+      console.log(this.state.list);
     }
-  }
+  };
 
   openDocumentFile = async () => {
     const res = await DocumentPicker.getDocumentAsync({});
@@ -521,10 +556,24 @@ export default class App extends Component {
   };
 
   render() {
-    const { title, location, openList, repetitionItems, colorPicker, eventColor, startDay, startDate, startTime, endDate, endTime, repetition, openDate } = this.state;
+    const {
+      title,
+      location,
+      openList,
+      repetitionItems,
+      colorPicker,
+      eventColor,
+      startDay,
+      startDate,
+      startTime,
+      endDate,
+      endTime,
+      repetition,
+      openDate,
+    } = this.state;
     if (colorPicker) {
-      console.log("colorpicked")
-      return <ColorWheel updateColor={this.updateColor}/>
+      console.log("colorpicked");
+      return <ColorWheel updateColor={this.updateColor} />;
     }
     return (
       <SafeAreaView style={{ flex: 1 }}>
@@ -601,21 +650,20 @@ export default class App extends Component {
                 <Text style={styles.header_text}>Create Event</Text>
               </View>
               <View style={styles.row}>
-              {/* New row for color picker and title input */}
-              <TouchableOpacity
-                onPress={() => this.setState({colorPicker: true})}
-              >
-                <View style={{paddingTop:5, paddingRight:15}}>
-                  <Icon name="square" size={40} color={eventColor} />
-                </View>
-              </TouchableOpacity>
-              <TextInput 
-                style={styles.titleInputStyle}
-                placeholder="Add title"
-                placeholderTextColor="#8b9cb5"
-                onChangeText={(text) => this.setTitle(text)}
-              >
-              </TextInput>
+                {/* New row for color picker and title input */}
+                <TouchableOpacity
+                  onPress={() => this.setState({ colorPicker: true })}
+                >
+                  <View style={{ paddingTop: 5, paddingRight: 15 }}>
+                    <Icon name="square" size={40} color={eventColor} />
+                  </View>
+                </TouchableOpacity>
+                <TextInput
+                  style={styles.titleInputStyle}
+                  placeholder="Add title"
+                  placeholderTextColor="#8b9cb5"
+                  onChangeText={(text) => this.setTitle(text)}
+                ></TextInput>
               </View>
               <View style={styles.row}>
                 <View style={{ flex: 1, paddingTop: 10 }}>
@@ -634,9 +682,9 @@ export default class App extends Component {
                 <View style={{ flex: 1, paddingTop: 10 }}>
                   <Icon name="repeat" size={20} color="#2F4858" />
                 </View>
-                <View style={{flex:8}}>
-                {/*dropdown selection does not work :(*/}
-                <DropDownPicker
+                <View style={{ flex: 8 }}>
+                  {/*dropdown selection does not work :(*/}
+                  <DropDownPicker
                     open={openList}
                     value={repetition}
                     items={repetitionItems}
@@ -666,10 +714,10 @@ export default class App extends Component {
                     borderWidth: 1,
                     borderColor: "#8b9cb5",
                     marginLeft: 10,
-                    marginTop:5,
-                    width:50,
-                    height:30,
-                    textAlign: 'center',
+                    marginTop: 5,
+                    width: 50,
+                    height: 30,
+                    textAlign: "center",
                   }}
                   value={startDate}
                   onChangeText={(text) => this.setStartDate(text)}
@@ -682,10 +730,10 @@ export default class App extends Component {
                     borderWidth: 1,
                     borderColor: "#8b9cb5",
                     marginLeft: 10,
-                    marginTop:5,
-                    width:100,
-                    height:30,
-                    textAlign: 'center',
+                    marginTop: 5,
+                    width: 100,
+                    height: 30,
+                    textAlign: "center",
                   }}
                   value={startTime}
                   onChangeText={(text) => this.setStartTime(text)}
@@ -710,10 +758,10 @@ export default class App extends Component {
                     borderWidth: 1,
                     borderColor: "#8b9cb5",
                     marginLeft: 10,
-                    marginTop:5,
-                    width:50,
-                    height:30,
-                    textAlign: 'center',
+                    marginTop: 5,
+                    width: 50,
+                    height: 30,
+                    textAlign: "center",
                   }}
                   value={endDate}
                   onChangeText={(text) => this.setEndDate(text)}
@@ -726,17 +774,22 @@ export default class App extends Component {
                     borderWidth: 1,
                     borderColor: "#8b9cb5",
                     marginLeft: 10,
-                    marginTop:5,
-                    width:100,
-                    height:30,
-                    textAlign: 'center',
+                    marginTop: 5,
+                    width: 100,
+                    height: 30,
+                    textAlign: "center",
                   }}
                   value={endTime}
                   onChangeText={(text) => this.setEndTime(text)}
                 />
               </View>
-              <Button title="Create new event" onPress={()=>{this.submitEvent(eventColor), this.setState({createEventVisible: false})}
-               } />
+              <Button
+                title="Create new event"
+                onPress={() => {
+                  this.submitEvent(eventColor),
+                    this.setState({ createEventVisible: false });
+                }}
+              />
             </View>
           </View>
         </Modal>
@@ -822,7 +875,7 @@ export default class App extends Component {
         >
           <Icon name="plus-circle" size={50} />
         </TouchableOpacity>
-        
+
         <View style={styles.monthHeaderContainer}>
           <IconButton
             onPress={this.goPrevWeek}
@@ -930,14 +983,13 @@ class ScrollViewVerticallySynced extends React.Component {
         showsVerticalScrollIndicator={false}
       >
         {populateRows(name, eventList)}
-        
       </ScrollView>
     );
   }
 }
 
 const displayEvents = () => {
- /* return (
+  /* return (
     <EventItem
     category="School Courses"
     day={5}
@@ -948,8 +1000,7 @@ const displayEvents = () => {
     color={"#8b9cb5"}
   />
   )*/
-  
-}
+};
 
 // If name is Time, populate the hours 0 ~ 24.
 // TODO: Need to set which time the time's going to start.
@@ -1084,7 +1135,7 @@ const styles = StyleSheet.create({
     height: 450,
     justifyContent: "center",
     alignItems: "center",
-    bottom:100,
+    bottom: 100,
   },
   header_text: {
     color: "white",
