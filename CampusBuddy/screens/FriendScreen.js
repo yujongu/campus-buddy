@@ -40,6 +40,7 @@ export default class FriendScreen extends Component {
     const subscriber = onSnapshot(
       doc(db, "friend_list", auth.currentUser?.email),
       (doc) => {
+        //this.setState({list : new list always})
         data = doc.data()["friends"];
         this.setState({ list: data });
       }
