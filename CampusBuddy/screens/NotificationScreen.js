@@ -28,11 +28,11 @@ export default class NotificationScreen extends Component{
       console.log(auth.currentUser?.email)
       //add to own friend list
       updateDoc(docRef, {
-        friends: arrayUnion(user)
+        friends: arrayUnion({user: user, group: []})
       });
       //add to from_user's friend list
       updateDoc(docRef_to, {
-        friends: arrayUnion(auth.currentUser?.email)
+        friends: arrayUnion({user: auth.currentUser?.email, group: []})
       })
       //remove to_request from user who sent the request
       updateDoc(remove_to, {

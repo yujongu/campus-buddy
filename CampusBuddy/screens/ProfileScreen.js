@@ -11,9 +11,6 @@ import { SHA256 } from 'crypto-js';
 export default function ProfileScreen({ navigation, route }) {
   const [newId, setNewId] = useState("");
   const [id, setId] = useState("");
-  const [visible, setVisible] = useState(false);
-  const [list, setList] = useState(["No friends"]);
-  const [loading, setLoading] = useState(true);
   const [password, setPassword] = useState("");
 
   const handleSignOut = () => {
@@ -65,15 +62,6 @@ export default function ProfileScreen({ navigation, route }) {
       });
   };
   useEffect(() => {
-    const subscriber = onSnapshot(doc(db, "friend_list", auth.currentUser?.email), (doc) => {
-      if(doc.data()['friends'] !== null){
-        setList(doc.data()['friends'])
-        setLoading(false)
-      }else{
-        setList(["No friends yet"])
-        setLoading(false)
-      }
-    })
     const userDocRef = doc(db, "users", auth.currentUser.uid);
     const unsubscribe = onSnapshot(userDocRef, (doc) => {
       if (doc.exists()) {
@@ -86,87 +74,15 @@ export default function ProfileScreen({ navigation, route }) {
       unsubscribe();
     };
   }, []);
-  const removeFriend = (item) => {
-    const me = doc(db, "friend_list", auth.currentUser?.email)
-    const friend = doc(db, "friend_list", item)
-    try{
-      updateDoc(me, {
-        friends: arrayRemove(item)
-      })
-      updateDoc(friend, {
-        friends: arrayRemove(auth.currentUser?.email)
-      })
-      alert(item+" has been unfriended")
-    } catch (e) {
-      console.error("Cancel friend: ", e);
-    }
-  }
-
-  const renderItem = (item) =>{
-    return (
-      <View style={styles.item}>
-        <TouchableOpacity onPress={(() => navigation.navigate("user_profile", {
-          email: item
-        }))}>
-          <Text style={{color: 'black', fontSize: 15}}>{item}</Text>
-        </TouchableOpacity>
-        <View style={{flexDirection: "row"}}>
-          <TouchableOpacity onPress={() => Alert.alert("Unfriend", "Do you really want to friend?", [
-            {text: 'Yes', onPress: () => removeFriend(item)},
-            {text: 'Cancel', style: 'cancel'}
-          ], {cancelable: false})}>
-            <Text>Unfriend</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-    )
-  }
-
+ 
   return (
     <View style={styles.container}>
-      <Modal
-          animationType="slide"
-          transparent={true}
-          visible={visible}
-          onRequestClose={() => {
-            setVisible(!visible)
-          }}
-        >
-          <View
-            style={{
-              flex: 1,
-              flexDirection: "column",
-              justifyContent: "center",
-              alignItems: "center",
-            }}
-          >
-            <View style={{width: '70%', height:'70%', backgroundColor: 'white'}}>
-              {
-                loading ?
-                <ActivityIndicator />
-                :
-                <FlatList 
-                  data={list}
-                  renderItem={({item}) => 
-                    renderItem(item)
-                  }
-                />
-              }
-            <Pressable
-                style={[styles.button, styles.buttonClose]}
-                onPress={() => setVisible(!visible)}
-            >
-                <Text style={styles.textStyle}>Close</Text>
-            </Pressable> 
-            </View>
-          </View>
-      </Modal>
       <Text>{auth.currentUser?.uid}</Text>
   
       <Text>Current Id: {id}</Text>
       <Button title="Settings" onPress={() => navigation.navigate("Settings")} />
       <Button title="Sign Out" onPress={handleSignOut} />
-      <Button title="Friend list" onPress={() => setVisible(!visible)} />
+      <Button title="Friend page" onPress={() => navigation.navigate("Friend")} />
       <TextInput
         style={styles.input}
         placeholder="Enter Password"
