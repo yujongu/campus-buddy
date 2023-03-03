@@ -24,15 +24,13 @@ export default class NotificationScreen extends Component{
     const remove_alert = doc(db, "requests", auth.currentUser?.email)
     const remove_to = doc(db, "requests", user)
     try {
-      console.log(user)
-      console.log(auth.currentUser?.email)
       //add to own friend list
       updateDoc(docRef, {
-        friends: arrayUnion({user: user, group: []})
+        friends: arrayUnion({user: user, group: [], favorite: false})
       });
       //add to from_user's friend list
       updateDoc(docRef_to, {
-        friends: arrayUnion({user: auth.currentUser?.email, group: []})
+        friends: arrayUnion({user: auth.currentUser?.email, group: [], favorite: false})
       })
       //remove to_request from user who sent the request
       updateDoc(remove_to, {
