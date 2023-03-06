@@ -295,6 +295,11 @@ export default class App extends Component {
       //   location: this.location,
       //   color: eventColor,
       // });
+
+      this.setState({ eventStartDate: new Date() });
+      this.setState({ eventStartTime: new Date() });
+      this.setState({ eventEndDate: new Date() });
+      this.setState({ eventEndTime: new Date() });
       this.setLocation("");
       this.setTitle("");
     }
