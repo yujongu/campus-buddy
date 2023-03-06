@@ -40,6 +40,7 @@ import {
   getDoc,
   Timestamp,
 } from "firebase/firestore";
+import { EventCategory } from "../constants/eventCategory";
 
 const MonthName = [
   "January",
@@ -106,7 +107,7 @@ export default class App extends Component {
       endDate: null,
       endTime: null,
       // This is the starting date for the current calendar UI.
-      startDay: new Date(),
+      weekViewStartDate: new Date(),
     };
   }
 
@@ -114,7 +115,7 @@ export default class App extends Component {
     //Set the calendar UI start date
     let tempDate = new Date();
     tempDate.setDate(tempDate.getDate() - tempDate.getDay());
-    this.setState({ startDay: tempDate });
+    this.setState({ weekViewStartDate: tempDate });
 
     // Getting schedules from database
     const res = await userSchedule(auth.currentUser?.uid);
@@ -123,6 +124,7 @@ export default class App extends Component {
       res["things"].map((element) => {
         const sp = element.data.split(",");
         const temp = {
+          category: EventCategory.SCHOOLCOURSE,
           title: sp[3],
           startTime: new Date(sp[2]),
           endTime: new Date(sp[0]),
@@ -152,6 +154,7 @@ export default class App extends Component {
         //   color: events["event"][i]["color"],
         // };
         const temp = {
+          category: EventCategory.EVENT,
           title: events["event"][i]["title"],
           startTime: new Date(events["event"][i]["startTime"].seconds * 1000), //multiply 1000 since Javascript uses milliseconds. Timestamp to date.
           endTime: new Date(events["event"][i]["endTime"].seconds * 1000),
@@ -173,7 +176,7 @@ export default class App extends Component {
           let cPref = doc.data().holidayNationPref;
 
           this.setState({ selectedCountryCode: cPref });
-          this.getHolidays(cPref, this.state.startDay.getFullYear());
+          this.getHolidays(cPref, this.state.weekViewStartDate.getFullYear());
         }
       }
     });
@@ -564,8 +567,8 @@ export default class App extends Component {
 
   //navigate through calendar ui
   goPrevWeek = () => {
-    let currYear = this.state.startDay.getFullYear();
-    let tempDate = this.state.startDay;
+    let currYear = this.state.weekViewStartDate.getFullYear();
+    let tempDate = this.state.weekViewStartDate;
     tempDate.setDate(tempDate.getDate() - 7);
     if (
       tempDate.getFullYear() != currYear &&
@@ -573,11 +576,11 @@ export default class App extends Component {
     ) {
       this.getHolidays(this.state.selectedCountryCode, tempDate.getFullYear());
     }
-    this.setState({ startDay: tempDate });
+    this.setState({ weekViewStartDate: tempDate });
   };
   goNextWeek = () => {
-    let currYear = this.state.startDay.getFullYear();
-    let tempDate = this.state.startDay;
+    let currYear = this.state.weekViewStartDate.getFullYear();
+    let tempDate = this.state.weekViewStartDate;
     tempDate.setDate(tempDate.getDate() + 7);
     if (
       tempDate.getFullYear() != currYear &&
@@ -585,7 +588,7 @@ export default class App extends Component {
     ) {
       this.getHolidays(this.state.selectedCountryCode, tempDate.getFullYear());
     }
-    this.setState({ startDay: tempDate });
+    this.setState({ weekViewStartDate: tempDate });
   };
 
   //fetch public holiday
@@ -618,7 +621,7 @@ export default class App extends Component {
 
   storeData = async (value) => {
     this.setState({ selectedCountryCode: value });
-    this.getHolidays(value, this.state.startDay.getFullYear());
+    this.getHolidays(value, this.state.weekViewStartDate.getFullYear());
     await updateDoc(doc(db, "users", auth.currentUser.uid), {
       holidayNationPref: value,
     });
@@ -659,7 +662,7 @@ export default class App extends Component {
       repetitionItems,
       colorPicker,
       eventColor,
-      startDay,
+      weekViewStartDate: weekViewStartDate,
       startDate,
       startTime,
       endDate,
@@ -1003,7 +1006,7 @@ export default class App extends Component {
             icon={(props) => <FeatherIcon name="arrow-left" {...props} />}
           />
           <Text style={{ fontSize: 20 }}>
-            {MonthName[this.state.startDay.getMonth()]}
+            {MonthName[this.state.weekViewStartDate.getMonth()]}
           </Text>
           <IconButton
             onPress={this.goNextWeek}
@@ -1031,37 +1034,37 @@ export default class App extends Component {
                   <TopHeaderDays
                     day={0}
                     holidays={this.state.holidays}
-                    startDay={this.state.startDay}
+                    startDay={this.state.weekViewStartDate}
                   />
                   <TopHeaderDays
                     day={1}
                     holidays={this.state.holidays}
-                    startDay={this.state.startDay}
+                    startDay={this.state.weekViewStartDate}
                   />
                   <TopHeaderDays
                     day={2}
                     holidays={this.state.holidays}
-                    startDay={this.state.startDay}
+                    startDay={this.state.weekViewStartDate}
                   />
                   <TopHeaderDays
                     day={3}
                     holidays={this.state.holidays}
-                    startDay={this.state.startDay}
+                    startDay={this.state.weekViewStartDate}
                   />
                   <TopHeaderDays
                     day={4}
                     holidays={this.state.holidays}
-                    startDay={this.state.startDay}
+                    startDay={this.state.weekViewStartDate}
                   />
                   <TopHeaderDays
                     day={5}
                     holidays={this.state.holidays}
-                    startDay={this.state.startDay}
+                    startDay={this.state.weekViewStartDate}
                   />
                   <TopHeaderDays
                     day={6}
                     holidays={this.state.holidays}
-                    startDay={this.state.startDay}
+                    startDay={this.state.weekViewStartDate}
                   />
                 </View>
               </View>
@@ -1072,6 +1075,7 @@ export default class App extends Component {
                 onScroll={this.scrollEvent}
                 scrollPosition={this.scrollPosition}
                 eventList={this.state.list}
+                weekStartDate={this.state.weekViewStartDate}
               />
             </View>
           </ScrollView>
@@ -1092,7 +1096,7 @@ class ScrollViewVerticallySynced extends React.Component {
   }
 
   render() {
-    const { name, style, onScroll, eventList } = this.props;
+    const { name, style, onScroll, eventList, weekStartDate } = this.props;
     return (
       <ScrollView
         key={name}
@@ -1103,7 +1107,7 @@ class ScrollViewVerticallySynced extends React.Component {
         bounces={false}
         showsVerticalScrollIndicator={false}
       >
-        {populateRows(name, eventList)}
+        {populateRows(name, eventList, weekStartDate)}
       </ScrollView>
     );
   }
@@ -1122,11 +1126,27 @@ const displayEvents = () => {
   />
   )*/
 };
+const makeVisible = (weekStartDate, event) => {
+  //if event is school course, make visible
+  if (event.category == EventCategory.SCHOOLCOURSE) {
+    return true;
+  }
+  //week range start and end
+  let s = weekStartDate;
+  let e = new Date(weekStartDate);
+  e.setDate(e.getDate() + 6);
+
+  //if event is within the week time frame, make visible
+  if (event.startTime >= s && event.startTime <= e) {
+    return true;
+  }
+  return false;
+};
 
 // If name is Time, populate the hours 0 ~ 24.
 // TODO: Need to set which time the time's going to start.
 // If name is Days, populate the schedule.
-const populateRows = (name, eventList) =>
+const populateRows = (name, eventList, weekStartDate) =>
   name == "Time"
     ? Array.from(Array(24).keys()).map((index) => (
         <View
@@ -1174,9 +1194,10 @@ const populateRows = (name, eventList) =>
           /> */}
 
           {eventList.map((event) => {
-            return index == event.startTime.getHours() ? (
+            return index == event.startTime.getHours() &&
+              makeVisible(weekStartDate, event) ? (
               <EventItem
-                category="School Courses"
+                category={event.category}
                 day={event.startTime.getDay()}
                 startTime={new Date(event.startTime)}
                 endTime={new Date(event.endTime)}
@@ -1185,7 +1206,8 @@ const populateRows = (name, eventList) =>
                 color={event.color}
               />
             ) : (
-              <EventItem category="Empty" />
+              // <EventItem category="Empty" />
+              <View />
             );
           })}
         </View>
