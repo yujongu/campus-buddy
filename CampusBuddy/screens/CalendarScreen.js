@@ -17,6 +17,7 @@ import {
   KeyboardAvoidingView,
 } from "react-native";
 import DateTimePicker from "@react-native-community/datetimepicker";
+
 import DropDownPicker from "react-native-dropdown-picker";
 import { ColorWheel } from "../components/ui/ColorWheel";
 import { SelectList } from "react-native-dropdown-select-list";
@@ -28,7 +29,7 @@ import TimeTableView, { genTimeBlock } from "react-native-timetable";
 import { addSchedule, userList, addEvent } from "../firebaseConfig";
 import { auth, db, userSchedule, getUserEvents } from "../firebaseConfig";
 import EventItem from "../components/ui/EventItem";
-import { IconButton } from "@react-native-material/core";
+import { even, IconButton } from "@react-native-material/core";
 import { async } from "@firebase/util";
 import TopHeaderDays from "../components/ui/TopHeaderDays";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -96,6 +97,10 @@ export default class App extends Component {
       ],
       openDate: false,
       repetition: 0,
+      eventStartDate: new Date(),
+      eventStartTime: new Date(),
+      eventEndDate: new Date(),
+      eventEndTime: new Date(),
       startDate: null,
       startTime: null,
       endDate: null,
@@ -131,18 +136,25 @@ export default class App extends Component {
     const events = await getUserEvents(auth.currentUser?.uid);
     if (events != null) {
       for (let i = 0; i < events["event"].length; i++) {
+        // const temp = {
+        //   title: events["event"][i]["title"],
+        //   startTime: genTimeBlock(
+        //     this.convertDay(events["event"][i]["startDate"]),
+        //     parseInt(events["event"][i]["startTime"].substring(0, 2), 10),
+        //     parseInt(events["event"][i]["startTime"].substring(3, 5), 10)
+        //   ),
+        //   endTime: genTimeBlock(
+        //     this.convertDay(events["event"][i]["endDate"]),
+        //     parseInt(events["event"][i]["endTime"].substring(0, 2), 10),
+        //     parseInt(events["event"][i]["endTime"].substring(3, 5), 10)
+        //   ),
+        //   location: events["event"][i]["location"],
+        //   color: events["event"][i]["color"],
+        // };
         const temp = {
           title: events["event"][i]["title"],
-          startTime: genTimeBlock(
-            this.convertDay(events["event"][i]["startDate"]),
-            parseInt(events["event"][i]["startTime"].substring(0, 2), 10),
-            parseInt(events["event"][i]["startTime"].substring(3, 5), 10)
-          ),
-          endTime: genTimeBlock(
-            this.convertDay(events["event"][i]["endDate"]),
-            parseInt(events["event"][i]["endTime"].substring(0, 2), 10),
-            parseInt(events["event"][i]["endTime"].substring(3, 5), 10)
-          ),
+          startTime: new Date(events["event"][i]["startTime"].seconds * 1000), //multiply 1000 since Javascript uses milliseconds. Timestamp to date.
+          endTime: new Date(events["event"][i]["endTime"].seconds * 1000),
           location: events["event"][i]["location"],
           color: events["event"][i]["color"],
         };
@@ -196,34 +208,96 @@ export default class App extends Component {
   };
 
   submitEvent = (eventColor) => {
-    addEvent(
-      auth.currentUser?.uid,
-      this.title,
-      this.startDate,
-      this.startTime,
-      this.endDate,
-      this.endTime,
-      this.location,
-      "test",
-      10,
-      eventColor,
-      0
-    );
-    this.state.list.push({
-      title: this.title,
-      startTime: genTimeBlock(
-        this.convertDay(this.startDate),
-        parseInt(this.startTime.substring(0, 2), 10),
-        parseInt(this.startTime.substring(4, 6), 10)
-      ),
-      endTime: genTimeBlock(
-        this.convertDay(this.endDate),
-        parseInt(this.endTime.substring(0, 2), 10),
-        parseInt(this.endTime.substring(4, 6), 10)
-      ),
-      location: this.location,
-      color: eventColor,
-    });
+    // addEvent(
+    //   auth.currentUser?.uid,
+    //   this.title,
+    //   this.startDate,
+    //   this.startTime,
+    //   this.endDate,
+    //   this.endTime,
+    //   this.location,
+    //   "test",
+    //   10,
+    //   eventColor,
+    //   0
+    // );
+
+    if (
+      this.location == undefined ||
+      this.title == undefined ||
+      this.location == "" ||
+      this.title == ""
+    ) {
+      alert("Enter title and location for the event");
+      this.setLocation("");
+      this.setTitle("");
+    } else {
+      var eventSTime = new Date(
+        this.state.eventStartDate.getFullYear(),
+        this.state.eventStartDate.getMonth(),
+        this.state.eventStartDate.getDate(),
+        this.state.eventStartTime.getHours(),
+        this.state.eventStartTime.getMinutes()
+      );
+
+      var eventETime = new Date(
+        this.state.eventEndDate.getFullYear(),
+        this.state.eventEndDate.getMonth(),
+        this.state.eventEndDate.getDate(),
+        this.state.eventEndTime.getHours(),
+        this.state.eventEndTime.getMinutes()
+      );
+
+      addEvent(
+        auth.currentUser?.uid,
+        this.title,
+        eventSTime,
+        eventETime,
+        this.location,
+        "test",
+        10,
+        eventColor,
+        0
+      );
+      // addEvent(
+      //   auth.currentUser?.uid,
+      //   this.title,
+      //   this.state.eventStartDate,
+      //   this.state.eventStartTime,
+      //   this.state.eventEndDate,
+      //   this.state.eventEndTime,
+      //   this.location,
+      //   "test",
+      //   10,
+      //   eventColor,
+      //   0
+      // );
+
+      this.state.list.push({
+        title: this.title,
+        startTime: eventSTime,
+        endTime: eventETime,
+        location: this.location,
+        color: eventColor,
+      });
+      // this.state.list.push({
+      //   title: this.title,
+      //   startTime: genTimeBlock(
+      //     this.convertDay(this.startDate),
+      //     parseInt(this.startTime.substring(0, 2), 10),
+      //     parseInt(this.startTime.substring(4, 6), 10)
+      //   ),
+      //   endTime: genTimeBlock(
+      //     this.convertDay(this.endDate),
+      //     parseInt(this.endTime.substring(0, 2), 10),
+      //     parseInt(this.endTime.substring(4, 6), 10)
+      //   ),
+      //   location: this.location,
+      //   color: eventColor,
+      // });
+      this.setLocation("");
+      this.setTitle("");
+    }
   };
   setTitle = (title) => {
     this.title = title;
@@ -555,6 +629,22 @@ export default class App extends Component {
     this.setState({ holidaySettingVisible: false });
   };
 
+  onEventStartDateSelected = (event, value) => {
+    this.setState({ eventStartDate: value });
+  };
+
+  onEventStartTimeSelected = (event, value) => {
+    this.setState({ eventStartTime: value });
+  };
+
+  onEventEndDateSelected = (event, value) => {
+    this.setState({ eventEndDate: value });
+  };
+
+  onEventEndTimeSelected = (event, value) => {
+    this.setState({ eventEndTime: value });
+  };
+
   render() {
     const {
       title,
@@ -695,6 +785,7 @@ export default class App extends Component {
                   />
                 </View>
               </View>
+              {/* <View style={styles.row}> */}
               <View style={styles.row}>
                 <Text
                   style={{
@@ -706,7 +797,19 @@ export default class App extends Component {
                 >
                   Start
                 </Text>
-                <TextInput
+                <DateTimePicker
+                  mode={"date"}
+                  value={this.state.eventStartDate}
+                  onChange={this.onEventStartDateSelected}
+                  style={{ marginLeft: 10, marginTop: 5 }}
+                />
+                <DateTimePicker
+                  mode={"time"}
+                  value={this.state.eventStartTime}
+                  onChange={this.onEventStartTimeSelected}
+                  style={{ marginLeft: 10, marginTop: 5 }}
+                />
+                {/* <TextInput
                   placeholder={"Day"}
                   placeholderTextColor="#8b9cb5"
                   style={{
@@ -721,8 +824,8 @@ export default class App extends Component {
                   }}
                   value={startDate}
                   onChangeText={(text) => this.setStartDate(text)}
-                />
-                <TextInput
+                /> */}
+                {/* <TextInput
                   placeholder={"Time"}
                   placeholderTextColor="#8b9cb5"
                   style={{
@@ -737,7 +840,7 @@ export default class App extends Component {
                   }}
                   value={startTime}
                   onChangeText={(text) => this.setStartTime(text)}
-                />
+                /> */}
               </View>
               <View style={styles.row}>
                 <Text
@@ -750,7 +853,19 @@ export default class App extends Component {
                 >
                   End
                 </Text>
-                <TextInput
+                <DateTimePicker
+                  mode={"date"}
+                  value={this.state.eventEndDate}
+                  onChange={this.onEventEndDateSelected}
+                  style={{ marginLeft: 10, marginTop: 5 }}
+                />
+                <DateTimePicker
+                  mode={"time"}
+                  value={this.state.eventEndTime}
+                  onChange={this.onEventEndTimeSelected}
+                  style={{ marginLeft: 10, marginTop: 5 }}
+                />
+                {/* <TextInput
                   placeholder={"Day"}
                   placeholderTextColor="#8b9cb5"
                   style={{
@@ -781,7 +896,7 @@ export default class App extends Component {
                   }}
                   value={endTime}
                   onChangeText={(text) => this.setEndTime(text)}
-                />
+                /> */}
               </View>
               <Button
                 title="Create new event"
