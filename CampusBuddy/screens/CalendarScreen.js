@@ -629,6 +629,7 @@ export default class App extends Component {
     this.setState({ holidaySettingVisible: false });
   };
 
+  //TODO: Need to do date time error checking when start date time is after end date time, etc.
   onEventStartDateSelected = (event, value) => {
     this.setState({ eventStartDate: value });
   };
