@@ -1007,7 +1007,9 @@ export default class App extends Component {
             icon={(props) => <FeatherIcon name="arrow-left" {...props} />}
           />
           <Text style={{ fontSize: 20 }}>
-            {MonthName[this.state.weekViewStartDate.getMonth()]}
+            {this.state.weekViewStartDate.getFullYear() +
+              " " +
+              MonthName[this.state.weekViewStartDate.getMonth()]}
           </Text>
           <IconButton
             onPress={this.goNextWeek}
