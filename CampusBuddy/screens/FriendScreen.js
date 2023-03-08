@@ -10,39 +10,54 @@ import {
   Alert,
   TouchableOpacity,
   FlatList,
-  ActivityIndicator,
+  Pressable
 } from "react-native";
 import { auth, db, userSchedule } from "../firebaseConfig";
+import { FloatingAction } from "react-native-floating-action";
 import {
   updateDoc,
   doc,
   arrayRemove,
   onSnapshot,
   arrayUnion,
-  FieldValue,
-  Firestore,
   getDoc,
 } from "firebase/firestore";
-import { useState, useEffect, Component } from "react";
+import { Component } from "react";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
+import AntDesign from 'react-native-vector-icons/AntDesign';
+import { MultiSelect } from 'react-native-element-dropdown';
+
+
+var all = []
 
 export default class FriendScreen extends Component {
   constructor() {
     super();
     this.state = {
-      list: [], // all friends
-      favor: [] // favorite friends
+      list: [], // all friends except favorite friends
+      favor: [], // favorite friends
+      searched: [],
+      actions: [
+        {
+          text: "Add a group",
+          icon: require("../assets/people.png"),
+          name: "add_group",
+          position: 1
+        }
+      ],
+      group_visible: false,
+      input: "",
+      selected: [],
     };
   }
 
   componentDidMount() {
-    var data;
     const subscriber = onSnapshot(
       doc(db, "friend_list", auth.currentUser?.email),
       (doc) => {
         const data = doc.data()["friends"];
         const data2 = doc.data()["favorite"];
-        this.setState({favor: data2, list:data})
+        this.setState({favor: data2, list:data, searched: [...data2, ...data]})
       }
       );
     return () => subscriber();
@@ -146,11 +161,116 @@ export default class FriendScreen extends Component {
     );
   };
 
+  floating_handler = (name) => {
+    console.log(name)
+    //if user clicked add_group button then show group modal
+    if(name === "add_group"){
+      this.setState({group_visible: !this.state.group_visible})
+    }
+  }
+
+  renderDataItem = (item) => {
+    return (
+        <View style={styles.item2}>
+            <Text style={styles.selectedTextStyle}>{item.user}</Text>
+            {
+              this.state.selected.indexOf(item.user) > -1 ?
+              <AntDesign style={styles.icon} color="black" name="check" size={20} />
+              :
+              <AntDesign style={styles.icon} color="black" name="plus" size={20} />
+            }
+        </View>
+    );
+  };
+
+  filter_friends = (text) => {
+    console.log(text)
+    const updatedData = [...this.state.favor, ...this.state.list].filter((item) => {
+      return item.user.includes(text)
+    });
+    if(updatedData.length > 0){
+      console.log(updatedData)
+      this.setState({searched: updatedData})
+    }
+  }
+
+  handle_create = () =>{
+    console.log(this.state.input)
+    console.log(this.state.selected)
+  }
+
   render() {
     return (
       <SafeAreaView style={styles.container}>
-        {/* <Text>{"\n\n"+auth.currentUser?.uid}</Text>
-          <Text>Current Id: {id}</Text> */}
+        <Modal
+          animationType="slide"
+          transparent={true}
+          visible={this.state.group_visible}
+        >
+          <View style={{flex: 1, justifyContent: 'center', alignItems: 'center',}}>
+            <View style={styles.modalView}>
+              <View style={{marginBottom: 25}}>
+                <Text>Group Name: </Text>
+                <TextInput
+                  style={styles.input2}
+                  onChangeText={text => this.setState({ input : text})}
+                  placeholder="Type here ..."
+                  value={this.state.input}
+                />
+                <Text>Choose your friends to add:</Text>
+                <MultiSelect
+                  style={styles.dropdown}
+                  placeholderStyle={styles.placeholderStyle}
+                  selectedTextStyle={styles.selectedTextStyle}
+                  inputSearchStyle={styles.inputSearchStyle}
+                  iconStyle={styles.iconStyle}
+                  data={this.state.searched}
+                  valueField="user"
+                  placeholder="Choose friends"
+                  value={this.state.selected}
+                  search
+                  searchQuery={(text) => {
+                    this.filter_friends(text)
+                    }
+                  }
+                  searchPlaceholder="Search..."
+                  onChange={item => {
+                      console.log(item)
+                      this.setState({selected: item})
+                  }}
+                  renderItem={this.renderDataItem}
+                  renderSelectedItem={(item, unSelect) => (
+                      <TouchableOpacity onPress={() => unSelect && unSelect(item)}>
+                          <View style={styles.selectedStyle}>
+                              <Text style={styles.textSelectedStyle}>{item.user}</Text>
+                              <AntDesign color="black" name="delete" size={17} />
+                          </View>
+                      </TouchableOpacity>
+                  )}
+                />
+                <StatusBar />
+              </View>
+              <View style={{flexDirection: "row", justifyContent: "space-around"}}>
+                <Pressable
+                  style={[styles.button, styles.buttonClose, {marginRight: 10}]}
+                  onPress={() => this.handle_create()}>
+                  <Text style={styles.textStyle}>Create</Text>
+                </Pressable>
+                <Pressable
+                  style={[styles.button, styles.buttonClose]}
+                  onPress={() => this.setState({group_visible: !this.state.group_visible})}>
+                  <Text style={styles.textStyle}>Cancel</Text>
+                </Pressable>
+              </View>
+            </View>
+          </View>
+        </Modal>
+        <FloatingAction
+          actions={this.state.actions}
+          onPressItem={name => {
+            this.floating_handler(name)
+          }}
+        />
         <Text>{"\n\n"}Favorites:</Text>
         <View>
           {this.state.favor && this.state.favor.length ? (
@@ -216,4 +336,91 @@ const styles = StyleSheet.create({
   buttonClose: {
     backgroundColor: "#2196F3",
   },
-});
+  modalView: {
+    margin: 20,
+    backgroundColor: 'white',
+    borderRadius: 20,
+    padding: 35,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  input2: {
+    height: 40,
+    width: 200,
+    margin: 12,
+    borderWidth: 1,
+    padding: 10,
+    marginBottom: 20,
+  },
+
+
+  dropdown: {
+    height: 50,
+    backgroundColor: 'white',
+    borderRadius: 12,
+    padding: 12,
+    shadowColor: '#000',
+    shadowOffset: {
+        width: 0,
+        height: 1,
+    },
+    shadowOpacity: 0.2,
+    shadowRadius: 1.41,
+
+    elevation: 2,
+  },
+  placeholderStyle: {
+      fontSize: 16,
+  },
+  selectedTextStyle: {
+      fontSize: 14,
+  },
+  iconStyle: {
+      width: 20,
+      height: 20,
+  },
+  inputSearchStyle: {
+      height: 40,
+      fontSize: 16,
+  },
+  icon: {
+      marginRight: 5,
+  },
+  item2: {
+      padding: 17,
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+  },
+  selectedStyle: {
+      flexDirection: 'row',
+      justifyContent: 'center',
+      alignItems: 'center',
+      borderRadius: 14,
+      backgroundColor: 'white',
+      shadowColor: '#000',
+      marginTop: 8,
+      marginRight: 12,
+      paddingHorizontal: 12,
+      paddingVertical: 8,
+      shadowOffset: {
+          width: 0,
+          height: 1,
+      },
+      shadowOpacity: 0.2,
+      shadowRadius: 1.41,
+
+      elevation: 2,
+  },
+  textSelectedStyle: {
+      marginRight: 5,
+      fontSize: 16,
+  },
+  });

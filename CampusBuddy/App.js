@@ -48,7 +48,7 @@ export default function App() {
           <Stack.Screen
             name="Friend"
             component={FriendScreen}
-            options={{headerShown: false}}
+            options={{headerShown: true}}
           />
         </Stack.Navigator>
       </NavigationContainer>

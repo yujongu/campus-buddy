@@ -33,6 +33,7 @@
     "react-native-date-picker": "^4.2.9",
     "react-native-dropdown-picker": "^5.4.4",
     "react-native-dropdown-select-list": "^2.0.4",
+    "react-native-element-dropdown": "^2.8.0",
     "react-native-elements": "^3.4.3",
     "react-native-floating-action": "^1.22.0",
     "react-native-gesture-handler": "~2.8.0",

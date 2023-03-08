@@ -31,6 +31,7 @@ const Item = ({ title }) => {
 
 const renderItem = ({ item }) => <Item title={[item.email, item.first, item.id, item.last]} />;
 
+
 export default class SearchScreen extends Component {
   constructor(props) {
     super(props);
