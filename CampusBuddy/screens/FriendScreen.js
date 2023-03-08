@@ -30,8 +30,8 @@ export default class FriendScreen extends Component {
   constructor() {
     super();
     this.state = {
-      list: [],
-      favor: []
+      list: [], // all friends
+      favor: [] // favorite friends
     };
   }
 
@@ -40,22 +40,28 @@ export default class FriendScreen extends Component {
     const subscriber = onSnapshot(
       doc(db, "friend_list", auth.currentUser?.email),
       (doc) => {
-        //this.setState({list : new list always})
-        data = doc.data()["friends"];
-        this.setState({ list: data });
+        const data = doc.data()["friends"];
+        const data2 = doc.data()["favorite"];
+        this.setState({favor: data2, list:data})
       }
       );
     return () => subscriber();
   }
 
-  removeFriend = async (item) => {
+  removeFriend = (item) => {
     const me = doc(db, "friend_list", auth.currentUser?.email);
     const friend = doc(db, "friend_list", item.user);
     try {
-      updateDoc(me, {
-        friends: arrayRemove(item),
-      });
-      const user_data = await getDoc(friend);
+      if(item.favorite){
+        updateDoc(me, {
+          favorite: arrayRemove(item),
+        });
+      }else{
+        updateDoc(me, {
+          friends: arrayRemove(item),
+        });
+      }
+      const user_data = getDoc(friend);
       user_data.data()["friends"].map((temp) => {
         if (temp.user === auth.currentUser?.email) {
           updateDoc(friend, {
@@ -69,16 +75,26 @@ export default class FriendScreen extends Component {
     }
   };
 
-  favorite = (item) => {
+  favorite_handler = (item) => {
     const me = doc(db, "friend_list", auth.currentUser?.email);
     try {
-        updateDoc(me, {
-          friends: arrayRemove(item),
-        });
-        item.favorite = !item.favorite
-        updateDoc(me, {
-            friends: arrayUnion({user: item.user, group: item.group, favorite: item.favorite})
-        });
+        if(item.favorite){
+          updateDoc(me, {
+            favorite: arrayRemove(item),
+          });
+          item.favorite = !item.favorite
+          updateDoc(me, {
+            friends: arrayUnion(item)
+          });
+        }else{
+          updateDoc(me, {
+            friends: arrayRemove(item),
+          });
+          item.favorite = !item.favorite
+          updateDoc(me, {
+            favorite: arrayUnion(item)
+          });
+        }
     } catch (e) {
      console.error("Favorite friend: ", e);
     }
@@ -90,7 +106,7 @@ export default class FriendScreen extends Component {
         <View style={{flexDirection: 'row', justifyContent: "center", alignContent: "space-around"}}>
         <TouchableOpacity
             onPress={() => 
-                this.favorite(item)
+                this.favorite_handler(item)
             }
         >
           <MaterialCommunityIcons

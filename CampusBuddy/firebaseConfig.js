@@ -69,6 +69,7 @@ export async function createUser(username, first, last, email, password) {
         //initialize user friend list
         setDoc(doc(db, "friend_list", userCredential.user.email), {
           friends: [],
+          favorite: []
         });
       } catch (e) {
         console.error("Error adding doc: ", e);
