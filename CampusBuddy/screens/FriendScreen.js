@@ -12,7 +12,7 @@ import {
   FlatList,
   Pressable
 } from "react-native";
-import { auth, db, userSchedule } from "../firebaseConfig";
+import { auth, db } from "../firebaseConfig";
 import { FloatingAction } from "react-native-floating-action";
 import {
   updateDoc,
@@ -165,6 +165,7 @@ export default class FriendScreen extends Component {
     console.log(name)
     //if user clicked add_group button then show group modal
     if(name === "add_group"){
+      this.setState({input: "", selected: []})
       this.setState({group_visible: !this.state.group_visible})
     }
   }
@@ -184,19 +185,35 @@ export default class FriendScreen extends Component {
   };
 
   filter_friends = (text) => {
-    console.log(text)
     const updatedData = [...this.state.favor, ...this.state.list].filter((item) => {
       return item.user.includes(text)
     });
     if(updatedData.length > 0){
-      console.log(updatedData)
       this.setState({searched: updatedData})
     }
   }
 
   handle_create = () =>{
-    console.log(this.state.input)
-    console.log(this.state.selected)
+    //check for the duplicate group name in friend list
+    var check = false;
+    if(this.state.input === ""){
+      Alert.alert("Warning", "Please enter the name of group")
+    }else{
+      const duplicate = getDoc(doc(db, "friend_list", auth.currentUser?.email)).then((doc) => {
+        if(Object.keys(doc.data()).indexOf(this.state.input) > -1){
+          Alert.alert("Duplicate", "Group name is already existing")
+        }else{
+          check = true;
+        }
+      })
+      if(!check){
+        updateDoc(doc(db, "friend_list", auth.currentUser?.email), {
+          [this.state.input] : this.state.selected
+        });
+        Alert.alert("Succeed!", "Successfully a created group: " + this.state.input)
+        this.setState({group_visible: !this.state.group_visible})
+      }
+    }
   }
 
   render() {
@@ -235,7 +252,6 @@ export default class FriendScreen extends Component {
                   }
                   searchPlaceholder="Search..."
                   onChange={item => {
-                      console.log(item)
                       this.setState({selected: item})
                   }}
                   renderItem={this.renderDataItem}
