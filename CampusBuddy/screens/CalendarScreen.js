@@ -982,63 +982,87 @@ export default class App extends Component {
           >
             <Icon name="plus-circle" size={50} />
           </TouchableOpacity>
-          <View
-            style={{
-              flexDirection: "row",
-              justifyContent: "space-between",
-              alignItems: "center",
-              paddingLeft: 10,
-              paddingRight: 10,
-            }}
-          >
-            <View style={{ flexDirection: "row", alignItems: "center" }}>
-              <IconButton
-                // onPress={this.goPrevWeek}
-                icon={(props) => (
-                  <MaterialCommunityIcons
-                    name="calendar-arrow-left"
-                    {...props}
-                  />
-                )}
-              />
-              <Text style={{ fontSize: 15 }}>{"Week View"}</Text>
-            </View>
 
-            <Pressable style={{ padding: 10 }} onPress={this.goToday}>
-              <Text style={{ fontSize: 15 }}>Today</Text>
-            </Pressable>
+          {/* Info Above the calendar times */}
+          <View>
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                justifyContent: "center",
+                paddingHorizontal: 10,
+              }}
+            >
+              <View
+                style={{
+                  flex: 1,
+                  alignItems: "flex-start",
+                  flexDirection: "column",
+                  justifyContent: "center",
+                }}
+              >
+                <Text style={{ fontSize: 20 }}>
+                  {MonthName[this.state.weekViewStartDate.getMonth()]}
+                </Text>
+                <Text style={{ fontSize: 12 }}>
+                  {this.state.weekViewStartDate.getFullYear()}
+                </Text>
+              </View>
+
+              <View
+                style={{
+                  flex: 1,
+                  alignItems: "center",
+                  flexDirection: "row",
+                  justifyContent: "center",
+                }}
+              >
+                <IconButton
+                  style={{}}
+                  color={Colors.grey}
+                  onPress={this.goPrevWeek}
+                  icon={(props) => <Octicons name="triangle-left" {...props} />}
+                />
+                <Pressable style={{ padding: 10 }} onPress={this.goToday}>
+                  <Text style={{ fontSize: 15 }}>Today</Text>
+                </Pressable>
+                <IconButton
+                  style={{}}
+                  color={Colors.grey}
+                  onPress={this.goNextWeek}
+                  icon={(props) => (
+                    <Octicons name="triangle-right" {...props} />
+                  )}
+                />
+              </View>
+              <View
+                style={{
+                  flex: 1,
+                  alignItems: "flex-end",
+                }}
+              >
+                <Pressable
+                  style={{
+                    alignItems: "center",
+                    padding: 10,
+                  }}
+                  onPress={this.sayHi}
+                >
+                  <Text
+                    style={{
+                      fontSize: 15,
+                    }}
+                  >
+                    Week
+                  </Text>
+                </Pressable>
+              </View>
+            </View>
           </View>
           <View
             style={{
               flexDirection: "row",
-              justifyContent: "space-between",
-              alignItems: "center",
-              paddingLeft: 10,
-              paddingRight: 10,
-            }}
-          >
-            <IconButton
-              style={{ marginLeft: 30 }}
-              color={Colors.grey}
-              onPress={this.goPrevWeek}
-              icon={(props) => <Octicons name="triangle-left" {...props} />}
-            />
-            <Text style={{ fontSize: 20 }}>
-              {MonthName[this.state.weekViewStartDate.getMonth()] +
-                "  " +
-                this.state.weekViewStartDate.getFullYear()}
-            </Text>
-            <IconButton
-              style={{ marginRight: 30 }}
-              color={Colors.grey}
-              onPress={this.goNextWeek}
-              icon={(props) => <Octicons name="triangle-right" {...props} />}
-            />
-          </View>
-          <View
-            style={{
-              flexDirection: "row",
-              marginBottom: 97,
+              marginBottom: 0, //Bottom Tab Container height. TODO Need to fix this.
             }}
           >
             {/* This is the left vertical header */}
@@ -1228,6 +1252,7 @@ const populateRows = (name, eventList, weekStartDate) =>
             return index == event.startTime.getHours() &&
               makeVisible(weekStartDate, event) ? (
               <EventItem
+                key={`${name}-${index}-${event.startTime}`}
                 category={event.category}
                 day={event.startTime.getDay()}
                 startTime={new Date(event.startTime)}

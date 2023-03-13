@@ -35,19 +35,21 @@ export default class TopHeaderDays extends React.Component {
     let dayNames = ["Sun", "Mon", "Tues", "Wed", "Thur", "Fri", "Sat"];
 
     return (
-      <View style={styles.daysWithDate}>
+      <View style={styles.daysWithDateContainer}>
         <Text style={styles.days}>{dayNames[day]}</Text>
         <Text style={styles.date}>
           {this.getNextDay(startDay, day).getDate()}
         </Text>
-        <Text>{this.getHoliday(this.getNextDay(startDay, day), holidays)}</Text>
+        <Text style={styles.holiday}>
+          {this.getHoliday(this.getNextDay(startDay, day), holidays)}
+        </Text>
       </View>
     );
   }
 }
 
 const styles = StyleSheet.create({
-  daysWithDate: {
+  daysWithDateContainer: {
     width: dailyWidth,
     flexDirection: "column",
     alignItems: "center",
@@ -58,5 +60,9 @@ const styles = StyleSheet.create({
   },
   date: {
     fontSize: 12,
+  },
+  holiday: {
+    fontSize: 10,
+    textAlign: "center",
   },
 });
