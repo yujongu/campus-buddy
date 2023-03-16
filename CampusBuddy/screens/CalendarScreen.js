@@ -14,7 +14,6 @@ import {
   Modal,
   Animated,
   TextInput,
-  KeyboardAvoidingView,
   Pressable,
 } from "react-native";
 import DateTimePicker from "@react-native-community/datetimepicker";
@@ -25,26 +24,15 @@ import { SelectList } from "react-native-dropdown-select-list";
 import { Colors } from "../constants/colors";
 import * as DocumentPicker from "expo-document-picker";
 import Icon from "react-native-vector-icons/FontAwesome";
-import FeatherIcon from "react-native-vector-icons/Feather";
-import MaterialCommunityIcons from "react-native-vector-icons/MaterialCommunityIcons";
 import Octicons from "react-native-vector-icons/Octicons";
-import TimeTableView, { genTimeBlock } from "react-native-timetable";
-import { addSchedule, userList, addEvent } from "../firebaseConfig";
+import { genTimeBlock } from "react-native-timetable";
+import { addSchedule, addEvent } from "../firebaseConfig";
 import { auth, db, userSchedule, getUserEvents } from "../firebaseConfig";
 import EventItem from "../components/ui/EventItem";
 import { even, IconButton } from "@react-native-material/core";
-import { async } from "@firebase/util";
 import TopHeaderDays from "../components/ui/TopHeaderDays";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import {
-  doc,
-  onSnapshot,
-  updateDoc,
-  getDoc,
-  Timestamp,
-} from "firebase/firestore";
+import { doc, onSnapshot, updateDoc, getDoc } from "firebase/firestore";
 import { EventCategory } from "../constants/eventCategory";
-import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import { CalendarViewType } from "../constants/calendarViewType";
 
 const MonthName = [
@@ -171,7 +159,8 @@ export default class App extends Component {
       }
     }
 
-    this.setState({ list: result });
+    this.checkList(result);
+
     const userDocRef = doc(db, "users", auth.currentUser.uid);
     onSnapshot(userDocRef, (doc) => {
       if (doc.exists()) {
@@ -187,6 +176,65 @@ export default class App extends Component {
       }
     });
   }
+
+  checkList = (result) => {
+    console.log("HI");
+    result.forEach((event, index) => {
+      //For events that go over on day
+      if (event.startTime.getDate() != event.endTime.getDate()) {
+        // console.log(event);
+
+        let longEvent = event;
+        result.splice(index, 1);
+        let sD = longEvent.endTime.getDate() - 1;
+
+        let nEventEndSide = {
+          category: longEvent.category,
+          color: longEvent.color,
+          endTime: longEvent.endTime,
+          location: longEvent.location,
+          startTime: new Date(
+            longEvent.endTime.getFullYear(),
+            longEvent.endTime.getMonth(),
+            longEvent.endTime.getDate()
+          ),
+          title: longEvent.title,
+        };
+        result.splice(index, 0, nEventEndSide);
+
+        console.log(nEventEndSide);
+        for (let i = sD; i >= longEvent.startTime.getDate() + 1; i--) {
+          console.log(nEventEndSide);
+        }
+
+        console.log("End OF DAY");
+
+        let endOfDay = new Date(
+          longEvent.startTime.getFullYear(),
+          longEvent.startTime.getMonth(),
+          longEvent.startTime.getDate(),
+          23,
+          59,
+          59
+        );
+        let nEventStartSide = {
+          category: longEvent.category,
+          color: longEvent.color,
+          endTime: endOfDay,
+          location: longEvent.location,
+          startTime: longEvent.startTime,
+          title: longEvent.title,
+        };
+        console.log(nEventStartSide.startTime.getHours());
+        console.log(nEventStartSide.startTime.getMinutes());
+        console.log(nEventStartSide.endTime.getHours());
+        console.log(nEventStartSide.endTime.getMinutes());
+
+        result.splice(index, 0, nEventStartSide);
+      }
+    });
+    this.setState({ list: result });
+  };
 
   convertDay = (day) => {
     var dayStr = "";
@@ -256,6 +304,11 @@ export default class App extends Component {
         this.state.eventEndTime.getHours(),
         this.state.eventEndTime.getMinutes()
       );
+
+      if (eventSTime > eventETime) {
+        alert("Invalid Time Frame");
+        return;
+      }
 
       addEvent(
         auth.currentUser?.uid,
@@ -644,7 +697,6 @@ export default class App extends Component {
     this.setState({ holidaySettingVisible: false });
   };
 
-  //TODO: Need to do date time error checking when start date time is after end date time, etc.
   onEventStartDateSelected = (event, value) => {
     this.setState({ eventStartDate: value });
   };
@@ -934,7 +986,12 @@ export default class App extends Component {
                       this.setState({ holidaySettingVisible: false })
                     }
                   >
-                    <View style={{ paddingLeft: 260, paddingTop: 10 }}>
+                    <View
+                      style={{
+                        paddingLeft: 260,
+                        paddingTop: 10,
+                      }}
+                    >
                       <Icon name="times" size={20} color="#2F4858" />
                     </View>
                   </TouchableOpacity>
@@ -1063,11 +1120,15 @@ export default class App extends Component {
             style={{
               flexDirection: "row",
               marginBottom: 0, //Bottom Tab Container height. TODO Need to fix this.
+              marginTop: 0,
             }}
           >
             {/* This is the left vertical header */}
             <ScrollViewVerticallySynced
-              style={{ width: leftHeaderWidth, marginTop: topHeaderHeight }}
+              style={{
+                width: leftHeaderWidth,
+                marginTop: topHeaderHeight,
+              }}
               name="Time"
               onScroll={this.scrollEvent}
               scrollPosition={this.scrollPosition}
@@ -1205,12 +1266,12 @@ const populateRows = (name, eventList, weekStartDate) =>
   name == "Time"
     ? Array.from(Array(24).keys()).map((index) => (
         <View
-          key={`${name}-${index}`}
+          key={`TIME${name}-${index}`}
           style={{
             height: dailyHeight,
             flex: 1,
             alignItems: "center",
-            justifyContent: "center",
+            // justifyContent: "center",
           }}
         >
           <Text
@@ -1227,7 +1288,7 @@ const populateRows = (name, eventList, weekStartDate) =>
       ))
     : Array.from(Array(24).keys()).map((index) => (
         <View
-          key={`${name}-${index}`}
+          key={`NT${name}-${index}`}
           style={{
             height: dailyHeight,
             flex: 1,
@@ -1252,7 +1313,7 @@ const populateRows = (name, eventList, weekStartDate) =>
             return index == event.startTime.getHours() &&
               makeVisible(weekStartDate, event) ? (
               <EventItem
-                key={`${name}-${index}-${event.startTime}`}
+                key={`EITEM${name}-${index}-${event.title}-${event.startTime}`}
                 category={event.category}
                 day={event.startTime.getDay()}
                 startTime={new Date(event.startTime)}

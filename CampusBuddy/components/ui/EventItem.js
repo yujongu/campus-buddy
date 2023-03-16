@@ -49,7 +49,7 @@ export default class EventItem extends React.Component {
         style={{
           position: "absolute",
           left: day * dailyWidth,
-          top: dailyHeight - startHeight,
+          top: dailyHeight / 2 - startHeight,
           width: dailyWidth * 0.9,
           height: nHeight,
           justifyContent: "center",
