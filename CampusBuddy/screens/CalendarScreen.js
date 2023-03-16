@@ -34,6 +34,7 @@ import TopHeaderDays from "../components/ui/TopHeaderDays";
 import { doc, onSnapshot, updateDoc, getDoc } from "firebase/firestore";
 import { EventCategory } from "../constants/eventCategory";
 import { CalendarViewType } from "../constants/calendarViewType";
+import HolidaySettingModal from "../components/ui/HolidaySettingModal";
 
 const MonthName = [
   "January",
@@ -452,6 +453,63 @@ export default class App extends Component {
     this.setState({ visible: true });
   };
 
+  //START Holiday Setting Modal Component Functions
+  //fetch public holiday
+  getHolidays = async (countryCode, year) => {
+    try {
+      const response = await fetch(
+        `https://date.nager.at/api/v3/PublicHolidays/${year}/${countryCode}`
+      );
+      const resp = await response.json();
+      this.setState({ holidays: resp });
+    } catch (error) {
+      console.error("Error at getHolidays\n" + error);
+    }
+  };
+  getCountries = async () => {
+    try {
+      const response = await fetch(
+        `https://date.nager.at/api/v3/AvailableCountries`
+      );
+      const resp = await response.json();
+      let nList = [];
+      for (let i in resp) {
+        nList.push({ key: resp[i].countryCode, value: resp[i].name });
+      }
+      this.setState({ holidayCountryList: nList });
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  storeData = async (value) => {
+    this.setState({ selectedCountryCode: value });
+    // this.getHolidays(value, this.state.weekViewStartDate.getFullYear());
+    await updateDoc(doc(db, "users", auth.currentUser.uid), {
+      holidayNationPref: value,
+    });
+    this.setState({ holidaySettingVisible: false });
+  };
+
+  removeData = async () => {
+    this.setState({ selectedCountryCode: "" });
+    this.setState({ holidays: [] });
+    await updateDoc(doc(db, "users", auth.currentUser.uid), {
+      holidayNationPref: "",
+    });
+    this.setState({ holidaySettingVisible: false });
+  };
+
+  closeHolidaySettingModal = () => {
+    this.setState({ holidaySettingVisible: false });
+  };
+
+  selectCountryHolidaySettingModal = (country) => {
+    this.setState({ selectedCountry: country });
+  };
+
+  //END Holiday Setting Modal Component Functions
+
   openURL = (url) => {
     Linking.openURL(url).catch((err) =>
       console.error("An error occurred", err)
@@ -630,9 +688,11 @@ export default class App extends Component {
     let currYear = this.state.weekViewStartDate.getFullYear();
     let tempDate = this.state.weekViewStartDate;
     tempDate.setDate(tempDate.getDate() - 7);
+
     if (
       tempDate.getFullYear() != currYear &&
-      this.state.selectedCountryCode != null
+      this.state.selectedCountryCode != null &&
+      this.state.selectedCountryCode.length > 0
     ) {
       this.getHolidays(this.state.selectedCountryCode, tempDate.getFullYear());
     }
@@ -644,57 +704,12 @@ export default class App extends Component {
     tempDate.setDate(tempDate.getDate() + 7);
     if (
       tempDate.getFullYear() != currYear &&
-      this.state.selectedCountryCode != null
+      this.state.selectedCountryCode != null &&
+      this.state.selectedCountryCode.length > 0
     ) {
       this.getHolidays(this.state.selectedCountryCode, tempDate.getFullYear());
     }
     this.setState({ weekViewStartDate: tempDate });
-  };
-
-  //fetch public holiday
-  getHolidays = async (countryCode, year) => {
-    try {
-      const response = await fetch(
-        `https://date.nager.at/api/v3/PublicHolidays/${year}/${countryCode}`
-      );
-      const resp = await response.json();
-      this.setState({ holidays: resp });
-    } catch (error) {
-      console.error("Error at getHolidays\n" + error);
-    }
-  };
-  getCountries = async () => {
-    try {
-      const response = await fetch(
-        `https://date.nager.at/api/v3/AvailableCountries`
-      );
-      const resp = await response.json();
-      let nList = [];
-      for (let i in resp) {
-        nList.push({ key: resp[i].countryCode, value: resp[i].name });
-      }
-      this.setState({ holidayCountryList: nList });
-    } catch (error) {
-      console.error(error);
-    }
-  };
-
-  storeData = async (value) => {
-    this.setState({ selectedCountryCode: value });
-    this.getHolidays(value, this.state.weekViewStartDate.getFullYear());
-    await updateDoc(doc(db, "users", auth.currentUser.uid), {
-      holidayNationPref: value,
-    });
-    this.setState({ holidaySettingVisible: false });
-  };
-
-  removeData = async () => {
-    this.setState({ selectedCountryCode: "" });
-    this.setState({ holidays: [] });
-    await updateDoc(doc(db, "users", auth.currentUser.uid), {
-      holidayNationPref: "",
-    });
-    this.setState({ holidaySettingVisible: false });
   };
 
   onEventStartDateSelected = (event, value) => {
@@ -958,79 +973,18 @@ export default class App extends Component {
             </View>
           </Modal>
 
-          <Modal
-            animationType="slide"
-            transparent={true}
-            visible={this.state.holidaySettingVisible}
-          >
-            <View
-              style={{
-                flex: 1,
-                flexDirection: "column",
-                justifyContent: "center",
-                alignItems: "center",
-              }}
-            >
-              <View
-                style={{
-                  backgroundColor: "white",
-                  width: 300,
-                  height: 450,
-                  borderRadius: 20,
-                  justifyContent: "space-between",
-                }}
-              >
-                <View>
-                  <TouchableOpacity
-                    onPress={() =>
-                      this.setState({ holidaySettingVisible: false })
-                    }
-                  >
-                    <View
-                      style={{
-                        paddingLeft: 260,
-                        paddingTop: 10,
-                      }}
-                    >
-                      <Icon name="times" size={20} color="#2F4858" />
-                    </View>
-                  </TouchableOpacity>
-
-                  <View style={{ marginRight: 10, marginLeft: 10 }}>
-                    <Text>Country</Text>
-                    <SelectList
-                      setSelected={(val) =>
-                        this.setState({ selectedCountry: val })
-                      }
-                      data={this.state.holidayCountryList}
-                    />
-                    <View style={{ marginTop: 15, flexDirection: "row" }}>
-                      <Text style={{ fontWeight: "bold", marginRight: 10 }}>
-                        Current Selected Option:
-                      </Text>
-                      <Text>{this.state.selectedCountryCode}</Text>
-                    </View>
-                  </View>
-                </View>
-
-                <View
-                  style={{
-                    flexDirection: "row",
-                    justifyContent: "space-between",
-                    marginLeft: 10,
-                    marginRight: 10,
-                    marginBottom: 10,
-                  }}
-                >
-                  <Button
-                    onPress={() => this.storeData(this.state.selectedCountry)}
-                    title="Save"
-                  />
-                  <Button title="Hide holidays" onPress={this.removeData} />
-                </View>
-              </View>
-            </View>
-          </Modal>
+          <HolidaySettingModal
+            holidaySettingVisible={this.state.holidaySettingVisible}
+            holidayCountryList={this.state.holidayCountryList}
+            selectedCountryCode={this.state.selectedCountryCode}
+            selectedCountry={this.state.selectedCountry}
+            closeHolidaySettingModal={this.closeHolidaySettingModal}
+            selectCountryHolidaySettingModal={
+              this.selectCountryHolidaySettingModal
+            }
+            storeData={this.storeData}
+            removeData={this.removeData}
+          />
 
           <TouchableOpacity
             activeOpacity={0.7}
