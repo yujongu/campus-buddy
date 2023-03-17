@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState } from "react";
 import { StatusBar } from "expo-status-bar";
 import { StyleSheet, Text, View, Button } from "react-native";
 import { sendDataToFirebase } from "./firebaseConfig";
@@ -9,15 +9,16 @@ import HomeScreen from "./BottomTabContainer";
 import SignInScreen from "./screens/SignInScreen";
 import SignUpScreen from "./screens/SignUpScreen";
 import User_profile from "./screens/User_profileScreen";
-import SettingsScreen from './screens/SettingsScreen';
-import { auth } from './firebaseConfig';
-import FriendScreen from './screens/FriendScreen';
+import SettingsScreen from "./screens/SettingsScreen";
+import { auth } from "./firebaseConfig";
+import FriendScreen from "./screens/FriendScreen";
+import { SafeAreaProvider } from "react-native-safe-area-context";
 
 const Stack = createNativeStackNavigator();
 
 export default function App() {
-
   return (
+    <SafeAreaProvider>
       <NavigationContainer>
         <Stack.Navigator>
           <Stack.Screen
@@ -28,7 +29,7 @@ export default function App() {
           <Stack.Screen
             name="SignUp"
             component={SignUpScreen}
-            options={{headerShown: false}}
+            options={{ headerShown: false }}
           />
           <Stack.Screen
             name="Home"
@@ -38,20 +39,21 @@ export default function App() {
           <Stack.Screen
             name="user_profile"
             component={User_profile}
-            options={{headerShown: false}}
+            options={{ headerShown: false }}
           />
           <Stack.Screen
             name="Settings"
             component={SettingsScreen}
-            options={{headerShown: false}}
+            options={{ headerShown: false }}
           />
           <Stack.Screen
             name="Friend"
             component={FriendScreen}
-            options={{headerShown: true}}
+            options={{ headerShown: true }}
           />
         </Stack.Navigator>
       </NavigationContainer>
+    </SafeAreaProvider>
   );
 }
 
@@ -63,4 +65,3 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
 });
-

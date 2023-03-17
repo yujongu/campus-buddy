@@ -4,7 +4,6 @@ import {
   StyleSheet,
   Button,
   View,
-  SafeAreaView,
   Text,
   ScrollView,
   Alert,
@@ -20,7 +19,6 @@ import DateTimePicker from "@react-native-community/datetimepicker";
 
 import DropDownPicker from "react-native-dropdown-picker";
 import { ColorWheel } from "../components/ui/ColorWheel";
-import { SelectList } from "react-native-dropdown-select-list";
 import { Colors } from "../constants/colors";
 import * as DocumentPicker from "expo-document-picker";
 import Icon from "react-native-vector-icons/FontAwesome";
@@ -29,12 +27,14 @@ import { genTimeBlock } from "react-native-timetable";
 import { addSchedule, addEvent } from "../firebaseConfig";
 import { auth, db, userSchedule, getUserEvents } from "../firebaseConfig";
 import EventItem from "../components/ui/EventItem";
-import { even, IconButton } from "@react-native-material/core";
+import { IconButton } from "@react-native-material/core";
 import TopHeaderDays from "../components/ui/TopHeaderDays";
 import { doc, onSnapshot, updateDoc, getDoc } from "firebase/firestore";
 import { EventCategory } from "../constants/eventCategory";
 import { CalendarViewType } from "../constants/calendarViewType";
 import HolidaySettingModal from "../components/ui/HolidaySettingModal";
+import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
+import { SafeAreaView, useSafeAreaFrame } from "react-native-safe-area-context";
 
 const MonthName = [
   "January",
@@ -133,21 +133,6 @@ export default class App extends Component {
     const events = await getUserEvents(auth.currentUser?.uid);
     if (events != null) {
       for (let i = 0; i < events["event"].length; i++) {
-        // const temp = {
-        //   title: events["event"][i]["title"],
-        //   startTime: genTimeBlock(
-        //     this.convertDay(events["event"][i]["startDate"]),
-        //     parseInt(events["event"][i]["startTime"].substring(0, 2), 10),
-        //     parseInt(events["event"][i]["startTime"].substring(3, 5), 10)
-        //   ),
-        //   endTime: genTimeBlock(
-        //     this.convertDay(events["event"][i]["endDate"]),
-        //     parseInt(events["event"][i]["endTime"].substring(0, 2), 10),
-        //     parseInt(events["event"][i]["endTime"].substring(3, 5), 10)
-        //   ),
-        //   location: events["event"][i]["location"],
-        //   color: events["event"][i]["color"],
-        // };
         const temp = {
           category: EventCategory.EVENT,
           title: events["event"][i]["title"],
@@ -178,6 +163,7 @@ export default class App extends Component {
     });
   }
 
+  //Format event list so it works with the calendar view.
   checkList = (result) => {
     console.log("HI");
     result.forEach((event, index) => {
@@ -226,60 +212,13 @@ export default class App extends Component {
           startTime: longEvent.startTime,
           title: longEvent.title,
         };
-        console.log(nEventStartSide.startTime.getHours());
-        console.log(nEventStartSide.startTime.getMinutes());
-        console.log(nEventStartSide.endTime.getHours());
-        console.log(nEventStartSide.endTime.getMinutes());
-
         result.splice(index, 0, nEventStartSide);
       }
     });
     this.setState({ list: result });
   };
 
-  convertDay = (day) => {
-    var dayStr = "";
-    switch (day) {
-      case "0":
-        dayStr = "SUN";
-        break;
-      case "1":
-        dayStr = "MON";
-        break;
-      case "2":
-        dayStr = "TUE";
-        break;
-      case "3":
-        dayStr = "WED";
-        break;
-      case "4":
-        dayStr = "THU";
-        break;
-      case "5":
-        dayStr = "FRI";
-        break;
-      case "6":
-        dayStr = "SAT";
-        break;
-    }
-    return dayStr;
-  };
-
   submitEvent = (eventColor) => {
-    // addEvent(
-    //   auth.currentUser?.uid,
-    //   this.title,
-    //   this.startDate,
-    //   this.startTime,
-    //   this.endDate,
-    //   this.endTime,
-    //   this.location,
-    //   "test",
-    //   10,
-    //   eventColor,
-    //   0
-    // );
-
     if (
       this.location == undefined ||
       this.title == undefined ||
@@ -322,19 +261,6 @@ export default class App extends Component {
         eventColor,
         0
       );
-      // addEvent(
-      //   auth.currentUser?.uid,
-      //   this.title,
-      //   this.state.eventStartDate,
-      //   this.state.eventStartTime,
-      //   this.state.eventEndDate,
-      //   this.state.eventEndTime,
-      //   this.location,
-      //   "test",
-      //   10,
-      //   eventColor,
-      //   0
-      // );
 
       this.state.list.push({
         category: EventCategory.EVENT,
@@ -344,21 +270,6 @@ export default class App extends Component {
         location: this.location,
         color: eventColor,
       });
-      // this.state.list.push({
-      //   title: this.title,
-      //   startTime: genTimeBlock(
-      //     this.convertDay(this.startDate),
-      //     parseInt(this.startTime.substring(0, 2), 10),
-      //     parseInt(this.startTime.substring(4, 6), 10)
-      //   ),
-      //   endTime: genTimeBlock(
-      //     this.convertDay(this.endDate),
-      //     parseInt(this.endTime.substring(0, 2), 10),
-      //     parseInt(this.endTime.substring(4, 6), 10)
-      //   ),
-      //   location: this.location,
-      //   color: eventColor,
-      // });
 
       this.setState({ eventStartDate: new Date() });
       this.setState({ eventStartTime: new Date() });
@@ -374,22 +285,6 @@ export default class App extends Component {
 
   setLocation = (location) => {
     this.location = location;
-  };
-
-  setStartDate = (date) => {
-    this.startDate = date;
-  };
-
-  setStartTime = (time) => {
-    this.startTime = time;
-  };
-
-  setEndDate = (date) => {
-    this.endDate = date;
-  };
-
-  setEndTime = (time) => {
-    this.endTime = time;
   };
 
   scrollViewRef = (ref) => {
@@ -732,6 +627,20 @@ export default class App extends Component {
     console.log("HIIIIIIIIIIIIIIIIIIII");
   };
 
+  toggleCalendarView = () => {
+    switch (this.state.calendarView) {
+      case CalendarViewType.WEEK:
+        this.setState({ calendarView: CalendarViewType.MONTH });
+        break;
+      case CalendarViewType.MONTH:
+        this.setState({ calendarView: CalendarViewType.WEEK });
+        break;
+      default:
+        console.error("Something Wrong with toggle calendar view");
+        break;
+    }
+  };
+
   goToday = () => {
     let tempDate = new Date();
     tempDate.setDate(tempDate.getDate() - tempDate.getDay());
@@ -747,10 +656,7 @@ export default class App extends Component {
       colorPicker,
       eventColor,
       weekViewStartDate: weekViewStartDate,
-      startDate,
-      startTime,
-      endDate,
-      endTime,
+
       repetition,
       openDate,
     } = this.state;
@@ -758,242 +664,209 @@ export default class App extends Component {
       console.log("colorpicked");
       return <ColorWheel updateColor={this.updateColor} />;
     }
-
     return (
       <SafeAreaView style={{ flex: 1 }}>
-        {/* Bottom tab bar hides calendar screen. */}
-        <View style={{ marginBottom: 100 }}>
-          <Modal
-            animationType="slide"
-            transparent={true}
-            visible={this.state.visible}
-            onRequestClose={() => {
-              this.setState({ visible: !this.state.visible });
+        <TouchableOpacity
+          activeOpacity={0.7}
+          onPress={this.clickHandler}
+          style={styles.touchableOpacityStyle}
+        >
+          <Icon name="plus-circle" size={50} />
+        </TouchableOpacity>
+
+        <Modal
+          animationType="slide"
+          transparent={true}
+          visible={this.state.visible}
+          onRequestClose={() => {
+            this.setState({ visible: !this.state.visible });
+          }}
+        >
+          <View
+            style={{
+              flex: 1,
+              flexDirection: "column",
+              justifyContent: "center",
+              alignItems: "center",
             }}
           >
-            <View
-              style={{
-                flex: 1,
-                flexDirection: "column",
-                justifyContent: "center",
-                alignItems: "center",
-              }}
-            >
-              <View style={styles.modalView}>
-                {/* Modal for calendar options */}
-                <Button
-                  title="Download schedule"
-                  onPress={() =>
-                    this.openURL(
-                      "https://timetable.mypurdue.purdue.edu/Timetabling/gwt.jsp?page=personal"
-                    )
-                  }
-                />
-                <Button
-                  title="Import schedule"
-                  onPress={() => this.openDocumentFile()}
-                />
-                <Button title="Add event" onPress={this.openCreateEvent} />
-                <Button
-                  title="Holiday settings"
-                  onPress={this.setHolidaySettings}
-                />
-                <Button
-                  title="Close modal"
-                  onPress={() => {
-                    this.setState({ visible: !this.state.visible });
-                  }}
-                />
-              </View>
+            <View style={styles.modalView}>
+              {/* Modal for calendar options */}
+              <Button
+                title="Download schedule"
+                onPress={() =>
+                  this.openURL(
+                    "https://timetable.mypurdue.purdue.edu/Timetabling/gwt.jsp?page=personal"
+                  )
+                }
+              />
+              <Button
+                title="Import schedule"
+                onPress={() => this.openDocumentFile()}
+              />
+              <Button title="Add event" onPress={this.openCreateEvent} />
+              <Button
+                title="Holiday settings"
+                onPress={this.setHolidaySettings}
+              />
+              <Button
+                title="Close modal"
+                onPress={() => {
+                  this.setState({ visible: !this.state.visible });
+                }}
+              />
             </View>
-          </Modal>
-          {/* Create event modal */}
-          <Modal
-            animationType="slide"
-            visible={this.state.createEventVisible}
-            transparent={true}
-            onRequestClose={() => {
-              this.setState({ visible: !this.state.createEventVisible });
+          </View>
+        </Modal>
+        {/* Create event modal */}
+        <Modal
+          animationType="slide"
+          visible={this.state.createEventVisible}
+          transparent={true}
+          onRequestClose={() => {
+            this.setState({ visible: !this.state.createEventVisible });
+          }}
+        >
+          <View
+            style={{
+              flex: 1,
+              justifyContent: "center",
+              alignItems: "center",
             }}
           >
-            <View
-              style={{
-                flex: 1,
-                justifyContent: "center",
-                alignItems: "center",
-              }}
-            >
-              <View style={styles.modal}>
+            <View style={styles.modal}>
+              <TouchableOpacity
+                onPress={() => this.setState({ createEventVisible: false })}
+              >
+                <View style={{ paddingLeft: 270, paddingTop: 5 }}>
+                  <Icon name="times" size={20} color="#2F4858" />
+                </View>
+              </TouchableOpacity>
+              {/* Creating a new View component with styles.row for each row in the modal for formatting */}
+              <View style={styles.row}>
+                <Text style={styles.header_text}>Create Event</Text>
+              </View>
+              <View style={styles.row}>
+                {/* New row for color picker and title input */}
                 <TouchableOpacity
-                  onPress={() => this.setState({ createEventVisible: false })}
+                  onPress={() => this.setState({ colorPicker: true })}
                 >
-                  <View style={{ paddingLeft: 270, paddingTop: 5 }}>
-                    <Icon name="times" size={20} color="#2F4858" />
+                  <View style={{ paddingTop: 5, paddingRight: 15 }}>
+                    <Icon name="square" size={40} color={eventColor} />
                   </View>
                 </TouchableOpacity>
-                {/* Creating a new View component with styles.row for each row in the modal for formatting */}
-                <View style={styles.row}>
-                  <Text style={styles.header_text}>Create Event</Text>
+                <TextInput
+                  style={styles.titleInputStyle}
+                  placeholder="Add title"
+                  placeholderTextColor="#8b9cb5"
+                  onChangeText={(text) => this.setTitle(text)}
+                ></TextInput>
+              </View>
+              <View style={styles.row}>
+                <View style={{ flex: 1, paddingTop: 10 }}>
+                  <Icon name="map-pin" size={20} color="#2F4858" />
                 </View>
-                <View style={styles.row}>
-                  {/* New row for color picker and title input */}
-                  <TouchableOpacity
-                    onPress={() => this.setState({ colorPicker: true })}
-                  >
-                    <View style={{ paddingTop: 5, paddingRight: 15 }}>
-                      <Icon name="square" size={40} color={eventColor} />
-                    </View>
-                  </TouchableOpacity>
+                <View style={{ flex: 8 }}>
                   <TextInput
-                    style={styles.titleInputStyle}
-                    placeholder="Add title"
+                    style={styles.inputStyle}
+                    placeholder="Location"
                     placeholderTextColor="#8b9cb5"
-                    onChangeText={(text) => this.setTitle(text)}
+                    onChangeText={(text) => this.setLocation(text)}
                   ></TextInput>
                 </View>
-                <View style={styles.row}>
-                  <View style={{ flex: 1, paddingTop: 10 }}>
-                    <Icon name="map-pin" size={20} color="#2F4858" />
-                  </View>
-                  <View style={{ flex: 8 }}>
-                    <TextInput
-                      style={styles.inputStyle}
-                      placeholder="Location"
-                      placeholderTextColor="#8b9cb5"
-                      onChangeText={(text) => this.setLocation(text)}
-                    ></TextInput>
-                  </View>
+              </View>
+              <View style={styles.row}>
+                <View style={{ flex: 1, paddingTop: 10 }}>
+                  <Icon name="repeat" size={20} color="#2F4858" />
                 </View>
-                <View style={styles.row}>
-                  <View style={{ flex: 1, paddingTop: 10 }}>
-                    <Icon name="repeat" size={20} color="#2F4858" />
-                  </View>
-                  <View style={{ flex: 8 }}>
-                    {/*dropdown selection does not work :(*/}
-                    <DropDownPicker
-                      open={openList}
-                      value={repetition}
-                      items={repetitionItems}
-                      placeholder={"Never"}
-                      setValue={this.setValue}
-                      setItems={this.setItems}
-                      onPress={this.setOpen}
-                    />
-                  </View>
+                <View style={{ flex: 8 }}>
+                  {/*dropdown selection does not work :(*/}
+                  <DropDownPicker
+                    open={openList}
+                    value={repetition}
+                    items={repetitionItems}
+                    placeholder={"Never"}
+                    setValue={this.setValue}
+                    setItems={this.setItems}
+                    onPress={this.setOpen}
+                  />
                 </View>
-                {/* <View style={styles.row}> */}
-                <View style={styles.row}>
-                  <Text
-                    style={{
-                      textAlign: "center",
-                      margin: 5,
-                      paddingTop: 7,
-                      color: "#2F4858",
-                    }}
-                  >
-                    Start
-                  </Text>
-                  <DateTimePicker
-                    mode={"date"}
-                    value={this.state.eventStartDate}
-                    onChange={this.onEventStartDateSelected}
-                    style={{ marginLeft: 10, marginTop: 5 }}
-                  />
-                  <DateTimePicker
-                    mode={"time"}
-                    value={this.state.eventStartTime}
-                    onChange={this.onEventStartTimeSelected}
-                    style={{ marginLeft: 10, marginTop: 5 }}
-                  />
-                  {/* <TextInput
-                  placeholder={"Day"}
-                  placeholderTextColor="#8b9cb5"
+              </View>
+              {/* <View style={styles.row}> */}
+              <View style={styles.row}>
+                <Text
                   style={{
-                    color: "black",
-                    borderWidth: 1,
-                    borderColor: "#8b9cb5",
-                    marginLeft: 10,
-                    marginTop: 5,
-                    width: 50,
-                    height: 30,
                     textAlign: "center",
+                    margin: 5,
+                    paddingTop: 7,
+                    color: "#2F4858",
                   }}
-                  value={startDate}
-                  onChangeText={(text) => this.setStartDate(text)}
-                /> */}
-                  {/* <TextInput
-                  placeholder={"Time"}
-                  placeholderTextColor="#8b9cb5"
-                  style={{
-                    color: "black",
-                    borderWidth: 1,
-                    borderColor: "#8b9cb5",
-                    marginLeft: 10,
-                    marginTop: 5,
-                    width: 100,
-                    height: 30,
-                    textAlign: "center",
-                  }}
-                  value={startTime}
-                  onChangeText={(text) => this.setStartTime(text)}
-                /> */}
-                </View>
-                <View style={styles.row}>
-                  <Text
-                    style={{
-                      textAlign: "center",
-                      margin: 5,
-                      paddingTop: 7,
-                      color: "#2F4858",
-                    }}
-                  >
-                    End
-                  </Text>
-                  <DateTimePicker
-                    mode={"date"}
-                    value={this.state.eventEndDate}
-                    onChange={this.onEventEndDateSelected}
-                    style={{ marginLeft: 10, marginTop: 5 }}
-                  />
-                  <DateTimePicker
-                    mode={"time"}
-                    value={this.state.eventEndTime}
-                    onChange={this.onEventEndTimeSelected}
-                    style={{ marginLeft: 10, marginTop: 5 }}
-                  />
-                </View>
-                <Button
-                  title="Create new event"
-                  onPress={() => {
-                    this.submitEvent(eventColor),
-                      this.setState({ createEventVisible: false });
-                  }}
+                >
+                  Start
+                </Text>
+                <DateTimePicker
+                  mode={"date"}
+                  value={this.state.eventStartDate}
+                  onChange={this.onEventStartDateSelected}
+                  style={{ marginLeft: 10, marginTop: 5 }}
+                />
+                <DateTimePicker
+                  mode={"time"}
+                  value={this.state.eventStartTime}
+                  onChange={this.onEventStartTimeSelected}
+                  style={{ marginLeft: 10, marginTop: 5 }}
                 />
               </View>
+              <View style={styles.row}>
+                <Text
+                  style={{
+                    textAlign: "center",
+                    margin: 5,
+                    paddingTop: 7,
+                    color: "#2F4858",
+                  }}
+                >
+                  End
+                </Text>
+                <DateTimePicker
+                  mode={"date"}
+                  value={this.state.eventEndDate}
+                  onChange={this.onEventEndDateSelected}
+                  style={{ marginLeft: 10, marginTop: 5 }}
+                />
+                <DateTimePicker
+                  mode={"time"}
+                  value={this.state.eventEndTime}
+                  onChange={this.onEventEndTimeSelected}
+                  style={{ marginLeft: 10, marginTop: 5 }}
+                />
+              </View>
+              <Button
+                title="Create new event"
+                onPress={() => {
+                  this.submitEvent(eventColor),
+                    this.setState({ createEventVisible: false });
+                }}
+              />
             </View>
-          </Modal>
+          </View>
+        </Modal>
 
-          <HolidaySettingModal
-            holidaySettingVisible={this.state.holidaySettingVisible}
-            holidayCountryList={this.state.holidayCountryList}
-            selectedCountryCode={this.state.selectedCountryCode}
-            selectedCountry={this.state.selectedCountry}
-            closeHolidaySettingModal={this.closeHolidaySettingModal}
-            selectCountryHolidaySettingModal={
-              this.selectCountryHolidaySettingModal
-            }
-            storeData={this.storeData}
-            removeData={this.removeData}
-          />
+        <HolidaySettingModal
+          holidaySettingVisible={this.state.holidaySettingVisible}
+          holidayCountryList={this.state.holidayCountryList}
+          selectedCountryCode={this.state.selectedCountryCode}
+          selectedCountry={this.state.selectedCountry}
+          closeHolidaySettingModal={this.closeHolidaySettingModal}
+          selectCountryHolidaySettingModal={
+            this.selectCountryHolidaySettingModal
+          }
+          storeData={this.storeData}
+          removeData={this.removeData}
+        />
 
-          <TouchableOpacity
-            activeOpacity={0.7}
-            onPress={this.clickHandler}
-            style={styles.touchableOpacityStyle}
-          >
-            <Icon name="plus-circle" size={50} />
-          </TouchableOpacity>
-
+        {/* Bottom tab bar hides calendar screen. TODO Need to fix this.*/}
+        <View style={{ flex: 1, marginBottom: 15 }}>
           {/* Info Above the calendar times */}
           <View>
             <View
@@ -1057,98 +930,108 @@ export default class App extends Component {
                     alignItems: "center",
                     padding: 10,
                   }}
-                  onPress={this.sayHi}
+                  onPress={this.toggleCalendarView}
                 >
                   <Text
                     style={{
                       fontSize: 15,
                     }}
                   >
-                    Week
+                    {this.state.calendarView}
                   </Text>
                 </Pressable>
               </View>
             </View>
           </View>
-          <View
-            style={{
-              flexDirection: "row",
-              marginBottom: 0, //Bottom Tab Container height. TODO Need to fix this.
-              marginTop: 0,
-            }}
-          >
-            {/* This is the left vertical header */}
-            <ScrollViewVerticallySynced
+          {this.state.calendarView == CalendarViewType.WEEK ? (
+            <View
               style={{
-                width: leftHeaderWidth,
-                marginTop: topHeaderHeight,
+                flexDirection: "row",
               }}
-              name="Time"
-              onScroll={this.scrollEvent}
-              scrollPosition={this.scrollPosition}
-            />
-            {/* This is the right vertical content */}
-            <ScrollView horizontal bounces={true}>
-              <View style={{ width: dailyWidth * 7 }}>
-                <View
-                  style={{
-                    height: topHeaderHeight,
-                    justifyContent: "center",
-                  }}
-                >
-                  <View style={styles.daysContainer}>
-                    <TopHeaderDays
-                      day={0}
-                      holidays={this.state.holidays}
-                      startDay={this.state.weekViewStartDate}
-                    />
-                    <TopHeaderDays
-                      day={1}
-                      holidays={this.state.holidays}
-                      startDay={this.state.weekViewStartDate}
-                    />
-                    <TopHeaderDays
-                      day={2}
-                      holidays={this.state.holidays}
-                      startDay={this.state.weekViewStartDate}
-                    />
-                    <TopHeaderDays
-                      day={3}
-                      holidays={this.state.holidays}
-                      startDay={this.state.weekViewStartDate}
-                    />
-                    <TopHeaderDays
-                      day={4}
-                      holidays={this.state.holidays}
-                      startDay={this.state.weekViewStartDate}
-                    />
-                    <TopHeaderDays
-                      day={5}
-                      holidays={this.state.holidays}
-                      startDay={this.state.weekViewStartDate}
-                    />
-                    <TopHeaderDays
-                      day={6}
-                      holidays={this.state.holidays}
-                      startDay={this.state.weekViewStartDate}
-                    />
+            >
+              {/* This is the left vertical header */}
+              <ScrollViewVerticallySynced
+                style={{
+                  width: leftHeaderWidth,
+                  marginTop: topHeaderHeight,
+                }}
+                name="Time"
+                onScroll={this.scrollEvent}
+                scrollPosition={this.scrollPosition}
+              />
+              {/* This is the right vertical content */}
+              <ScrollView horizontal bounces={true}>
+                <View style={{ width: dailyWidth * 7 }}>
+                  <View
+                    style={{
+                      height: topHeaderHeight,
+                      justifyContent: "center",
+                    }}
+                  >
+                    <View style={styles.daysContainer}>
+                      <TopHeaderDays
+                        day={0}
+                        holidays={this.state.holidays}
+                        startDay={this.state.weekViewStartDate}
+                      />
+                      <TopHeaderDays
+                        day={1}
+                        holidays={this.state.holidays}
+                        startDay={this.state.weekViewStartDate}
+                      />
+                      <TopHeaderDays
+                        day={2}
+                        holidays={this.state.holidays}
+                        startDay={this.state.weekViewStartDate}
+                      />
+                      <TopHeaderDays
+                        day={3}
+                        holidays={this.state.holidays}
+                        startDay={this.state.weekViewStartDate}
+                      />
+                      <TopHeaderDays
+                        day={4}
+                        holidays={this.state.holidays}
+                        startDay={this.state.weekViewStartDate}
+                      />
+                      <TopHeaderDays
+                        day={5}
+                        holidays={this.state.holidays}
+                        startDay={this.state.weekViewStartDate}
+                      />
+                      <TopHeaderDays
+                        day={6}
+                        holidays={this.state.holidays}
+                        startDay={this.state.weekViewStartDate}
+                      />
+                    </View>
                   </View>
+                  {/* This is the vertically scrolling content. */}
+                  <ScrollViewVerticallySynced
+                    style={{
+                      width: "100%",
+                      backgroundColor: "#F8F8F8",
+                    }}
+                    name="notTime"
+                    onScroll={this.scrollEvent}
+                    scrollPosition={this.scrollPosition}
+                    eventList={this.state.list}
+                    weekStartDate={this.state.weekViewStartDate}
+                  />
                 </View>
-                {/* This is the vertically scrolling content. */}
-                <ScrollViewVerticallySynced
-                  style={{
-                    width: dailyWidth * 7,
-                    backgroundColor: "#F8F8F8",
-                  }}
-                  name="notTime"
-                  onScroll={this.scrollEvent}
-                  scrollPosition={this.scrollPosition}
-                  eventList={this.state.list}
-                  weekStartDate={this.state.weekViewStartDate}
-                />
-              </View>
-            </ScrollView>
-          </View>
+              </ScrollView>
+            </View>
+          ) : (
+            <View
+              style={{
+                backgroundColor: "blue",
+                width: "100%",
+                height: "100%",
+              }}
+            >
+              <Text>This is month view</Text>
+            </View>
+          )}
         </View>
       </SafeAreaView>
     );
@@ -1183,19 +1066,6 @@ class ScrollViewVerticallySynced extends React.Component {
   }
 }
 
-const displayEvents = () => {
-  /* return (
-    <EventItem
-    category="School Courses"
-    day={5}
-    startTime={genTimeBlock("FRI", 3, 30)}
-    endTime={genTimeBlock("FRI", 5, 30)}
-    title={"test"}
-    location={"test"}
-    color={"#8b9cb5"}
-  />
-  )*/
-};
 const makeVisible = (weekStartDate, event) => {
   //if event is school course, make visible
   if (event.category == EventCategory.SCHOOLCOURSE) {
@@ -1342,7 +1212,6 @@ const styles = StyleSheet.create({
     height: 450,
     justifyContent: "center",
     alignItems: "center",
-    bottom: 100,
   },
   header_text: {
     color: "white",

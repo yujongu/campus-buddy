@@ -1,4 +1,5 @@
 export const CalendarViewType = {
-  WEEK: "Week View",
-  MONTH: "Month View",
+  WEEK: "Week",
+  MONTH: "Month",
+  YEAR: "Year",
 };
