@@ -16,7 +16,7 @@ import {
   Pressable,
 } from "react-native";
 import DateTimePicker from "@react-native-community/datetimepicker";
-
+import { useEffect, useState, useContext} from "react";
 import DropDownPicker from "react-native-dropdown-picker";
 import { ColorWheel } from "../components/ui/ColorWheel";
 import { Colors } from "../constants/colors";
@@ -30,6 +30,9 @@ import EventItem from "../components/ui/EventItem";
 import { IconButton } from "@react-native-material/core";
 import TopHeaderDays from "../components/ui/TopHeaderDays";
 import { doc, onSnapshot, updateDoc, getDoc } from "firebase/firestore";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import ThemeContext from "../components/ui/ThemeContext";
+import theme from "../components/ui/theme";
 import { EventCategory } from "../constants/eventCategory";
 import { CalendarViewType } from "../constants/calendarViewType";
 import HolidaySettingModal from "../components/ui/HolidaySettingModal";
@@ -57,7 +60,9 @@ const dailyWidth = (Dimensions.get("window").width - leftHeaderWidth) / 3;
 const dailyHeight = Dimensions.get("window").height / 10;
 
 export default class App extends Component {
+  
   constructor(props) {
+
     super(props);
     this.numOfDays = 7;
     this.pivotDate = genTimeBlock("mon");

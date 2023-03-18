@@ -1,17 +1,22 @@
 import { StatusBar } from "expo-status-bar";
-import { Button, StyleSheet, Text, Pressable, TextInput, View, Modal, Alert, TouchableOpacity, FlatList, ActivityIndicator } from "react-native";
+import { Switch, Button, StyleSheet, Text, Pressable, TextInput, View, Modal, Alert, TouchableOpacity, FlatList, ActivityIndicator } from "react-native";
 import { auth, db, userSchedule } from "../firebaseConfig"
 import { EmailAuthProvider } from "firebase/auth";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { signOut } from "firebase/auth"
 import { updateDoc, doc, arrayRemove, onSnapshot, arrayUnion } from "firebase/firestore";
-import { useState, useEffect } from "react";
+import React, { useState, useEffect, useContext } from "react";
 import { SHA256 } from 'crypto-js';
+import ThemeContext  from "../components/ui/ThemeContext";
+import theme from "../components/ui/theme";
+import {EventRegister} from "react-native-event-listeners";
 
 export default function ProfileScreen({ navigation, route }) {
   const [newId, setNewId] = useState("");
   const [id, setId] = useState("");
   const [password, setPassword] = useState("");
+  const [mode,setMode] = useState(false);
+  const theme = useContext(ThemeContext);
 
   const handleSignOut = () => {
     signOut(auth)
@@ -19,8 +24,6 @@ export default function ProfileScreen({ navigation, route }) {
         navigation.popToTop();
       })
   }
-
-
 
   const handleChangeId = () => {
     const userDocRef = doc(db, "users", auth.currentUser.uid);
@@ -76,10 +79,16 @@ export default function ProfileScreen({ navigation, route }) {
   }, []);
  
   return (
-    <View style={styles.container}>
-      <Text>{auth.currentUser?.uid}</Text>
+    <View style={[styles.container]}>
+      <Text style = {[styles.textStyle, {color: theme.color}]}>{auth.currentUser?.uid}</Text>
   
-      <Text>Current Id: {id}</Text>
+      <Text style = {[styles.textStyle, {color: theme.color}]}>Current Id: {id}</Text>
+      <Switch 
+        value={mode} 
+        onValueChange={(value) => {
+        setMode(value);
+        EventRegister.emit("changeTheme", value);
+      }} />
       <Button title="Settings" onPress={() => navigation.navigate("Settings")} />
       <Button title="Sign Out" onPress={handleSignOut} />
       <Button title="Friend page" onPress={() => navigation.navigate("Friend")} />
@@ -99,7 +108,6 @@ export default function ProfileScreen({ navigation, route }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#fff",
     alignItems: "center",
     justifyContent: "center",
   },
@@ -128,7 +136,6 @@ const styles = StyleSheet.create({
     elevation: 2
   },
   textStyle: {
-    color: "white",
     fontWeight: "bold",
     textAlign: "center"
   },

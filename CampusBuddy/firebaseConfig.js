@@ -1,7 +1,8 @@
 // Import the functions you need from the SDKs you need
 import { initializeApp } from "firebase/app";
 import { getAnalytics } from "firebase/analytics";
-import { getAuth, createUserWithEmailAndPassword } from "firebase/auth";
+import { getAuth, createUserWithEmailAndPassword, sendPasswordResetEmail } from "firebase/auth";
+import firebase from "firebase/compat/app";
 import { EmailAuthProvider, credential } from "firebase/auth";
 import { query, where } from "firebase/firestore";
 import {
@@ -38,6 +39,42 @@ const analytics = getAnalytics(app);
 const auth = getAuth(app);
 const db = getFirestore();
 export { auth, db };
+const dbRef = collection(db, "users");
+
+export async function checkUser(firstName, lastName, userId) {
+  console.log(userId);
+  return new Promise((resolve, reject) => {
+    const usersRef = collection(db, 'users');
+    const q = query(usersRef, where('id', '==', userId));
+    getDocs(q)
+      .then((querySnapshot) => {
+        let foundUser = null;
+        querySnapshot.forEach((doc) => {
+          const user = doc.data();
+          if (user.first === firstName && user.last === lastName) {
+            foundUser = user;
+          }
+        });
+        if (foundUser) {
+          alert(`The email address of the user is ${foundUser.email}`);
+        } else {
+          resolve(null);
+          alert('The entered informations are wrong');
+        }
+      })
+      .catch((error) => {
+        console.error(error);
+        reject(error);
+      });
+  });
+}
+
+export async function checkEmailExists(email) {
+  const usersRef = collection(db, "users");
+  const q = query(usersRef, where("email", "==", email));
+  const querySnapshot = await getDocs(q);
+  return !querySnapshot.empty;
+}
 
 export async function createUser(username, first, last, email, password) {
   const querySnapshot = await getDocs(
