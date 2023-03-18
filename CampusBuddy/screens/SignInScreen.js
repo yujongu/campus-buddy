@@ -1,14 +1,11 @@
 
 
 import { useState, createContext, useContext, useEffect } from "react";
-import { StyleSheet, View, Text, TextInput, TouchableOpacity, KeyboardAvoidingView } from 'react-native';
+import { Button, StyleSheet, View, Text, TextInput, TouchableOpacity, KeyboardAvoidingView } from 'react-native';
 import { auth } from "../firebaseConfig";
 import { signInWithEmailAndPassword, } from "firebase/auth"
 import { SHA256 } from 'crypto-js';
 import { EmailAuthProvider } from "firebase/auth";
-
-
-
 
 const SignInScreen = ({navigation}) => {
     const [username, setUsername] = useState('');
@@ -59,6 +56,8 @@ const SignInScreen = ({navigation}) => {
         <TouchableOpacity style={styles.loginButton} onPress={() => navigation.navigate('SignUp')}>
           <Text style={styles.loginButtonText}>Register</Text>
         </TouchableOpacity>
+        <Button title="Forgot Email" onPress={() => navigation.navigate("ForgotEmail")} />
+        <Button title="Forgot Password" onPress={() => navigation.navigate("ForgotPassword")} />
       </View>
     </KeyboardAvoidingView>
   );

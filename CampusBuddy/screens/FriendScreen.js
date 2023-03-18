@@ -31,8 +31,8 @@ import { MultiSelect } from 'react-native-element-dropdown';
 var all = []
 
 export default class FriendScreen extends Component {
-  constructor() {
-    super();
+  constructor(props) {
+    super(props);
     this.state = {
       list: [], // all friends except favorite friends
       favor: [], // favorite friends
@@ -48,8 +48,40 @@ export default class FriendScreen extends Component {
       group_visible: false,
       input: "",
       selected: [],
+      modalVisible: false,
+      nicknames: {},
+      nickname: "",
+      showNicknameInput: false,
+      currentFriend: null,
     };
   }
+
+  setModalVisible = (visible) => {
+    this.setState({ modalVisible: visible });
+  };
+
+  openNicknameInput = (friend) => {
+    this.setState({ showNicknameInput: true, currentFriend: friend });
+  };
+
+  submitNickname = () => {
+    const { currentFriend, nickname } = this.state;
+  
+    // Update the friend's nickname in the user's friend list
+    // You can save the nickname in a new property, e.g. "nickname"
+  
+    // Hide the nickname input
+    this.setState({ showNicknameInput: false, currentFriend: null });
+  };
+
+  setNickname = (email, nickname) => {
+    this.setState((prevState) => ({
+      nicknames: {
+        ...prevState.nicknames,
+        [email]: nickname,
+      },
+    }));
+  };
 
   componentDidMount() {
     const subscriber = onSnapshot(
@@ -115,6 +147,29 @@ export default class FriendScreen extends Component {
     }
   }
 
+  handleAddNickname = () => {
+    const { selected, nickname } = this.state;
+    if (selected.length === 0 || nickname === "") {
+      Alert.alert("Invalid input", "Please enter both user(s) and group name");
+      return;
+    }
+    const me = doc(db, "friend_list", auth.currentUser?.email);
+    const friend_list = db.collection("friend_list");
+    const users = selected.map((s) => doc(friend_list, s));
+    try {
+      updateDoc(me, {
+        group: arrayUnion({
+          name: nickname,
+          users: [...users, doc(friend_list, auth.currentUser?.email)],
+        }),
+      });
+      this.setState({ group_visible: false, selected: [], nickname: "" }); // add this line
+      Alert.alert("Add Group", "Successfully added a new group");
+    } catch (e) {
+      console.error("Add Group: ", e);
+    }
+  };
+
   renderItem = (item) => {
     return (
       <View style={styles.item}>
@@ -131,24 +186,29 @@ export default class FriendScreen extends Component {
           />
         </TouchableOpacity>
         <TouchableOpacity
-          onPress={() =>
-            this.props.navigation.navigate("user_profile", {
-              email: item.user,
-            })
-          }
-        >
-          <Text style={{ color: "black", fontSize: 15 }}>{item.user}</Text>
-        </TouchableOpacity>
+        onPress={() =>
+          this.props.navigation.navigate("user_profile", {
+            email: item.user,
+          })
+        }
+      >
+        <Text style={{ color: "black", fontSize: 15 }}>{item.user}</Text>
+        {this.state.nicknames[item.user] && (
+          <Text style={{ color: "grey", fontSize: 12 }}>
+            {this.state.nicknames[item.user]}
+          </Text>
+        )}
+      </TouchableOpacity>
         </View>
-        <View style={{ flexDirection: "row" }}>
+        <View style={{ flexDirection: 'column' }}>
           <TouchableOpacity
             onPress={() =>
               Alert.alert(
-                "Unfriend",
-                "Do you really want to unfriend?",
+                'Unfriend',
+                'Do you really want to unfriend?',
                 [
-                  { text: "Yes", onPress: () => this.removeFriend(item) },
-                  { text: "Cancel", style: "cancel" },
+                  { text: 'Yes', onPress: () => this.removeFriend(item) },
+                  { text: 'Cancel', style: 'cancel' },
                 ],
                 { cancelable: false }
               )
@@ -156,6 +216,26 @@ export default class FriendScreen extends Component {
           >
             <Text>Unfriend</Text>
           </TouchableOpacity>
+
+
+          <TouchableOpacity
+            onPress={() => {
+              Alert.prompt(
+                "Add Nickname",
+                "Enter a nickname for this friend",
+                (nickname) => {
+                  if (nickname) {
+                    this.setNickname(item.user, nickname);
+                  } else {
+                    Alert.alert("Invalid input", "Please enter a valid nickname");
+                  }
+                }
+              );
+            }}
+          >
+            <Text>Add Nickname</Text>
+          </TouchableOpacity>
+  
         </View>
       </View>
     );
@@ -217,6 +297,22 @@ export default class FriendScreen extends Component {
   }
 
   render() {
+    const { showNicknameInput } = this.state;
+
+    const nicknameInput = showNicknameInput ? (
+      <View>
+        <TextInput
+          style={styles.input}
+          onChangeText={(text) => this.setState({ nickname: text })}
+          placeholder="Enter a nickname"
+          value={this.state.nickname}
+        />
+        <TouchableOpacity onPress={this.submitNickname}>
+          <Text>Submit Nickname</Text>
+        </TouchableOpacity>
+      </View>
+    ) : null;
+
     return (
       <SafeAreaView style={styles.container}>
         <Modal
@@ -309,6 +405,7 @@ export default class FriendScreen extends Component {
             <Text>No friends yet</Text>
           )}
         </View>
+        {nicknameInput}
       </SafeAreaView>
     );
   }

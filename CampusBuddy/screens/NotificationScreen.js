@@ -6,7 +6,7 @@ import { Component, useEffect, useState } from "react";
 import { Button, Alert, StyleSheet, Text, TouchableOpacity, View, ActivityIndicator } from "react-native";
 import { FlatList } from "react-native";
 import Icon from 'react-native-vector-icons/AntDesign'
-
+import ThemeContext  from "../components/ui/ThemeContext";
 
 
 export default class NotificationScreen extends Component{
