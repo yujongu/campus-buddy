@@ -121,7 +121,7 @@ export default class App extends Component {
     this.setState({ weekViewStartDate: tempDate });
 
     //Set month view calendar UI with the start date
-    this.createMonthViewData();
+    this.createMonthViewData(tempDate);
     // Getting schedules from database
     const res = await userSchedule(auth.currentUser?.uid);
     const result = [];
@@ -175,7 +175,6 @@ export default class App extends Component {
 
   //Format event list so it works with the calendar view.
   checkList = (result) => {
-    // console.log("HI");
     result.forEach((event, index) => {
       //For events that go over on day
       if (event.startTime.getDate() != event.endTime.getDate()) {
@@ -630,7 +629,7 @@ export default class App extends Component {
       this.getHolidays(this.state.selectedCountryCode, tempDate.getFullYear());
     }
     this.setState({ weekViewStartDate: tempDate });
-    this.createMonthViewData();
+    this.createMonthViewData(tempDate);
   };
   goNextMonth = () => {
     let currYear = this.state.weekViewStartDate.getFullYear();
@@ -644,28 +643,30 @@ export default class App extends Component {
       this.getHolidays(this.state.selectedCountryCode, tempDate.getFullYear());
     }
     this.setState({ weekViewStartDate: tempDate });
-    this.createMonthViewData();
+    this.createMonthViewData(tempDate);
   };
 
   goToday = () => {
     let tempDate = new Date();
     tempDate.setDate(tempDate.getDate() - tempDate.getDay());
+
     this.setState({ weekViewStartDate: tempDate });
+    this.createMonthViewData(tempDate);
   };
 
-  createMonthViewData = () => {
+  createMonthViewData = (startDate) => {
     let prevMonthDate = new Date(
-      this.state.weekViewStartDate.getFullYear(),
-      this.state.weekViewStartDate.getMonth(),
+      startDate.getFullYear(),
+      startDate.getMonth(),
       0
     );
     let numDaysInPrevMonth = prevMonthDate.getDate();
     let monthDate = new Date(
-      this.state.weekViewStartDate.getFullYear(),
-      this.state.weekViewStartDate.getMonth() + 1,
+      startDate.getFullYear(),
+      startDate.getMonth() + 1,
       0
     );
-    const monthData = [];
+    let monthData = [];
     let numDaysInMonth = monthDate.getDate();
     monthDate.setDate(1);
     for (let i = 0; i < 42; i++) {
@@ -675,7 +676,8 @@ export default class App extends Component {
           hasEvent: false,
           isThisMonth: false,
         };
-        monthData.push(temp);
+        // monthData.push(temp);
+        monthData = [...monthData, temp];
       } else {
         if (i < monthDate.getDay() + numDaysInMonth) {
           const temp = {
@@ -684,14 +686,16 @@ export default class App extends Component {
             isThisMonth: true,
           };
 
-          monthData.push(temp);
+          // monthData.push(temp);
+          monthData = [...monthData, temp];
         } else {
           const temp = {
             date: i - numDaysInMonth - monthDate.getDay() + 1,
             hasEvent: false,
             isThisMonth: false,
           };
-          monthData.push(temp);
+          // monthData.push(temp);
+          monthData = [...monthData, temp];
         }
       }
     }
@@ -1149,6 +1153,8 @@ export default class App extends Component {
                               ? Colors.morningTimeColor
                               : Colors.eveningTimeColor,
                           width: 20,
+                          marginHorizontal: 4,
+                          textAlign: "center",
                         }}
                       >
                         {index}
@@ -1267,10 +1273,15 @@ export default class App extends Component {
               }}
             >
               <FlatList
+                scrollEnabled={false}
                 data={this.state.monthViewData}
                 renderItem={({ item }) => (
                   // console.log(item)
-                  <MonthViewItem date={item.date} />
+                  <MonthViewItem
+                    date={item.date}
+                    hasEvent={item.hasEvent}
+                    isThisMonth={item.isThisMonth}
+                  />
                 )}
                 //Setting the number of column
                 numColumns={7}
