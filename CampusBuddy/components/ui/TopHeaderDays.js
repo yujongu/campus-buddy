@@ -1,7 +1,7 @@
 import React from "react";
 import { StyleSheet, View, Text, Dimensions } from "react-native";
 const leftHeaderWidth = 50;
-const topHeaderHeight = 20;
+const topHeaderHeight = 60;
 const dailyWidth = (Dimensions.get("window").width - leftHeaderWidth) / 3;
 const dailyHeight = Dimensions.get("window").height / 10;
 export default class TopHeaderDays extends React.Component {
@@ -50,6 +50,7 @@ export default class TopHeaderDays extends React.Component {
 
 const styles = StyleSheet.create({
   daysWithDateContainer: {
+    height: topHeaderHeight,
     width: dailyWidth,
     flexDirection: "column",
     alignItems: "center",

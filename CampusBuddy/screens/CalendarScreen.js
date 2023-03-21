@@ -1,4 +1,4 @@
-import React, { Component } from "react";
+import React, { Component, createRef } from "react";
 import { readString } from "react-native-csv";
 import {
   StyleSheet,
@@ -16,7 +16,7 @@ import {
   Pressable,
 } from "react-native";
 import DateTimePicker from "@react-native-community/datetimepicker";
-import { useEffect, useState, useContext} from "react";
+import { useEffect, useState, useContext } from "react";
 import DropDownPicker from "react-native-dropdown-picker";
 import { ColorWheel } from "../components/ui/ColorWheel";
 import { Colors } from "../constants/colors";
@@ -60,12 +60,12 @@ const dailyWidth = (Dimensions.get("window").width - leftHeaderWidth) / 3;
 const dailyHeight = Dimensions.get("window").height / 10;
 
 export default class App extends Component {
-  
   constructor(props) {
-
     super(props);
     this.numOfDays = 7;
     this.pivotDate = genTimeBlock("mon");
+
+    this.svRef = React.createRef();
 
     this.scrollPosition = new Animated.Value(0);
     this.scrollEvent = Animated.event(
@@ -170,7 +170,7 @@ export default class App extends Component {
 
   //Format event list so it works with the calendar view.
   checkList = (result) => {
-    console.log("HI");
+    // console.log("HI");
     result.forEach((event, index) => {
       //For events that go over on day
       if (event.startTime.getDate() != event.endTime.getDate()) {
@@ -194,12 +194,12 @@ export default class App extends Component {
         };
         result.splice(index, 0, nEventEndSide);
 
-        console.log(nEventEndSide);
-        for (let i = sD; i >= longEvent.startTime.getDate() + 1; i--) {
-          console.log(nEventEndSide);
-        }
+        // console.log(nEventEndSide);
+        // for (let i = sD; i >= longEvent.startTime.getDate() + 1; i--) {
+        //   console.log(nEventEndSide);
+        // }
 
-        console.log("End OF DAY");
+        // console.log("End OF DAY");
 
         let endOfDay = new Date(
           longEvent.startTime.getFullYear(),
@@ -631,6 +631,18 @@ export default class App extends Component {
   sayHi = (e) => {
     console.log("HIIIIIIIIIIIIIIIIIIII");
   };
+  scrollViewEventOne = (e) => {
+    this.svRef.current.scrollTo({
+      x: 0,
+      y: e.nativeEvent.contentOffset.y,
+      animated: true,
+    });
+  };
+
+  scrollEvent = Animated.event(
+    [{ nativeEvent: { contentOffset: { y: this.scrollPosition } } }],
+    { useNativeDriver: false }
+  );
 
   toggleCalendarView = () => {
     switch (this.state.calendarView) {
@@ -949,80 +961,213 @@ export default class App extends Component {
             </View>
           </View>
           {this.state.calendarView == CalendarViewType.WEEK ? (
-            <View
-              style={{
-                flexDirection: "row",
-              }}
-            >
-              {/* This is the left vertical header */}
-              <ScrollViewVerticallySynced
-                style={{
-                  width: leftHeaderWidth,
-                  marginTop: topHeaderHeight,
-                }}
-                name="Time"
-                onScroll={this.scrollEvent}
-                scrollPosition={this.scrollPosition}
-              />
-              {/* This is the right vertical content */}
-              <ScrollView horizontal bounces={true}>
-                <View style={{ width: dailyWidth * 7 }}>
-                  <View
-                    style={{
-                      height: topHeaderHeight,
-                      justifyContent: "center",
-                    }}
-                  >
-                    <View style={styles.daysContainer}>
-                      <TopHeaderDays
-                        day={0}
-                        holidays={this.state.holidays}
-                        startDay={this.state.weekViewStartDate}
-                      />
-                      <TopHeaderDays
-                        day={1}
-                        holidays={this.state.holidays}
-                        startDay={this.state.weekViewStartDate}
-                      />
-                      <TopHeaderDays
-                        day={2}
-                        holidays={this.state.holidays}
-                        startDay={this.state.weekViewStartDate}
-                      />
-                      <TopHeaderDays
-                        day={3}
-                        holidays={this.state.holidays}
-                        startDay={this.state.weekViewStartDate}
-                      />
-                      <TopHeaderDays
-                        day={4}
-                        holidays={this.state.holidays}
-                        startDay={this.state.weekViewStartDate}
-                      />
-                      <TopHeaderDays
-                        day={5}
-                        holidays={this.state.holidays}
-                        startDay={this.state.weekViewStartDate}
-                      />
-                      <TopHeaderDays
-                        day={6}
-                        holidays={this.state.holidays}
-                        startDay={this.state.weekViewStartDate}
-                      />
+            // <View
+            //   style={{
+            //     flexDirection: "row",
+            //   }}
+            // >
+            //   {/* This is the left vertical header */}
+            //   <ScrollViewVerticallySynced
+            //     style={{
+            //       width: leftHeaderWidth,
+            //       marginTop: topHeaderHeight,
+            //     }}
+            //     name="Time"
+            //     onScroll={this.scrollEvent}
+            //     scrollPosition={this.scrollPosition}
+            //     eventList={this.state.list}
+            //     weekStartDate={this.state.weekViewStartDate}
+            //   />
+            //   {/* This is the right vertical content */}
+            //   <ScrollView horizontal bounces={true}>
+            //     <View style={{ width: dailyWidth * 7 }}>
+            //       <View
+            //         style={{
+            //           height: topHeaderHeight,
+            //           justifyContent: "center",
+            //         }}
+            //       >
+            //         <View style={styles.daysContainer}>
+            //           <TopHeaderDays
+            //             day={0}
+            //             holidays={this.state.holidays}
+            //             startDay={this.state.weekViewStartDate}
+            //           />
+            //           <TopHeaderDays
+            //             day={1}
+            //             holidays={this.state.holidays}
+            //             startDay={this.state.weekViewStartDate}
+            //           />
+            //           <TopHeaderDays
+            //             day={2}
+            //             holidays={this.state.holidays}
+            //             startDay={this.state.weekViewStartDate}
+            //           />
+            //           <TopHeaderDays
+            //             day={3}
+            //             holidays={this.state.holidays}
+            //             startDay={this.state.weekViewStartDate}
+            //           />
+            //           <TopHeaderDays
+            //             day={4}
+            //             holidays={this.state.holidays}
+            //             startDay={this.state.weekViewStartDate}
+            //           />
+            //           <TopHeaderDays
+            //             day={5}
+            //             holidays={this.state.holidays}
+            //             startDay={this.state.weekViewStartDate}
+            //           />
+            //           <TopHeaderDays
+            //             day={6}
+            //             holidays={this.state.holidays}
+            //             startDay={this.state.weekViewStartDate}
+            //           />
+            //         </View>
+            //       </View>
+            //       {/* This is the vertically scrolling content. */}
+            //       <ScrollViewVerticallySynced
+            //         style={{
+            //           width: "100%",
+            //           backgroundColor: "#F8F8F8",
+            //         }}
+            //         name="notTime"
+            //         onScroll={this.scrollEvent}
+            //         scrollPosition={this.scrollPosition}
+            //         eventList={this.state.list}
+            //         weekStartDate={this.state.weekViewStartDate}
+            //       />
+            //     </View>
+            //   </ScrollView>
+            // </View>
+            <View style={{ flexDirection: "row", height: "100%" }}>
+              <View>
+                <View style={{ height: topHeaderHeight }} />
+                <ScrollView scrollEnabled={false} ref={this.svRef}>
+                  {Array.from(Array(24).keys()).map((index) => (
+                    <View
+                      // key={`TIME${name}-${index}`}
+                      key={index}
+                      style={{
+                        height: dailyHeight,
+                        // justifyContent: "center",
+                        flexDirection: "row",
+                      }}
+                    >
+                      <Text
+                        style={{
+                          color:
+                            index <= 12 && index > 0
+                              ? Colors.morningTimeColor
+                              : Colors.eveningTimeColor,
+                          width: 20,
+                        }}
+                      >
+                        {index}
+                      </Text>
                     </View>
+                  ))}
+                </ScrollView>
+              </View>
+              <ScrollView
+                style={{
+                  height: "100%",
+                  width: "100%",
+                }}
+                horizontal={true}
+              >
+                <View style={{ flexDirection: "column" }}>
+                  <View style={styles.daysContainer}>
+                    <TopHeaderDays
+                      day={0}
+                      holidays={this.state.holidays}
+                      startDay={this.state.weekViewStartDate}
+                    />
+                    <TopHeaderDays
+                      day={1}
+                      holidays={this.state.holidays}
+                      startDay={this.state.weekViewStartDate}
+                    />
+                    <TopHeaderDays
+                      day={2}
+                      holidays={this.state.holidays}
+                      startDay={this.state.weekViewStartDate}
+                    />
+                    <TopHeaderDays
+                      day={3}
+                      holidays={this.state.holidays}
+                      startDay={this.state.weekViewStartDate}
+                    />
+                    <TopHeaderDays
+                      day={4}
+                      holidays={this.state.holidays}
+                      startDay={this.state.weekViewStartDate}
+                    />
+                    <TopHeaderDays
+                      day={5}
+                      holidays={this.state.holidays}
+                      startDay={this.state.weekViewStartDate}
+                    />
+                    <TopHeaderDays
+                      day={6}
+                      holidays={this.state.holidays}
+                      startDay={this.state.weekViewStartDate}
+                    />
                   </View>
-                  {/* This is the vertically scrolling content. */}
-                  <ScrollViewVerticallySynced
+
+                  <ScrollView
                     style={{
-                      width: "100%",
                       backgroundColor: "#F8F8F8",
+                      width: "100%",
+                      height: "100%",
                     }}
-                    name="notTime"
-                    onScroll={this.scrollEvent}
-                    scrollPosition={this.scrollPosition}
-                    eventList={this.state.list}
-                    weekStartDate={this.state.weekViewStartDate}
-                  />
+                    horizontal={false}
+                    nestedScrollEnabled
+                    scrollEventThrottle={16}
+                    onScroll={this.scrollViewEventOne}
+                  >
+                    <View style={{}}>
+                      {Array.from(Array(24).keys()).map((index) => (
+                        <View
+                          key={index}
+                          style={{
+                            height: dailyHeight,
+                            flexDirection: "row",
+                          }}
+                        >
+                          <View
+                            key={`NT-${index}`}
+                            style={{
+                              height: dailyHeight,
+                              flex: 1,
+                              flexDirection: "row",
+                            }}
+                          >
+                            {this.state.list.map((event) => {
+                              return index == event.startTime.getHours() &&
+                                makeVisible(
+                                  this.state.weekViewStartDate,
+                                  event
+                                ) ? (
+                                <EventItem
+                                  key={`EITEM-${index}-${event.title}-${event.startTime}`}
+                                  category={event.category}
+                                  day={event.startTime.getDay()}
+                                  startTime={new Date(event.startTime)}
+                                  endTime={new Date(event.endTime)}
+                                  title={event.title}
+                                  location={event.location}
+                                  color={event.color}
+                                />
+                              ) : (
+                                <View />
+                              );
+                            })}
+                          </View>
+                        </View>
+                      ))}
+                    </View>
+                  </ScrollView>
                 </View>
               </ScrollView>
             </View>
