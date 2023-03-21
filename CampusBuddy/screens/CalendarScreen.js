@@ -78,6 +78,7 @@ export default class App extends Component {
     this.state = {
       visible: false,
       list: [],
+      calendarEventList: [],
       midterms: [],
       holidays: [],
       testlist: [],
@@ -125,6 +126,7 @@ export default class App extends Component {
     // Getting schedules from database
     const res = await userSchedule(auth.currentUser?.uid);
     const result = [];
+    const eventResult = [];
     if (res != null) {
       res["things"].map((element) => {
         const sp = element.data.split(",");
@@ -151,11 +153,14 @@ export default class App extends Component {
           location: events["event"][i]["location"],
           color: events["event"][i]["color"],
         };
-        result.push(temp);
+        eventResult.push(temp);
       }
     }
 
     this.checkList(result);
+    this.setState({ calendarEventList: eventResult });
+
+
 
     const userDocRef = doc(db, "users", auth.currentUser.uid);
     onSnapshot(userDocRef, (doc) => {
@@ -272,7 +277,7 @@ export default class App extends Component {
         0
       );
 
-      this.state.list.push({
+      this.state.calendarEventList.push({
         category: EventCategory.EVENT,
         title: this.title,
         startTime: eventSTime,
@@ -428,13 +433,13 @@ export default class App extends Component {
     if (querySnapShot.exists()) {
       const result = querySnapShot.data();
       console.log(result["start"].toDate());
-      this.state.testlist.push({
+      this.state.calendarEventList.push({
         title: result["title"],
         startTime: result["start"],
         endTime: result["end"],
         location: result["location"],
       });
-      console.log(this.state.list);
+      console.log(this.state.calendarEventList);
     }
   };
 
@@ -731,6 +736,7 @@ export default class App extends Component {
   );
 
   toggleCalendarView = () => {
+    alert(this.state.calendarEventList);
     switch (this.state.calendarView) {
       case CalendarViewType.WEEK:
         this.setState({ calendarView: CalendarViewType.MONTH });
@@ -1254,6 +1260,49 @@ export default class App extends Component {
                           </View>
                         </View>
                       ))}
+                      
+                    </View>
+                    <View style={{}}>
+                      {Array.from(Array(24).keys()).map((index) => (
+                        <View
+                          key={index}
+                          style={{
+                            height: dailyHeight,
+                            flexDirection: "row",
+                          }}
+                        >
+                          <View
+                            key={`NT-${index}`}
+                            style={{
+                              height: dailyHeight,
+                              flex: 1,
+                              flexDirection: "row",
+                            }}
+                          >
+                            {this.state.calendarEventList.map((event) => {
+                              return index == event.startTime.getHours() &&
+                                makeVisible(
+                                  this.state.weekViewStartDate,
+                                  event
+                                ) ? (
+                                <EventItem
+                                  key={`EITEM-${index}-${event.title}-${event.startTime}`}
+                                  category={event.category}
+                                  day={event.startTime.getDay()}
+                                  startTime={new Date(event.startTime)}
+                                  endTime={new Date(event.endTime)}
+                                  title={event.title}
+                                  location={event.location}
+                                  color={event.color}
+                                />
+                              ) : (
+                                <View />
+                              );
+                            })}
+                          </View>
+                        </View>
+                      ))}
+                      
                     </View>
                   </ScrollView>
                 </View>
