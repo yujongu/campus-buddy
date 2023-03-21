@@ -108,6 +108,7 @@ export default class App extends Component {
       startTime: null,
       endDate: null,
       endTime: null,
+      points: 0,
       // This is the starting date for the current calendar UI.
       weekViewStartDate: new Date(),
       monthViewData: [],
@@ -272,7 +273,7 @@ export default class App extends Component {
         eventETime,
         this.location,
         "test",
-        10,
+        this.points,
         eventColor,
         0
       );
@@ -302,6 +303,9 @@ export default class App extends Component {
     this.location = location;
   };
 
+  setPoints = (points) => {
+    this.points = points;
+  };
   scrollViewRef = (ref) => {
     this.timetableRef = ref;
   };
@@ -759,7 +763,6 @@ export default class App extends Component {
       colorPicker,
       eventColor,
       weekViewStartDate: weekViewStartDate,
-
       repetition,
       openDate,
     } = this.state;
@@ -896,6 +899,40 @@ export default class App extends Component {
                 </View>
               </View>
               {/* <View style={styles.row}> */}
+              <View style={styles.row}>
+                <Text
+                  style={{
+                    textAlign: "center",
+                    margin: 5,
+                    paddingTop: 10,
+                    paddingLeft: 80,
+                    color: "#2F4858",
+                  }}
+                >
+                  Points
+                </Text>
+                <ScrollView
+                  keyboardShouldPersistTaps='handled'
+                >
+                  <TextInput
+                    placeholderTextColor="#8b9cb5"
+                    style={{
+                      color: "black",
+                      borderWidth: 1,
+                      borderColor: "#8b9cb5",
+                      marginLeft: 10,
+                      marginTop:5,
+                      width:50,
+                      height:30,
+                      textAlign: 'center',
+                    }}
+                    value={this.state.points}
+                    defaultValue={0}
+                    keyboardType="numeric"
+                    onChangeText={(text) => this.setPoints(text)}
+                  ></TextInput>
+                  </ScrollView>
+                </View>
               <View style={styles.row}>
                 <Text
                   style={{
@@ -1504,7 +1541,7 @@ const styles = StyleSheet.create({
   modal: {
     backgroundColor: "white",
     width: 350,
-    height: 450,
+    height: 475,
     justifyContent: "center",
     alignItems: "center",
   },
