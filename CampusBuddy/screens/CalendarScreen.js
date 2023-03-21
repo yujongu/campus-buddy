@@ -6,6 +6,7 @@ import {
   View,
   Text,
   ScrollView,
+  FlatList,
   Alert,
   Linking,
   Dimensions,
@@ -38,6 +39,7 @@ import { CalendarViewType } from "../constants/calendarViewType";
 import HolidaySettingModal from "../components/ui/HolidaySettingModal";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import { SafeAreaView, useSafeAreaFrame } from "react-native-safe-area-context";
+import MonthViewItem from "../components/MonthViewItem";
 
 const MonthName = [
   "January",
@@ -107,7 +109,8 @@ export default class App extends Component {
       endTime: null,
       // This is the starting date for the current calendar UI.
       weekViewStartDate: new Date(),
-      calendarView: CalendarViewType.WEEK, //On click, go above a level. Once date is clicked, go into week view.
+      monthViewData: [],
+      calendarView: CalendarViewType.MONTH, //On click, go above a level. Once date is clicked, go into week view.
     };
   }
 
@@ -117,6 +120,8 @@ export default class App extends Component {
     tempDate.setDate(tempDate.getDate() - tempDate.getDay());
     this.setState({ weekViewStartDate: tempDate });
 
+    //Set month view calendar UI with the start date
+    this.createMonthViewData();
     // Getting schedules from database
     const res = await userSchedule(auth.currentUser?.uid);
     const result = [];
@@ -611,6 +616,87 @@ export default class App extends Component {
     }
     this.setState({ weekViewStartDate: tempDate });
   };
+  //navigate through calendar ui
+  goPrevMonth = () => {
+    let currYear = this.state.weekViewStartDate.getFullYear();
+    let tempDate = this.state.weekViewStartDate;
+    tempDate.setMonth(tempDate.getMonth() - 1);
+
+    if (
+      tempDate.getFullYear() != currYear &&
+      this.state.selectedCountryCode != null &&
+      this.state.selectedCountryCode.length > 0
+    ) {
+      this.getHolidays(this.state.selectedCountryCode, tempDate.getFullYear());
+    }
+    this.setState({ weekViewStartDate: tempDate });
+    this.createMonthViewData();
+  };
+  goNextMonth = () => {
+    let currYear = this.state.weekViewStartDate.getFullYear();
+    let tempDate = this.state.weekViewStartDate;
+    tempDate.setMonth(tempDate.getMonth() + 1);
+    if (
+      tempDate.getFullYear() != currYear &&
+      this.state.selectedCountryCode != null &&
+      this.state.selectedCountryCode.length > 0
+    ) {
+      this.getHolidays(this.state.selectedCountryCode, tempDate.getFullYear());
+    }
+    this.setState({ weekViewStartDate: tempDate });
+    this.createMonthViewData();
+  };
+
+  goToday = () => {
+    let tempDate = new Date();
+    tempDate.setDate(tempDate.getDate() - tempDate.getDay());
+    this.setState({ weekViewStartDate: tempDate });
+  };
+
+  createMonthViewData = () => {
+    let prevMonthDate = new Date(
+      this.state.weekViewStartDate.getFullYear(),
+      this.state.weekViewStartDate.getMonth(),
+      0
+    );
+    let numDaysInPrevMonth = prevMonthDate.getDate();
+    let monthDate = new Date(
+      this.state.weekViewStartDate.getFullYear(),
+      this.state.weekViewStartDate.getMonth() + 1,
+      0
+    );
+    const monthData = [];
+    let numDaysInMonth = monthDate.getDate();
+    monthDate.setDate(1);
+    for (let i = 0; i < 42; i++) {
+      if (i < monthDate.getDay()) {
+        const temp = {
+          date: numDaysInPrevMonth - monthDate.getDay() + i + 1,
+          hasEvent: false,
+          isThisMonth: false,
+        };
+        monthData.push(temp);
+      } else {
+        if (i < monthDate.getDay() + numDaysInMonth) {
+          const temp = {
+            date: i - monthDate.getDay() + 1,
+            hasEvent: false,
+            isThisMonth: true,
+          };
+
+          monthData.push(temp);
+        } else {
+          const temp = {
+            date: i - numDaysInMonth - monthDate.getDay() + 1,
+            hasEvent: false,
+            isThisMonth: false,
+          };
+          monthData.push(temp);
+        }
+      }
+    }
+    this.setState({ monthViewData: monthData });
+  };
 
   onEventStartDateSelected = (event, value) => {
     this.setState({ eventStartDate: value });
@@ -656,12 +742,6 @@ export default class App extends Component {
         console.error("Something Wrong with toggle calendar view");
         break;
     }
-  };
-
-  goToday = () => {
-    let tempDate = new Date();
-    tempDate.setDate(tempDate.getDate() - tempDate.getDay());
-    this.setState({ weekViewStartDate: tempDate });
   };
 
   render() {
@@ -921,7 +1001,11 @@ export default class App extends Component {
                 <IconButton
                   style={{}}
                   color={Colors.grey}
-                  onPress={this.goPrevWeek}
+                  onPress={
+                    this.state.calendarView == CalendarViewType.WEEK
+                      ? this.goPrevWeek
+                      : this.goPrevMonth
+                  }
                   icon={(props) => <Octicons name="triangle-left" {...props} />}
                 />
                 <Pressable style={{ padding: 10 }} onPress={this.goToday}>
@@ -930,7 +1014,11 @@ export default class App extends Component {
                 <IconButton
                   style={{}}
                   color={Colors.grey}
-                  onPress={this.goNextWeek}
+                  onPress={
+                    this.state.calendarView == CalendarViewType.WEEK
+                      ? this.goNextWeek
+                      : this.goNextMonth
+                  }
                   icon={(props) => (
                     <Octicons name="triangle-right" {...props} />
                   )}
@@ -1174,12 +1262,20 @@ export default class App extends Component {
           ) : (
             <View
               style={{
-                backgroundColor: "blue",
                 width: "100%",
                 height: "100%",
               }}
             >
-              <Text>This is month view</Text>
+              <FlatList
+                data={this.state.monthViewData}
+                renderItem={({ item }) => (
+                  // console.log(item)
+                  <MonthViewItem date={item.date} />
+                )}
+                //Setting the number of column
+                numColumns={7}
+                keyExtractor={(item, index) => index}
+              />
             </View>
           )}
         </View>
