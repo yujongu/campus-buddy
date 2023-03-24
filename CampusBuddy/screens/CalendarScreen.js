@@ -1,12 +1,12 @@
-import React, { Component } from "react";
+import React, { Component, createRef } from "react";
 import { readString } from "react-native-csv";
 import {
   StyleSheet,
   Button,
   View,
-  SafeAreaView,
   Text,
   ScrollView,
+  FlatList,
   Alert,
   Linking,
   Dimensions,
@@ -14,40 +14,32 @@ import {
   Modal,
   Animated,
   TextInput,
-  KeyboardAvoidingView,
   Pressable,
 } from "react-native";
 import DateTimePicker from "@react-native-community/datetimepicker";
-import { useEffect, useState, useContext} from "react";
+import { useEffect, useState, useContext } from "react";
 import DropDownPicker from "react-native-dropdown-picker";
 import { ColorWheel } from "../components/ui/ColorWheel";
-import { SelectList } from "react-native-dropdown-select-list";
 import { Colors } from "../constants/colors";
 import * as DocumentPicker from "expo-document-picker";
 import Icon from "react-native-vector-icons/FontAwesome";
-import FeatherIcon from "react-native-vector-icons/Feather";
-import MaterialCommunityIcons from "react-native-vector-icons/MaterialCommunityIcons";
 import Octicons from "react-native-vector-icons/Octicons";
-import TimeTableView, { genTimeBlock } from "react-native-timetable";
-import { addSchedule, userList, addEvent } from "../firebaseConfig";
+import { genTimeBlock } from "react-native-timetable";
+import { addSchedule, addEvent } from "../firebaseConfig";
 import { auth, db, userSchedule, getUserEvents } from "../firebaseConfig";
 import EventItem from "../components/ui/EventItem";
-import { even, IconButton } from "@react-native-material/core";
-import { async } from "@firebase/util";
+import { IconButton } from "@react-native-material/core";
 import TopHeaderDays from "../components/ui/TopHeaderDays";
+import { doc, onSnapshot, updateDoc, getDoc } from "firebase/firestore";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import ThemeContext from "../components/ui/ThemeContext";
 import theme from "../components/ui/theme";
-import {
-  doc,
-  onSnapshot,
-  updateDoc,
-  getDoc,
-  Timestamp,
-} from "firebase/firestore";
 import { EventCategory } from "../constants/eventCategory";
-import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import { CalendarViewType } from "../constants/calendarViewType";
+import HolidaySettingModal from "../components/ui/HolidaySettingModal";
+import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
+import { SafeAreaView, useSafeAreaFrame } from "react-native-safe-area-context";
+import MonthViewItem from "../components/MonthViewItem";
 
 const MonthName = [
   "January",
@@ -77,6 +69,8 @@ export default class App extends Component {
     this.numOfDays = 7;
     this.pivotDate = genTimeBlock("mon");
 
+    this.svRef = React.createRef();
+
     this.scrollPosition = new Animated.Value(0);
     this.scrollEvent = Animated.event(
       [{ nativeEvent: { contentOffset: { y: this.scrollPosition } } }],
@@ -86,6 +80,7 @@ export default class App extends Component {
     this.state = {
       visible: false,
       list: [],
+      calendarEventList: [],
       midterms: [],
       holidays: [],
       testlist: [],
@@ -115,9 +110,11 @@ export default class App extends Component {
       startTime: null,
       endDate: null,
       endTime: null,
+      points: 0,
       // This is the starting date for the current calendar UI.
       weekViewStartDate: new Date(),
-      calendarView: CalendarViewType.WEEK, //On click, go above a level. Once date is clicked, go into week view.
+      monthViewData: [],
+      calendarView: CalendarViewType.MONTH, //On click, go above a level. Once date is clicked, go into week view.
     };
   }
 
@@ -127,9 +124,12 @@ export default class App extends Component {
     tempDate.setDate(tempDate.getDate() - tempDate.getDay());
     this.setState({ weekViewStartDate: tempDate });
 
+    //Set month view calendar UI with the start date
+    this.createMonthViewData();
     // Getting schedules from database
     const res = await userSchedule(auth.currentUser?.uid);
     const result = [];
+    const eventResult = [];
     if (res != null) {
       res["things"].map((element) => {
         const sp = element.data.split(",");
@@ -148,21 +148,6 @@ export default class App extends Component {
     const events = await getUserEvents(auth.currentUser?.uid);
     if (events != null) {
       for (let i = 0; i < events["event"].length; i++) {
-        // const temp = {
-        //   title: events["event"][i]["title"],
-        //   startTime: genTimeBlock(
-        //     this.convertDay(events["event"][i]["startDate"]),
-        //     parseInt(events["event"][i]["startTime"].substring(0, 2), 10),
-        //     parseInt(events["event"][i]["startTime"].substring(3, 5), 10)
-        //   ),
-        //   endTime: genTimeBlock(
-        //     this.convertDay(events["event"][i]["endDate"]),
-        //     parseInt(events["event"][i]["endTime"].substring(0, 2), 10),
-        //     parseInt(events["event"][i]["endTime"].substring(3, 5), 10)
-        //   ),
-        //   location: events["event"][i]["location"],
-        //   color: events["event"][i]["color"],
-        // };
         const temp = {
           category: EventCategory.EVENT,
           title: events["event"][i]["title"],
@@ -171,11 +156,15 @@ export default class App extends Component {
           location: events["event"][i]["location"],
           color: events["event"][i]["color"],
         };
-        result.push(temp);
+        eventResult.push(temp);
       }
     }
 
-    this.setState({ list: result });
+    this.checkList(result);
+    this.setState({ calendarEventList: eventResult });
+
+
+
     const userDocRef = doc(db, "users", auth.currentUser.uid);
     onSnapshot(userDocRef, (doc) => {
       if (doc.exists()) {
@@ -192,49 +181,62 @@ export default class App extends Component {
     });
   }
 
-  convertDay = (day) => {
-    var dayStr = "";
-    switch (day) {
-      case "0":
-        dayStr = "SUN";
-        break;
-      case "1":
-        dayStr = "MON";
-        break;
-      case "2":
-        dayStr = "TUE";
-        break;
-      case "3":
-        dayStr = "WED";
-        break;
-      case "4":
-        dayStr = "THU";
-        break;
-      case "5":
-        dayStr = "FRI";
-        break;
-      case "6":
-        dayStr = "SAT";
-        break;
-    }
-    return dayStr;
+  //Format event list so it works with the calendar view.
+  checkList = (result) => {
+    // console.log("HI");
+    result.forEach((event, index) => {
+      //For events that go over on day
+      if (event.startTime.getDate() != event.endTime.getDate()) {
+        // console.log(event);
+
+        let longEvent = event;
+        result.splice(index, 1);
+        let sD = longEvent.endTime.getDate() - 1;
+
+        let nEventEndSide = {
+          category: longEvent.category,
+          color: longEvent.color,
+          endTime: longEvent.endTime,
+          location: longEvent.location,
+          startTime: new Date(
+            longEvent.endTime.getFullYear(),
+            longEvent.endTime.getMonth(),
+            longEvent.endTime.getDate()
+          ),
+          title: longEvent.title,
+        };
+        result.splice(index, 0, nEventEndSide);
+
+        // console.log(nEventEndSide);
+        // for (let i = sD; i >= longEvent.startTime.getDate() + 1; i--) {
+        //   console.log(nEventEndSide);
+        // }
+
+        // console.log("End OF DAY");
+
+        let endOfDay = new Date(
+          longEvent.startTime.getFullYear(),
+          longEvent.startTime.getMonth(),
+          longEvent.startTime.getDate(),
+          23,
+          59,
+          59
+        );
+        let nEventStartSide = {
+          category: longEvent.category,
+          color: longEvent.color,
+          endTime: endOfDay,
+          location: longEvent.location,
+          startTime: longEvent.startTime,
+          title: longEvent.title,
+        };
+        result.splice(index, 0, nEventStartSide);
+      }
+    });
+    this.setState({ list: result });
   };
 
   submitEvent = (eventColor) => {
-    // addEvent(
-    //   auth.currentUser?.uid,
-    //   this.title,
-    //   this.startDate,
-    //   this.startTime,
-    //   this.endDate,
-    //   this.endTime,
-    //   this.location,
-    //   "test",
-    //   10,
-    //   eventColor,
-    //   0
-    // );
-
     if (
       this.location == undefined ||
       this.title == undefined ||
@@ -261,6 +263,11 @@ export default class App extends Component {
         this.state.eventEndTime.getMinutes()
       );
 
+      if (eventSTime > eventETime) {
+        alert("Invalid Time Frame");
+        return;
+      }
+
       addEvent(
         auth.currentUser?.uid,
         this.title,
@@ -268,25 +275,12 @@ export default class App extends Component {
         eventETime,
         this.location,
         "test",
-        10,
+        this.points,
         eventColor,
         0
       );
-      // addEvent(
-      //   auth.currentUser?.uid,
-      //   this.title,
-      //   this.state.eventStartDate,
-      //   this.state.eventStartTime,
-      //   this.state.eventEndDate,
-      //   this.state.eventEndTime,
-      //   this.location,
-      //   "test",
-      //   10,
-      //   eventColor,
-      //   0
-      // );
 
-      this.state.list.push({
+      this.state.calendarEventList.push({
         category: EventCategory.EVENT,
         title: this.title,
         startTime: eventSTime,
@@ -294,21 +288,6 @@ export default class App extends Component {
         location: this.location,
         color: eventColor,
       });
-      // this.state.list.push({
-      //   title: this.title,
-      //   startTime: genTimeBlock(
-      //     this.convertDay(this.startDate),
-      //     parseInt(this.startTime.substring(0, 2), 10),
-      //     parseInt(this.startTime.substring(4, 6), 10)
-      //   ),
-      //   endTime: genTimeBlock(
-      //     this.convertDay(this.endDate),
-      //     parseInt(this.endTime.substring(0, 2), 10),
-      //     parseInt(this.endTime.substring(4, 6), 10)
-      //   ),
-      //   location: this.location,
-      //   color: eventColor,
-      // });
 
       this.setState({ eventStartDate: new Date() });
       this.setState({ eventStartTime: new Date() });
@@ -326,22 +305,9 @@ export default class App extends Component {
     this.location = location;
   };
 
-  setStartDate = (date) => {
-    this.startDate = date;
+  setPoints = (points) => {
+    this.points = points;
   };
-
-  setStartTime = (time) => {
-    this.startTime = time;
-  };
-
-  setEndDate = (date) => {
-    this.endDate = date;
-  };
-
-  setEndTime = (time) => {
-    this.endTime = time;
-  };
-
   scrollViewRef = (ref) => {
     this.timetableRef = ref;
   };
@@ -403,6 +369,63 @@ export default class App extends Component {
     this.setState({ visible: true });
   };
 
+  //START Holiday Setting Modal Component Functions
+  //fetch public holiday
+  getHolidays = async (countryCode, year) => {
+    try {
+      const response = await fetch(
+        `https://date.nager.at/api/v3/PublicHolidays/${year}/${countryCode}`
+      );
+      const resp = await response.json();
+      this.setState({ holidays: resp });
+    } catch (error) {
+      console.error("Error at getHolidays\n" + error);
+    }
+  };
+  getCountries = async () => {
+    try {
+      const response = await fetch(
+        `https://date.nager.at/api/v3/AvailableCountries`
+      );
+      const resp = await response.json();
+      let nList = [];
+      for (let i in resp) {
+        nList.push({ key: resp[i].countryCode, value: resp[i].name });
+      }
+      this.setState({ holidayCountryList: nList });
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  storeData = async (value) => {
+    this.setState({ selectedCountryCode: value });
+    // this.getHolidays(value, this.state.weekViewStartDate.getFullYear());
+    await updateDoc(doc(db, "users", auth.currentUser.uid), {
+      holidayNationPref: value,
+    });
+    this.setState({ holidaySettingVisible: false });
+  };
+
+  removeData = async () => {
+    this.setState({ selectedCountryCode: "" });
+    this.setState({ holidays: [] });
+    await updateDoc(doc(db, "users", auth.currentUser.uid), {
+      holidayNationPref: "",
+    });
+    this.setState({ holidaySettingVisible: false });
+  };
+
+  closeHolidaySettingModal = () => {
+    this.setState({ holidaySettingVisible: false });
+  };
+
+  selectCountryHolidaySettingModal = (country) => {
+    this.setState({ selectedCountry: country });
+  };
+
+  //END Holiday Setting Modal Component Functions
+
   openURL = (url) => {
     Linking.openURL(url).catch((err) =>
       console.error("An error occurred", err)
@@ -416,13 +439,13 @@ export default class App extends Component {
     if (querySnapShot.exists()) {
       const result = querySnapShot.data();
       console.log(result["start"].toDate());
-      this.state.testlist.push({
+      this.state.calendarEventList.push({
         title: result["title"],
         startTime: result["start"],
         endTime: result["end"],
         location: result["location"],
       });
-      console.log(this.state.list);
+      console.log(this.state.calendarEventList);
     }
   };
 
@@ -581,9 +604,11 @@ export default class App extends Component {
     let currYear = this.state.weekViewStartDate.getFullYear();
     let tempDate = this.state.weekViewStartDate;
     tempDate.setDate(tempDate.getDate() - 7);
+
     if (
       tempDate.getFullYear() != currYear &&
-      this.state.selectedCountryCode != null
+      this.state.selectedCountryCode != null &&
+      this.state.selectedCountryCode.length > 0
     ) {
       this.getHolidays(this.state.selectedCountryCode, tempDate.getFullYear());
     }
@@ -595,60 +620,95 @@ export default class App extends Component {
     tempDate.setDate(tempDate.getDate() + 7);
     if (
       tempDate.getFullYear() != currYear &&
-      this.state.selectedCountryCode != null
+      this.state.selectedCountryCode != null &&
+      this.state.selectedCountryCode.length > 0
     ) {
       this.getHolidays(this.state.selectedCountryCode, tempDate.getFullYear());
     }
     this.setState({ weekViewStartDate: tempDate });
   };
+  //navigate through calendar ui
+  goPrevMonth = () => {
+    let currYear = this.state.weekViewStartDate.getFullYear();
+    let tempDate = this.state.weekViewStartDate;
+    tempDate.setMonth(tempDate.getMonth() - 1);
 
-  //fetch public holiday
-  getHolidays = async (countryCode, year) => {
-    try {
-      const response = await fetch(
-        `https://date.nager.at/api/v3/PublicHolidays/${year}/${countryCode}`
-      );
-      const resp = await response.json();
-      this.setState({ holidays: resp });
-    } catch (error) {
-      console.error("Error at getHolidays\n" + error);
+    if (
+      tempDate.getFullYear() != currYear &&
+      this.state.selectedCountryCode != null &&
+      this.state.selectedCountryCode.length > 0
+    ) {
+      this.getHolidays(this.state.selectedCountryCode, tempDate.getFullYear());
     }
+    this.setState({ weekViewStartDate: tempDate });
+    this.createMonthViewData();
   };
-  getCountries = async () => {
-    try {
-      const response = await fetch(
-        `https://date.nager.at/api/v3/AvailableCountries`
-      );
-      const resp = await response.json();
-      let nList = [];
-      for (let i in resp) {
-        nList.push({ key: resp[i].countryCode, value: resp[i].name });
+  goNextMonth = () => {
+    let currYear = this.state.weekViewStartDate.getFullYear();
+    let tempDate = this.state.weekViewStartDate;
+    tempDate.setMonth(tempDate.getMonth() + 1);
+    if (
+      tempDate.getFullYear() != currYear &&
+      this.state.selectedCountryCode != null &&
+      this.state.selectedCountryCode.length > 0
+    ) {
+      this.getHolidays(this.state.selectedCountryCode, tempDate.getFullYear());
+    }
+    this.setState({ weekViewStartDate: tempDate });
+    this.createMonthViewData();
+  };
+
+  goToday = () => {
+    let tempDate = new Date();
+    tempDate.setDate(tempDate.getDate() - tempDate.getDay());
+    this.setState({ weekViewStartDate: tempDate });
+  };
+
+  createMonthViewData = () => {
+    let prevMonthDate = new Date(
+      this.state.weekViewStartDate.getFullYear(),
+      this.state.weekViewStartDate.getMonth(),
+      0
+    );
+    let numDaysInPrevMonth = prevMonthDate.getDate();
+    let monthDate = new Date(
+      this.state.weekViewStartDate.getFullYear(),
+      this.state.weekViewStartDate.getMonth() + 1,
+      0
+    );
+    const monthData = [];
+    let numDaysInMonth = monthDate.getDate();
+    monthDate.setDate(1);
+    for (let i = 0; i < 42; i++) {
+      if (i < monthDate.getDay()) {
+        const temp = {
+          date: numDaysInPrevMonth - monthDate.getDay() + i + 1,
+          hasEvent: false,
+          isThisMonth: false,
+        };
+        monthData.push(temp);
+      } else {
+        if (i < monthDate.getDay() + numDaysInMonth) {
+          const temp = {
+            date: i - monthDate.getDay() + 1,
+            hasEvent: false,
+            isThisMonth: true,
+          };
+
+          monthData.push(temp);
+        } else {
+          const temp = {
+            date: i - numDaysInMonth - monthDate.getDay() + 1,
+            hasEvent: false,
+            isThisMonth: false,
+          };
+          monthData.push(temp);
+        }
       }
-      this.setState({ holidayCountryList: nList });
-    } catch (error) {
-      console.error(error);
     }
+    this.setState({ monthViewData: monthData });
   };
 
-  storeData = async (value) => {
-    this.setState({ selectedCountryCode: value });
-    this.getHolidays(value, this.state.weekViewStartDate.getFullYear());
-    await updateDoc(doc(db, "users", auth.currentUser.uid), {
-      holidayNationPref: value,
-    });
-    this.setState({ holidaySettingVisible: false });
-  };
-
-  removeData = async () => {
-    this.setState({ selectedCountryCode: "" });
-    this.setState({ holidays: [] });
-    await updateDoc(doc(db, "users", auth.currentUser.uid), {
-      holidayNationPref: "",
-    });
-    this.setState({ holidaySettingVisible: false });
-  };
-
-  //TODO: Need to do date time error checking when start date time is after end date time, etc.
   onEventStartDateSelected = (event, value) => {
     this.setState({ eventStartDate: value });
   };
@@ -668,11 +728,32 @@ export default class App extends Component {
   sayHi = (e) => {
     console.log("HIIIIIIIIIIIIIIIIIIII");
   };
+  scrollViewEventOne = (e) => {
+    this.svRef.current.scrollTo({
+      x: 0,
+      y: e.nativeEvent.contentOffset.y,
+      animated: true,
+    });
+  };
 
-  goToday = () => {
-    let tempDate = new Date();
-    tempDate.setDate(tempDate.getDate() - tempDate.getDay());
-    this.setState({ weekViewStartDate: tempDate });
+  scrollEvent = Animated.event(
+    [{ nativeEvent: { contentOffset: { y: this.scrollPosition } } }],
+    { useNativeDriver: false }
+  );
+
+  toggleCalendarView = () => {
+    alert(this.state.calendarEventList);
+    switch (this.state.calendarView) {
+      case CalendarViewType.WEEK:
+        this.setState({ calendarView: CalendarViewType.MONTH });
+        break;
+      case CalendarViewType.MONTH:
+        this.setState({ calendarView: CalendarViewType.WEEK });
+        break;
+      default:
+        console.error("Something Wrong with toggle calendar view");
+        break;
+    }
   };
 
   render() {
@@ -684,10 +765,6 @@ export default class App extends Component {
       colorPicker,
       eventColor,
       weekViewStartDate: weekViewStartDate,
-      startDate,
-      startTime,
-      endDate,
-      endTime,
       repetition,
       openDate,
     } = this.state;
@@ -695,372 +772,444 @@ export default class App extends Component {
       console.log("colorpicked");
       return <ColorWheel updateColor={this.updateColor} />;
     }
-
     return (
       <SafeAreaView style={{ flex: 1 }}>
-        {/* Bottom tab bar hides calendar screen. */}
-        <View style={{ marginBottom: 100 }}>
-          <Modal
-            animationType="slide"
-            transparent={true}
-            visible={this.state.visible}
-            onRequestClose={() => {
-              this.setState({ visible: !this.state.visible });
+        <TouchableOpacity
+          activeOpacity={0.7}
+          onPress={this.clickHandler}
+          style={styles.touchableOpacityStyle}
+        >
+          <Icon name="plus-circle" size={50} />
+        </TouchableOpacity>
+
+        <Modal
+          animationType="slide"
+          transparent={true}
+          visible={this.state.visible}
+          onRequestClose={() => {
+            this.setState({ visible: !this.state.visible });
+          }}
+        >
+          <View
+            style={{
+              flex: 1,
+              flexDirection: "column",
+              justifyContent: "center",
+              alignItems: "center",
             }}
           >
-            <View
-              style={{
-                flex: 1,
-                flexDirection: "column",
-                justifyContent: "center",
-                alignItems: "center",
-              }}
-            >
-              <View style={styles.modalView}>
-                {/* Modal for calendar options */}
-                <Button
-                  title="Download schedule"
-                  onPress={() =>
-                    this.openURL(
-                      "https://timetable.mypurdue.purdue.edu/Timetabling/gwt.jsp?page=personal"
-                    )
-                  }
-                />
-                <Button
-                  title="Import schedule"
-                  onPress={() => this.openDocumentFile()}
-                />
-                <Button title="Add event" onPress={this.openCreateEvent} />
-                <Button
-                  title="Holiday settings"
-                  onPress={this.setHolidaySettings}
-                />
-                <Button
-                  title="Close modal"
-                  onPress={() => {
-                    this.setState({ visible: !this.state.visible });
-                  }}
-                />
-              </View>
+            <View style={styles.modalView}>
+              {/* Modal for calendar options */}
+              <Button
+                title="Download schedule"
+                onPress={() =>
+                  this.openURL(
+                    "https://timetable.mypurdue.purdue.edu/Timetabling/gwt.jsp?page=personal"
+                  )
+                }
+              />
+              <Button
+                title="Import schedule"
+                onPress={() => this.openDocumentFile()}
+              />
+              <Button title="Add event" onPress={this.openCreateEvent} />
+              <Button
+                title="Holiday settings"
+                onPress={this.setHolidaySettings}
+              />
+              <Button
+                title="Close modal"
+                onPress={() => {
+                  this.setState({ visible: !this.state.visible });
+                }}
+              />
             </View>
-          </Modal>
-          {/* Create event modal */}
-          <Modal
-            animationType="slide"
-            visible={this.state.createEventVisible}
-            transparent={true}
-            onRequestClose={() => {
-              this.setState({ visible: !this.state.createEventVisible });
+          </View>
+        </Modal>
+        {/* Create event modal */}
+        <Modal
+          animationType="slide"
+          visible={this.state.createEventVisible}
+          transparent={true}
+          onRequestClose={() => {
+            this.setState({ visible: !this.state.createEventVisible });
+          }}
+        >
+          <View
+            style={{
+              flex: 1,
+              justifyContent: "center",
+              alignItems: "center",
             }}
           >
-            <View
-              style={{
-                flex: 1,
-                justifyContent: "center",
-                alignItems: "center",
-              }}
-            >
-              <View style={styles.modal}>
+            <View style={styles.modal}>
+              <TouchableOpacity
+                onPress={() => this.setState({ createEventVisible: false })}
+              >
+                <View style={{ paddingLeft: 270, paddingTop: 5 }}>
+                  <Icon name="times" size={20} color="#2F4858" />
+                </View>
+              </TouchableOpacity>
+              {/* Creating a new View component with styles.row for each row in the modal for formatting */}
+              <View style={styles.row}>
+                <Text style={styles.header_text}>Create Event</Text>
+              </View>
+              <View style={styles.row}>
+                {/* New row for color picker and title input */}
                 <TouchableOpacity
-                  onPress={() => this.setState({ createEventVisible: false })}
+                  onPress={() => this.setState({ colorPicker: true })}
                 >
-                  <View style={{ paddingLeft: 270, paddingTop: 5 }}>
-                    <Icon name="times" size={20} color="#2F4858" />
+                  <View style={{ paddingTop: 5, paddingRight: 15 }}>
+                    <Icon name="square" size={40} color={eventColor} />
                   </View>
                 </TouchableOpacity>
-                {/* Creating a new View component with styles.row for each row in the modal for formatting */}
-                <View style={styles.row}>
-                  <Text style={styles.header_text}>Create Event</Text>
+                <TextInput
+                  style={styles.titleInputStyle}
+                  placeholder="Add title"
+                  placeholderTextColor="#8b9cb5"
+                  onChangeText={(text) => this.setTitle(text)}
+                ></TextInput>
+              </View>
+              <View style={styles.row}>
+                <View style={{ flex: 1, paddingTop: 10 }}>
+                  <Icon name="map-pin" size={20} color="#2F4858" />
                 </View>
-                <View style={styles.row}>
-                  {/* New row for color picker and title input */}
-                  <TouchableOpacity
-                    onPress={() => this.setState({ colorPicker: true })}
-                  >
-                    <View style={{ paddingTop: 5, paddingRight: 15 }}>
-                      <Icon name="square" size={40} color={eventColor} />
-                    </View>
-                  </TouchableOpacity>
+                <View style={{ flex: 8 }}>
                   <TextInput
-                    style={styles.titleInputStyle}
-                    placeholder="Add title"
+                    style={styles.inputStyle}
+                    placeholder="Location"
                     placeholderTextColor="#8b9cb5"
-                    onChangeText={(text) => this.setTitle(text)}
+                    onChangeText={(text) => this.setLocation(text)}
                   ></TextInput>
                 </View>
-                <View style={styles.row}>
-                  <View style={{ flex: 1, paddingTop: 10 }}>
-                    <Icon name="map-pin" size={20} color="#2F4858" />
-                  </View>
-                  <View style={{ flex: 8 }}>
-                    <TextInput
-                      style={styles.inputStyle}
-                      placeholder="Location"
-                      placeholderTextColor="#8b9cb5"
-                      onChangeText={(text) => this.setLocation(text)}
-                    ></TextInput>
-                  </View>
+              </View>
+              <View style={styles.row}>
+                <View style={{ flex: 1, paddingTop: 10 }}>
+                  <Icon name="repeat" size={20} color="#2F4858" />
                 </View>
-                <View style={styles.row}>
-                  <View style={{ flex: 1, paddingTop: 10 }}>
-                    <Icon name="repeat" size={20} color="#2F4858" />
-                  </View>
-                  <View style={{ flex: 8 }}>
-                    {/*dropdown selection does not work :(*/}
-                    <DropDownPicker
-                      open={openList}
-                      value={repetition}
-                      items={repetitionItems}
-                      placeholder={"Never"}
-                      setValue={this.setValue}
-                      setItems={this.setItems}
-                      onPress={this.setOpen}
-                    />
-                  </View>
+                <View style={{ flex: 8 }}>
+                  {/*dropdown selection does not work :(*/}
+                  <DropDownPicker
+                    open={openList}
+                    value={repetition}
+                    items={repetitionItems}
+                    placeholder={"Never"}
+                    setValue={this.setValue}
+                    setItems={this.setItems}
+                    onPress={this.setOpen}
+                  />
                 </View>
-                {/* <View style={styles.row}> */}
-                <View style={styles.row}>
-                  <Text
-                    style={{
-                      textAlign: "center",
-                      margin: 5,
-                      paddingTop: 7,
-                      color: "#2F4858",
-                    }}
-                  >
-                    Start
-                  </Text>
-                  <DateTimePicker
-                    mode={"date"}
-                    value={this.state.eventStartDate}
-                    onChange={this.onEventStartDateSelected}
-                    style={{ marginLeft: 10, marginTop: 5 }}
-                  />
-                  <DateTimePicker
-                    mode={"time"}
-                    value={this.state.eventStartTime}
-                    onChange={this.onEventStartTimeSelected}
-                    style={{ marginLeft: 10, marginTop: 5 }}
-                  />
-                  {/* <TextInput
-                  placeholder={"Day"}
-                  placeholderTextColor="#8b9cb5"
+              </View>
+              {/* <View style={styles.row}> */}
+              <View style={styles.row}>
+                <Text
                   style={{
-                    color: "black",
-                    borderWidth: 1,
-                    borderColor: "#8b9cb5",
-                    marginLeft: 10,
-                    marginTop: 5,
-                    width: 50,
-                    height: 30,
                     textAlign: "center",
+                    margin: 5,
+                    paddingTop: 10,
+                    paddingLeft: 80,
+                    color: "#2F4858",
                   }}
-                  value={startDate}
-                  onChangeText={(text) => this.setStartDate(text)}
-                /> */}
-                  {/* <TextInput
-                  placeholder={"Time"}
-                  placeholderTextColor="#8b9cb5"
-                  style={{
-                    color: "black",
-                    borderWidth: 1,
-                    borderColor: "#8b9cb5",
-                    marginLeft: 10,
-                    marginTop: 5,
-                    width: 100,
-                    height: 30,
-                    textAlign: "center",
-                  }}
-                  value={startTime}
-                  onChangeText={(text) => this.setStartTime(text)}
-                /> */}
-                </View>
-                <View style={styles.row}>
-                  <Text
+                >
+                  Points
+                </Text>
+                <ScrollView
+                  keyboardShouldPersistTaps='handled'
+                >
+                  <TextInput
+                    placeholderTextColor="#8b9cb5"
                     style={{
-                      textAlign: "center",
-                      margin: 5,
-                      paddingTop: 7,
-                      color: "#2F4858",
+                      color: "black",
+                      borderWidth: 1,
+                      borderColor: "#8b9cb5",
+                      marginLeft: 10,
+                      marginTop:5,
+                      width:50,
+                      height:30,
+                      textAlign: 'center',
                     }}
-                  >
-                    End
-                  </Text>
-                  <DateTimePicker
-                    mode={"date"}
-                    value={this.state.eventEndDate}
-                    onChange={this.onEventEndDateSelected}
-                    style={{ marginLeft: 10, marginTop: 5 }}
-                  />
-                  <DateTimePicker
-                    mode={"time"}
-                    value={this.state.eventEndTime}
-                    onChange={this.onEventEndTimeSelected}
-                    style={{ marginLeft: 10, marginTop: 5 }}
-                  />
+                    value={this.state.points}
+                    defaultValue={0}
+                    keyboardType="numeric"
+                    onChangeText={(text) => this.setPoints(text)}
+                  ></TextInput>
+                  </ScrollView>
                 </View>
-                <Button
-                  title="Create new event"
-                  onPress={() => {
-                    this.submitEvent(eventColor),
-                      this.setState({ createEventVisible: false });
+              <View style={styles.row}>
+                <Text
+                  style={{
+                    textAlign: "center",
+                    margin: 5,
+                    paddingTop: 7,
+                    color: "#2F4858",
                   }}
+                >
+                  Start
+                </Text>
+                <DateTimePicker
+                  mode={"date"}
+                  value={this.state.eventStartDate}
+                  onChange={this.onEventStartDateSelected}
+                  style={{ marginLeft: 10, marginTop: 5 }}
+                />
+                <DateTimePicker
+                  mode={"time"}
+                  value={this.state.eventStartTime}
+                  onChange={this.onEventStartTimeSelected}
+                  style={{ marginLeft: 10, marginTop: 5 }}
                 />
               </View>
+              <View style={styles.row}>
+                <Text
+                  style={{
+                    textAlign: "center",
+                    margin: 5,
+                    paddingTop: 7,
+                    color: "#2F4858",
+                  }}
+                >
+                  End
+                </Text>
+                <DateTimePicker
+                  mode={"date"}
+                  value={this.state.eventEndDate}
+                  onChange={this.onEventEndDateSelected}
+                  style={{ marginLeft: 10, marginTop: 5 }}
+                />
+                <DateTimePicker
+                  mode={"time"}
+                  value={this.state.eventEndTime}
+                  onChange={this.onEventEndTimeSelected}
+                  style={{ marginLeft: 10, marginTop: 5 }}
+                />
+              </View>
+              <Button
+                title="Create new event"
+                onPress={() => {
+                  this.submitEvent(eventColor),
+                    this.setState({ createEventVisible: false });
+                }}
+              />
             </View>
-          </Modal>
+          </View>
+        </Modal>
 
-          <Modal
-            animationType="slide"
-            transparent={true}
-            visible={this.state.holidaySettingVisible}
-          >
+        <HolidaySettingModal
+          holidaySettingVisible={this.state.holidaySettingVisible}
+          holidayCountryList={this.state.holidayCountryList}
+          selectedCountryCode={this.state.selectedCountryCode}
+          selectedCountry={this.state.selectedCountry}
+          closeHolidaySettingModal={this.closeHolidaySettingModal}
+          selectCountryHolidaySettingModal={
+            this.selectCountryHolidaySettingModal
+          }
+          storeData={this.storeData}
+          removeData={this.removeData}
+        />
+
+        {/* Bottom tab bar hides calendar screen. TODO Need to fix this.*/}
+        <View style={{ flex: 1, marginBottom: 15 }}>
+          {/* Info Above the calendar times */}
+          <View>
             <View
               style={{
-                flex: 1,
-                flexDirection: "column",
-                justifyContent: "center",
+                flexDirection: "row",
                 alignItems: "center",
+                justifyContent: "center",
+                paddingHorizontal: 10,
               }}
             >
               <View
                 style={{
-                  backgroundColor: "white",
-                  width: 300,
-                  height: 450,
-                  borderRadius: 20,
-                  justifyContent: "space-between",
+                  flex: 1,
+                  alignItems: "flex-start",
+                  flexDirection: "column",
+                  justifyContent: "center",
                 }}
               >
-                <View>
-                  <TouchableOpacity
-                    onPress={() =>
-                      this.setState({ holidaySettingVisible: false })
-                    }
-                  >
-                    <View style={{ paddingLeft: 260, paddingTop: 10 }}>
-                      <Icon name="times" size={20} color="#2F4858" />
-                    </View>
-                  </TouchableOpacity>
+                <Text style={{ fontSize: 20 }}>
+                  {MonthName[this.state.weekViewStartDate.getMonth()]}
+                </Text>
+                <Text style={{ fontSize: 12 }}>
+                  {this.state.weekViewStartDate.getFullYear()}
+                </Text>
+              </View>
 
-                  <View style={{ marginRight: 10, marginLeft: 10 }}>
-                    <Text>Country</Text>
-                    <SelectList
-                      setSelected={(val) =>
-                        this.setState({ selectedCountry: val })
-                      }
-                      data={this.state.holidayCountryList}
-                    />
-                    <View style={{ marginTop: 15, flexDirection: "row" }}>
-                      <Text style={{ fontWeight: "bold", marginRight: 10 }}>
-                        Current Selected Option:
-                      </Text>
-                      <Text>{this.state.selectedCountryCode}</Text>
-                    </View>
-                  </View>
-                </View>
-
-                <View
+              <View
+                style={{
+                  flex: 1,
+                  alignItems: "center",
+                  flexDirection: "row",
+                  justifyContent: "center",
+                }}
+              >
+                <IconButton
+                  style={{}}
+                  color={Colors.grey}
+                  onPress={
+                    this.state.calendarView == CalendarViewType.WEEK
+                      ? this.goPrevWeek
+                      : this.goPrevMonth
+                  }
+                  icon={(props) => <Octicons name="triangle-left" {...props} />}
+                />
+                <Pressable style={{ padding: 10 }} onPress={this.goToday}>
+                  <Text style={{ fontSize: 15 }}>Today</Text>
+                </Pressable>
+                <IconButton
+                  style={{}}
+                  color={Colors.grey}
+                  onPress={
+                    this.state.calendarView == CalendarViewType.WEEK
+                      ? this.goNextWeek
+                      : this.goNextMonth
+                  }
+                  icon={(props) => (
+                    <Octicons name="triangle-right" {...props} />
+                  )}
+                />
+              </View>
+              <View
+                style={{
+                  flex: 1,
+                  alignItems: "flex-end",
+                }}
+              >
+                <Pressable
                   style={{
-                    flexDirection: "row",
-                    justifyContent: "space-between",
-                    marginLeft: 10,
-                    marginRight: 10,
-                    marginBottom: 10,
+                    alignItems: "center",
+                    padding: 10,
                   }}
+                  onPress={this.toggleCalendarView}
                 >
-                  <Button
-                    onPress={() => this.storeData(this.state.selectedCountry)}
-                    title="Save"
-                  />
-                  <Button title="Hide holidays" onPress={this.removeData} />
-                </View>
+                  <Text
+                    style={{
+                      fontSize: 15,
+                    }}
+                  >
+                    {this.state.calendarView}
+                  </Text>
+                </Pressable>
               </View>
             </View>
-          </Modal>
-
-          <TouchableOpacity
-            activeOpacity={0.7}
-            onPress={this.clickHandler}
-            style={styles.touchableOpacityStyle}
-          >
-            <Icon name="plus-circle" size={50} />
-          </TouchableOpacity>
-          <View
-            style={{
-              flexDirection: "row",
-              justifyContent: "space-between",
-              alignItems: "center",
-              paddingLeft: 10,
-              paddingRight: 10,
-            }}
-          >
-            <View style={{ flexDirection: "row", alignItems: "center" }}>
-              <IconButton
-                // onPress={this.goPrevWeek}
-                icon={(props) => (
-                  <MaterialCommunityIcons
-                    name="calendar-arrow-left"
-                    {...props}
-                  />
-                )}
-              />
-              <Text style={{ fontSize: 15 }}>{"Week View"}</Text>
-            </View>
-
-            <Pressable style={{ padding: 10 }} onPress={this.goToday}>
-              <Text style={{ fontSize: 15 }}>Today</Text>
-            </Pressable>
           </View>
-          <View
-            style={{
-              flexDirection: "row",
-              justifyContent: "space-between",
-              alignItems: "center",
-              paddingLeft: 10,
-              paddingRight: 10,
-            }}
-          >
-            <IconButton
-              style={{ marginLeft: 30 }}
-              color={Colors.grey}
-              onPress={this.goPrevWeek}
-              icon={(props) => <Octicons name="triangle-left" {...props} />}
-            />
-            <Text style={{ fontSize: 20 }}>
-              {MonthName[this.state.weekViewStartDate.getMonth()] +
-                "  " +
-                this.state.weekViewStartDate.getFullYear()}
-            </Text>
-            <IconButton
-              style={{ marginRight: 30 }}
-              color={Colors.grey}
-              onPress={this.goNextWeek}
-              icon={(props) => <Octicons name="triangle-right" {...props} />}
-            />
-          </View>
-          <View
-            style={{
-              flexDirection: "row",
-              marginBottom: 97,
-            }}
-          >
-            {/* This is the left vertical header */}
-            <ScrollViewVerticallySynced
-              style={{ width: leftHeaderWidth, marginTop: topHeaderHeight }}
-              name="Time"
-              onScroll={this.scrollEvent}
-              scrollPosition={this.scrollPosition}
-            />
-            {/* This is the right vertical content */}
-            <ScrollView horizontal bounces={true}>
-              <View style={{ width: dailyWidth * 7 }}>
-                <View
-                  style={{
-                    height: topHeaderHeight,
-                    justifyContent: "center",
-                  }}
-                >
+          {this.state.calendarView == CalendarViewType.WEEK ? (
+            // <View
+            //   style={{
+            //     flexDirection: "row",
+            //   }}
+            // >
+            //   {/* This is the left vertical header */}
+            //   <ScrollViewVerticallySynced
+            //     style={{
+            //       width: leftHeaderWidth,
+            //       marginTop: topHeaderHeight,
+            //     }}
+            //     name="Time"
+            //     onScroll={this.scrollEvent}
+            //     scrollPosition={this.scrollPosition}
+            //     eventList={this.state.list}
+            //     weekStartDate={this.state.weekViewStartDate}
+            //   />
+            //   {/* This is the right vertical content */}
+            //   <ScrollView horizontal bounces={true}>
+            //     <View style={{ width: dailyWidth * 7 }}>
+            //       <View
+            //         style={{
+            //           height: topHeaderHeight,
+            //           justifyContent: "center",
+            //         }}
+            //       >
+            //         <View style={styles.daysContainer}>
+            //           <TopHeaderDays
+            //             day={0}
+            //             holidays={this.state.holidays}
+            //             startDay={this.state.weekViewStartDate}
+            //           />
+            //           <TopHeaderDays
+            //             day={1}
+            //             holidays={this.state.holidays}
+            //             startDay={this.state.weekViewStartDate}
+            //           />
+            //           <TopHeaderDays
+            //             day={2}
+            //             holidays={this.state.holidays}
+            //             startDay={this.state.weekViewStartDate}
+            //           />
+            //           <TopHeaderDays
+            //             day={3}
+            //             holidays={this.state.holidays}
+            //             startDay={this.state.weekViewStartDate}
+            //           />
+            //           <TopHeaderDays
+            //             day={4}
+            //             holidays={this.state.holidays}
+            //             startDay={this.state.weekViewStartDate}
+            //           />
+            //           <TopHeaderDays
+            //             day={5}
+            //             holidays={this.state.holidays}
+            //             startDay={this.state.weekViewStartDate}
+            //           />
+            //           <TopHeaderDays
+            //             day={6}
+            //             holidays={this.state.holidays}
+            //             startDay={this.state.weekViewStartDate}
+            //           />
+            //         </View>
+            //       </View>
+            //       {/* This is the vertically scrolling content. */}
+            //       <ScrollViewVerticallySynced
+            //         style={{
+            //           width: "100%",
+            //           backgroundColor: "#F8F8F8",
+            //         }}
+            //         name="notTime"
+            //         onScroll={this.scrollEvent}
+            //         scrollPosition={this.scrollPosition}
+            //         eventList={this.state.list}
+            //         weekStartDate={this.state.weekViewStartDate}
+            //       />
+            //     </View>
+            //   </ScrollView>
+            // </View>
+            <View style={{ flexDirection: "row", height: "100%" }}>
+              <View>
+                <View style={{ height: topHeaderHeight }} />
+                <ScrollView scrollEnabled={false} ref={this.svRef}>
+                  {Array.from(Array(24).keys()).map((index) => (
+                    <View
+                      // key={`TIME${name}-${index}`}
+                      key={index}
+                      style={{
+                        height: dailyHeight,
+                        // justifyContent: "center",
+                        flexDirection: "row",
+                      }}
+                    >
+                      <Text
+                        style={{
+                          color:
+                            index <= 12 && index > 0
+                              ? Colors.morningTimeColor
+                              : Colors.eveningTimeColor,
+                          width: 20,
+                        }}
+                      >
+                        {index}
+                      </Text>
+                    </View>
+                  ))}
+                </ScrollView>
+              </View>
+              <ScrollView
+                style={{
+                  height: "100%",
+                  width: "100%",
+                }}
+                horizontal={true}
+              >
+                <View style={{ flexDirection: "column" }}>
                   <View style={styles.daysContainer}>
                     <TopHeaderDays
                       day={0}
@@ -1098,22 +1247,125 @@ export default class App extends Component {
                       startDay={this.state.weekViewStartDate}
                     />
                   </View>
+
+                  <ScrollView
+                    style={{
+                      backgroundColor: "#F8F8F8",
+                      width: "100%",
+                      height: "100%",
+                    }}
+                    horizontal={false}
+                    nestedScrollEnabled
+                    scrollEventThrottle={16}
+                    onScroll={this.scrollViewEventOne}
+                  >
+                    <View style={{}}>
+                      {Array.from(Array(24).keys()).map((index) => (
+                        <View
+                          key={index}
+                          style={{
+                            height: dailyHeight,
+                            flexDirection: "row",
+                          }}
+                        >
+                          <View
+                            key={`NT-${index}`}
+                            style={{
+                              height: dailyHeight,
+                              flex: 1,
+                              flexDirection: "row",
+                            }}
+                          >
+                            {this.state.list.map((event) => {
+                              return index == event.startTime.getHours() &&
+                                makeVisible(
+                                  this.state.weekViewStartDate,
+                                  event
+                                ) ? (
+                                <EventItem
+                                  key={`EITEM-${index}-${event.title}-${event.startTime}`}
+                                  category={event.category}
+                                  day={event.startTime.getDay()}
+                                  startTime={new Date(event.startTime)}
+                                  endTime={new Date(event.endTime)}
+                                  title={event.title}
+                                  location={event.location}
+                                  color={event.color}
+                                />
+                              ) : (
+                                <View />
+                              );
+                            })}
+                          </View>
+                        </View>
+                      ))}
+                      
+                    </View>
+                    <View style={{}}>
+                      {Array.from(Array(24).keys()).map((index) => (
+                        <View
+                          key={index}
+                          style={{
+                            height: dailyHeight,
+                            flexDirection: "row",
+                          }}
+                        >
+                          <View
+                            key={`NT-${index}`}
+                            style={{
+                              height: dailyHeight,
+                              flex: 1,
+                              flexDirection: "row",
+                            }}
+                          >
+                            {this.state.calendarEventList.map((event) => {
+                              return index == event.startTime.getHours() &&
+                                makeVisible(
+                                  this.state.weekViewStartDate,
+                                  event
+                                ) ? (
+                                <EventItem
+                                  key={`EITEM-${index}-${event.title}-${event.startTime}`}
+                                  category={event.category}
+                                  day={event.startTime.getDay()}
+                                  startTime={new Date(event.startTime)}
+                                  endTime={new Date(event.endTime)}
+                                  title={event.title}
+                                  location={event.location}
+                                  color={event.color}
+                                />
+                              ) : (
+                                <View />
+                              );
+                            })}
+                          </View>
+                        </View>
+                      ))}
+                      
+                    </View>
+                  </ScrollView>
                 </View>
-                {/* This is the vertically scrolling content. */}
-                <ScrollViewVerticallySynced
-                  style={{
-                    width: dailyWidth * 7,
-                    backgroundColor: "#F8F8F8",
-                  }}
-                  name="notTime"
-                  onScroll={this.scrollEvent}
-                  scrollPosition={this.scrollPosition}
-                  eventList={this.state.list}
-                  weekStartDate={this.state.weekViewStartDate}
-                />
-              </View>
-            </ScrollView>
-          </View>
+              </ScrollView>
+            </View>
+          ) : (
+            <View
+              style={{
+                width: "100%",
+                height: "100%",
+              }}
+            >
+              <FlatList
+                data={this.state.monthViewData}
+                renderItem={({ item }) => (
+                  // console.log(item)
+                  <MonthViewItem date={item.date} />
+                )}
+                //Setting the number of column
+                numColumns={7}
+                keyExtractor={(item, index) => index}
+              />
+            </View>
+          )}
         </View>
       </SafeAreaView>
     );
@@ -1148,19 +1400,6 @@ class ScrollViewVerticallySynced extends React.Component {
   }
 }
 
-const displayEvents = () => {
-  /* return (
-    <EventItem
-    category="School Courses"
-    day={5}
-    startTime={genTimeBlock("FRI", 3, 30)}
-    endTime={genTimeBlock("FRI", 5, 30)}
-    title={"test"}
-    location={"test"}
-    color={"#8b9cb5"}
-  />
-  )*/
-};
 const makeVisible = (weekStartDate, event) => {
   //if event is school course, make visible
   if (event.category == EventCategory.SCHOOLCOURSE) {
@@ -1185,12 +1424,12 @@ const populateRows = (name, eventList, weekStartDate) =>
   name == "Time"
     ? Array.from(Array(24).keys()).map((index) => (
         <View
-          key={`${name}-${index}`}
+          key={`TIME${name}-${index}`}
           style={{
             height: dailyHeight,
             flex: 1,
             alignItems: "center",
-            justifyContent: "center",
+            // justifyContent: "center",
           }}
         >
           <Text
@@ -1207,7 +1446,7 @@ const populateRows = (name, eventList, weekStartDate) =>
       ))
     : Array.from(Array(24).keys()).map((index) => (
         <View
-          key={`${name}-${index}`}
+          key={`NT${name}-${index}`}
           style={{
             height: dailyHeight,
             flex: 1,
@@ -1232,6 +1471,7 @@ const populateRows = (name, eventList, weekStartDate) =>
             return index == event.startTime.getHours() &&
               makeVisible(weekStartDate, event) ? (
               <EventItem
+                key={`EITEM${name}-${index}-${event.title}-${event.startTime}`}
                 category={event.category}
                 day={event.startTime.getDay()}
                 startTime={new Date(event.startTime)}
@@ -1303,10 +1543,9 @@ const styles = StyleSheet.create({
   modal: {
     backgroundColor: "white",
     width: 350,
-    height: 450,
+    height: 475,
     justifyContent: "center",
     alignItems: "center",
-    bottom: 100,
   },
   header_text: {
     color: "white",

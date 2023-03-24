@@ -1,5 +1,5 @@
 import { StatusBar } from "expo-status-bar";
-import { Switch, Button, StyleSheet, Text, Pressable, TextInput, View, Modal, Alert, TouchableOpacity, FlatList, ActivityIndicator } from "react-native";
+import { Image, Switch, Button, StyleSheet, Text, Pressable, TextInput, View, Modal, Alert, TouchableOpacity, FlatList, ActivityIndicator } from "react-native";
 import { auth, db, userSchedule } from "../firebaseConfig"
 import { EmailAuthProvider } from "firebase/auth";
 import { signInWithEmailAndPassword } from "firebase/auth";
@@ -10,6 +10,9 @@ import { SHA256 } from 'crypto-js';
 import ThemeContext  from "../components/ui/ThemeContext";
 import theme from "../components/ui/theme";
 import {EventRegister} from "react-native-event-listeners";
+import * as ImagePicker from 'expo-image-picker';
+import { getDownloadURL, ref, uploadBytes } from 'firebase/storage';
+import { storage } from "../firebaseConfig";
 
 export default function ProfileScreen({ navigation, route }) {
   const [newId, setNewId] = useState("");
@@ -17,6 +20,60 @@ export default function ProfileScreen({ navigation, route }) {
   const [password, setPassword] = useState("");
   const [mode,setMode] = useState(false);
   const theme = useContext(ThemeContext);
+  const [profilePicture, setProfilePicture] = useState(null);
+
+  useEffect(() => {
+    const fetchProfilePicture = async () => {
+      const imageRef = ref(storage, `profilePictures/${auth.currentUser.uid}`);
+      try {
+        const downloadURL = await getDownloadURL(imageRef);
+        setProfilePicture(downloadURL);
+      } catch (error) {
+        if (error.code === "storage/object-not-found") {
+          console.log("No profile picture found, using a default image.");
+        } else {
+          console.error("Error fetching profile picture:", error);
+        }
+      }
+    };
+    fetchProfilePicture();
+  }, []);
+
+  const pickImage = async () => {
+    let result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [4, 3],
+      quality: 1,
+    });
+  
+    console.log(result);
+  
+    if (!result.cancelled) {
+      setProfilePicture(result.uri);
+      uploadImage(result.uri);
+    }
+  };
+  
+  const uploadImage = async (uri) => {
+    const response = await fetch(uri);
+    const blob = await response.blob();
+    const userId = auth.currentUser.uid;
+  
+    const storageRef = ref(storage, `profile_pictures/${userId}`);
+    const uploadTask = uploadBytes(storageRef, blob);
+  
+    try {
+      await uploadTask;
+      const downloadURL = await getDownloadURL(storageRef);
+      console.log("Uploaded image to", downloadURL);
+  
+      const userDocRef = doc(db, "users", userId);
+      updateDoc(userDocRef, { profilePicture: downloadURL });
+    } catch (error) {
+      console.error("Error uploading image:", error);
+    }
+  };
 
   const handleSignOut = () => {
     signOut(auth)
@@ -80,6 +137,13 @@ export default function ProfileScreen({ navigation, route }) {
  
   return (
     <View style={[styles.container]}>
+      {profilePicture && (
+        <Image
+          source={{ uri: profilePicture }}
+          style={{ width: 100, height: 100, borderRadius: 50 }}
+        />
+      )}
+      <Button title="Pick an image from the gallery" onPress={pickImage} />
       <Text style = {[styles.textStyle, {color: theme.color}]}>{auth.currentUser?.uid}</Text>
   
       <Text style = {[styles.textStyle, {color: theme.color}]}>Current Id: {id}</Text>

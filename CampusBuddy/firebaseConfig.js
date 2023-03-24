@@ -2,7 +2,7 @@
 import { initializeApp } from "firebase/app";
 import { getAnalytics } from "firebase/analytics";
 import { getAuth, createUserWithEmailAndPassword, sendPasswordResetEmail } from "firebase/auth";
-import firebase from "firebase/compat/app";
+import { getStorage } from "firebase/storage";
 import { EmailAuthProvider, credential } from "firebase/auth";
 import { query, where } from "firebase/firestore";
 import {
@@ -38,8 +38,10 @@ const app = initializeApp(firebaseConfig);
 const analytics = getAnalytics(app);
 const auth = getAuth(app);
 const db = getFirestore();
-export { auth, db };
+const storage = getStorage(app);
+export { auth, db, storage };
 const dbRef = collection(db, "users");
+
 
 export async function checkUser(firstName, lastName, userId) {
   console.log(userId);
@@ -73,7 +75,12 @@ export async function checkEmailExists(email) {
   const usersRef = collection(db, "users");
   const q = query(usersRef, where("email", "==", email));
   const querySnapshot = await getDocs(q);
-  return !querySnapshot.empty;
+  if (querySnapshot.empty) {
+    console.log("User not found.");
+    alert('User not found');
+    return false;
+  }
+  return true;
 }
 
 export async function createUser(username, first, last, email, password) {

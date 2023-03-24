@@ -1,7 +1,7 @@
 import React from "react";
 import { StyleSheet, View, Text, Dimensions } from "react-native";
 const leftHeaderWidth = 50;
-const topHeaderHeight = 20;
+const topHeaderHeight = 60;
 const dailyWidth = (Dimensions.get("window").width - leftHeaderWidth) / 3;
 const dailyHeight = Dimensions.get("window").height / 10;
 export default class TopHeaderDays extends React.Component {
@@ -35,19 +35,22 @@ export default class TopHeaderDays extends React.Component {
     let dayNames = ["Sun", "Mon", "Tues", "Wed", "Thur", "Fri", "Sat"];
 
     return (
-      <View style={styles.daysWithDate}>
+      <View style={styles.daysWithDateContainer}>
         <Text style={styles.days}>{dayNames[day]}</Text>
         <Text style={styles.date}>
           {this.getNextDay(startDay, day).getDate()}
         </Text>
-        <Text>{this.getHoliday(this.getNextDay(startDay, day), holidays)}</Text>
+        <Text style={styles.holiday}>
+          {this.getHoliday(this.getNextDay(startDay, day), holidays)}
+        </Text>
       </View>
     );
   }
 }
 
 const styles = StyleSheet.create({
-  daysWithDate: {
+  daysWithDateContainer: {
+    height: topHeaderHeight,
     width: dailyWidth,
     flexDirection: "column",
     alignItems: "center",
@@ -58,5 +61,9 @@ const styles = StyleSheet.create({
   },
   date: {
     fontSize: 12,
+  },
+  holiday: {
+    fontSize: 10,
+    textAlign: "center",
   },
 });

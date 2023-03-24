@@ -17,6 +17,7 @@ import ThemeContext from "./components/ui/ThemeContext";
 import theme from "./components/ui/theme";
 import ForgotEmail from "./screens/ForgotEmail";
 import ForgotPassword from "./screens/ForgotPassword";
+import { SafeAreaProvider } from "react-native-safe-area-context";
 
 
 const Stack = createNativeStackNavigator();
@@ -36,6 +37,7 @@ export default function App() {
   })
 
   return (
+    <SafeAreaProvider>
     <ThemeContext.Provider value={mode === true ? theme.dark : theme.light}>
       <NavigationContainer theme = {mode === true ? DarkTheme: DefaultTheme}>
         <Stack.Navigator>
@@ -47,7 +49,7 @@ export default function App() {
           <Stack.Screen
             name="SignUp"
             component={SignUpScreen}
-            options={{headerShown: false}}
+            options={{ headerShown: false }}
           />
           <Stack.Screen
             name="Home"
@@ -57,17 +59,17 @@ export default function App() {
           <Stack.Screen
             name="user_profile"
             component={User_profile}
-            options={{headerShown: false}}
+            options={{ headerShown: false }}
           />
           <Stack.Screen
             name="Settings"
             component={SettingsScreen}
-            options={{headerShown: false}}
+            options={{ headerShown: false }}
           />
           <Stack.Screen
             name="Friend"
             component={FriendScreen}
-            options={{headerShown: true}}
+            options={{ headerShown: true }}
           />
           <Stack.Screen
             name="ForgotEmail"
@@ -80,8 +82,9 @@ export default function App() {
             options={{headerShown: true}}
           />
         </Stack.Navigator>
-      </NavigationContainer>
-    </ThemeContext.Provider>
+        </NavigationContainer>
+      </ThemeContext.Provider>
+    </SafeAreaProvider>
   );
 }
 
@@ -93,4 +96,3 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
 });
-
