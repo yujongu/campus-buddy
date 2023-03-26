@@ -161,8 +161,6 @@ export default class App extends Component {
     this.checkList(result);
     this.setState({ calendarEventList: eventResult });
 
-
-
     const userDocRef = doc(db, "users", auth.currentUser.uid);
     onSnapshot(userDocRef, (doc) => {
       if (doc.exists()) {
@@ -427,23 +425,6 @@ export default class App extends Component {
     Linking.openURL(url).catch((err) =>
       console.error("An error occurred", err)
     );
-  };
-
-  addEventToCalendar = async () => {
-    const querySnapShot = await getDoc(
-      doc(db, "events", auth.currentUser?.uid)
-    );
-    if (querySnapShot.exists()) {
-      const result = querySnapShot.data();
-      console.log(result["start"].toDate());
-      this.state.calendarEventList.push({
-        title: result["title"],
-        startTime: result["start"],
-        endTime: result["end"],
-        location: result["location"],
-      });
-      console.log(this.state.calendarEventList);
-    }
   };
 
   openDocumentFile = async () => {
@@ -744,7 +725,6 @@ export default class App extends Component {
   );
 
   toggleCalendarView = () => {
-    alert(this.state.calendarEventList);
     switch (this.state.calendarView) {
       case CalendarViewType.WEEK:
         this.setState({ calendarView: CalendarViewType.MONTH });
@@ -915,9 +895,7 @@ export default class App extends Component {
                 >
                   Points
                 </Text>
-                <ScrollView
-                  keyboardShouldPersistTaps='handled'
-                >
+                <ScrollView keyboardShouldPersistTaps="handled">
                   <TextInput
                     placeholderTextColor="#8b9cb5"
                     style={{
@@ -925,18 +903,18 @@ export default class App extends Component {
                       borderWidth: 1,
                       borderColor: "#8b9cb5",
                       marginLeft: 10,
-                      marginTop:5,
-                      width:50,
-                      height:30,
-                      textAlign: 'center',
+                      marginTop: 5,
+                      width: 50,
+                      height: 30,
+                      textAlign: "center",
                     }}
                     value={this.state.points}
                     defaultValue={0}
                     keyboardType="numeric"
                     onChangeText={(text) => this.setPoints(text)}
                   ></TextInput>
-                  </ScrollView>
-                </View>
+                </ScrollView>
+              </View>
               <View style={styles.row}>
                 <Text
                   style={{
@@ -1300,28 +1278,6 @@ export default class App extends Component {
                                 <View />
                               );
                             })}
-                          </View>
-                        </View>
-                      ))}
-                      
-                    </View>
-                    <View style={{}}>
-                      {Array.from(Array(24).keys()).map((index) => (
-                        <View
-                          key={index}
-                          style={{
-                            height: dailyHeight,
-                            flexDirection: "row",
-                          }}
-                        >
-                          <View
-                            key={`NT-${index}`}
-                            style={{
-                              height: dailyHeight,
-                              flex: 1,
-                              flexDirection: "row",
-                            }}
-                          >
                             {this.state.calendarEventList.map((event) => {
                               return index == event.startTime.getHours() &&
                                 makeVisible(
@@ -1345,7 +1301,6 @@ export default class App extends Component {
                           </View>
                         </View>
                       ))}
-                      
                     </View>
                   </ScrollView>
                 </View>
@@ -1491,6 +1446,23 @@ const populateRows = (name, eventList, weekStartDate) =>
               />
             ) : (
               // <EventItem category="Empty" />
+              <View />
+            );
+          })}
+          {this.state.calendarEventList.map((event) => {
+            return index == event.startTime.getHours() &&
+              makeVisible(this.state.weekViewStartDate, event) ? (
+              <EventItem
+                key={`EITEM-${index}-${event.title}-${event.startTime}`}
+                category={event.category}
+                day={event.startTime.getDay()}
+                startTime={new Date(event.startTime)}
+                endTime={new Date(event.endTime)}
+                title={event.title}
+                location={event.location}
+                color={event.color}
+              />
+            ) : (
               <View />
             );
           })}
