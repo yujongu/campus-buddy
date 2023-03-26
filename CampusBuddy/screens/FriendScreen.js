@@ -53,6 +53,9 @@ export default class FriendScreen extends Component {
       nickname: "",
       showNicknameInput: false,
       currentFriend: null,
+      all_groups: [],
+      all: [],
+      data: []
     };
   }
 
@@ -90,6 +93,12 @@ export default class FriendScreen extends Component {
         const data = doc.data()["friends"];
         const data2 = doc.data()["favorite"];
         this.setState({favor: data2, list:data, searched: [...data2, ...data]})
+        this.setState({all : [...this.state.list, ...this.state.favor], data: doc.data()})
+        this.setState({all_groups: Object.keys(doc.data()).filter((group) => {
+          if(group != "favorite" && group != "friends"){
+            return group
+          }
+        })})
       }
       );
     return () => subscriber();
@@ -241,15 +250,94 @@ export default class FriendScreen extends Component {
     );
   };
 
+  removeGroup = (item, group) => {
+    const me = doc(db, "friend_list", auth.currentUser?.email);
+    updateDoc(me, {
+      [group]: arrayRemove(item),
+    });
+    Alert.alert("Ungroup", "Succesfully ungrouped!")
+  }
+
+  renderItem2 = (item, group) => {
+    console.log(group)
+    return (
+      <View style={styles.item}>
+        <View style={{flexDirection: 'row', justifyContent: "center", alignContent: "space-around"}}>
+        
+        <TouchableOpacity
+        onPress={() =>
+          this.props.navigation.navigate("user_profile", {
+            email: item.user,
+          })
+        }
+      >
+        <Text style={{ color: "black", fontSize: 15 }}>{item.user}</Text>
+        {this.state.nicknames[item.user] && (
+          <Text style={{ color: "grey", fontSize: 12 }}>
+            {this.state.nicknames[item.user]}
+          </Text>
+        )}
+      </TouchableOpacity>
+        </View>
+        <View style={{ flexDirection: 'column' }}>
+          <TouchableOpacity
+            onPress={() =>
+              Alert.alert(
+                'Unfriend',
+                'Do you really want to ungroup?',
+                [
+                  { text: 'Yes', onPress: () => this.removeGroup(item, group) },
+                  { text: 'Cancel', style: 'cancel' },
+                ],
+                { cancelable: false }
+              )
+            }
+          >
+            <Text>Ungroup</Text>
+          </TouchableOpacity>
+
+
+          <TouchableOpacity
+            onPress={() => {
+              Alert.prompt(
+                "Add Nickname",
+                "Enter a nickname for this friend",
+                (nickname) => {
+                  if (nickname) {
+                    this.setNickname(item.user, nickname);
+                  } else {
+                    Alert.alert("Invalid input", "Please enter a valid nickname");
+                  }
+                }
+              );
+            }}
+          >
+            <Text>Add Nickname</Text>
+          </TouchableOpacity>
+  
+        </View>
+      </View>
+    );
+  };
+
   floating_handler = (name) => {
-    console.log(name)
     //if user clicked add_group button then show group modal
     if(name === "add_group"){
       this.setState({input: "", selected: []})
       this.setState({group_visible: !this.state.group_visible})
     }
   }
-
+  renderGroups = (group) => {
+    return (
+      <View>
+        <Text>{"\n\n" + group + ":"}</Text>
+        <FlatList 
+          data = {this.state.data[group]}
+          renderItem={({item}) => this.renderItem2(item, group)}
+        />
+      </View>
+    )
+  }
   renderDataItem = (item) => {
     return (
         <View style={styles.item2}>
@@ -287,8 +375,18 @@ export default class FriendScreen extends Component {
         }
       })
       if(!check){
+        const selected = []
+        this.state.selected.map(choice => {
+          this.state.all.map(data => {
+            if(data.user == choice){
+              const {_index, ...rest} = data
+              selected.push(rest)
+            }
+          })
+        })
+        console.log(selected)
         updateDoc(doc(db, "friend_list", auth.currentUser?.email), {
-          [this.state.input] : this.state.selected
+          [this.state.input] : selected
         });
         Alert.alert("Succeed!", "Successfully a created group: " + this.state.input)
         this.setState({group_visible: !this.state.group_visible})
@@ -383,6 +481,7 @@ export default class FriendScreen extends Component {
             this.floating_handler(name)
           }}
         />
+        
         <Text>{"\n\n"}Favorites:</Text>
         <View>
           {this.state.favor && this.state.favor.length ? (
@@ -405,6 +504,13 @@ export default class FriendScreen extends Component {
             <Text>No friends yet</Text>
           )}
         </View>
+        <View>
+          <FlatList 
+            data = {this.state.all_groups}
+            renderItem = {({item}) => this.renderGroups(item)}
+          />
+        </View>
+
         {nicknameInput}
       </SafeAreaView>
     );
