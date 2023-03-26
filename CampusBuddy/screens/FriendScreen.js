@@ -259,7 +259,6 @@ export default class FriendScreen extends Component {
   }
 
   renderItem2 = (item, group) => {
-    console.log(group)
     return (
       <View style={styles.item}>
         <View style={{flexDirection: 'row', justifyContent: "center", alignContent: "space-around"}}>
@@ -384,7 +383,6 @@ export default class FriendScreen extends Component {
             }
           })
         })
-        console.log(selected)
         updateDoc(doc(db, "friend_list", auth.currentUser?.email), {
           [this.state.input] : selected
         });
