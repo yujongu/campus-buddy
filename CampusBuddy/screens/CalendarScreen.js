@@ -32,6 +32,7 @@ import { async } from "@firebase/util";
 import TopHeaderDays from "../components/ui/TopHeaderDays";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { doc, onSnapshot, updateDoc } from "firebase/firestore";
+import firestore from 'firebase/firestore';
 import { createAppContainer } from "react-navigation";
 //import { createStackNavigator } from '@react-navigation/stack';
 import CompareScreen from '../screens/CompareScreen';
@@ -62,7 +63,7 @@ const dailyHeight = Dimensions.get("window").height / 10;
 
 
 export default class App extends Component {
-  constructor(props) {
+  constructor(props, navigation) {
     super(props);
     this.numOfDays = 7;
     this.pivotDate = genTimeBlock("mon");
@@ -198,152 +199,23 @@ export default class App extends Component {
     );
   };
 
-  openDocumentFile = async () => {
-    const res = await DocumentPicker.getDocumentAsync({});
-    fetch(res.uri)
-      .then(async (response) => {
-        const resp = await response.text();
-        var result = readString(resp, { header: true });
-        result.data.forEach((product) => {
-          console.log(product["Name"]);
-          if (
-            (product["Type"] == "Midterm Examination" ||
-              product["Type"] == "Final Examination") &&
-            product["Published End"] != null
-          ) {
-            this.state.midterms.push(
-              product["Type"] +
-                ";" +
-                product["Name"] +
-                ";" +
-                product["First Date"] +
-                ";" +
-                product["Published Start"] +
-                ";" +
-                product["Published End"] +
-                ";" +
-                product["Location"]
-            );
-          } else if (
-            /[0-9]/.test(product["Published Start"]) ||
-            product["Published Start"] == "noon"
-          ) {
-            const st =
-              product["Published Start"] == "noon"
-                ? 12
-                : product["Published Start"].split(":");
-            const ed = product["Published End"].split(":");
-            var start, start_min, end, end_min;
-            if (product["Published Start"].lastIndexOf("a") > -1) {
-              start = st[0];
-              start_min = st[1].replace("a", "");
-            } else if (product["Published Start"].lastIndexOf("p") > -1) {
-              st[0] != "12"
-                ? (start = parseInt(st[0], 10) + 12)
-                : (start = parseInt(st[0], 10));
-              start_min = st[1].replace("p", "");
-            } else {
-              start = st;
-              start_min = 0;
-            }
-            if (product["Published End"].lastIndexOf("a") > -1) {
-              end = ed[0];
-              end_min = ed[1].replace("a", "");
-            } else if (product["Published End"].lastIndexOf("p") > -1) {
-              ed[0] != "12"
-                ? (end = parseInt(ed[0], 10) + 12)
-                : (end = parseInt(ed[0], 10));
-              end_min = ed[1].replace("p", "");
-            }
-            for (var i = 0; i < product["Day Of Week"].length; i++) {
-              //Monday
-              if (product["Day Of Week"][i] == "M") {
-                this.state.list.push({
-                  title: product["Name"] + " (" + product["Type"] + ")",
-                  startTime: genTimeBlock("MON", start, start_min),
-                  endTime: genTimeBlock("MON", end, end_min),
-                  location: product["Location"],
-                });
-                //Tuesday
-              } else if (
-                product["Day Of Week"][i] == "T" &&
-                product["Day Of Week"].length > i + 1 &&
-                product["Day Of Week"][i + 1] != "h"
-              ) {
-                this.state.list.push({
-                  title: product["Name"] + " (" + product["Type"] + ")",
-                  startTime: genTimeBlock("TUE", start, start_min),
-                  endTime: genTimeBlock("TUE", end, end_min),
-                  location: product["Location"],
-                });
-                //Wednesday
-              } else if (product["Day Of Week"][i] == "W") {
-                this.state.list.push({
-                  title: product["Name"] + " (" + product["Type"] + ")",
-                  startTime: genTimeBlock("WED", start, start_min),
-                  endTime: genTimeBlock("WED", end, end_min),
-                  location: product["Location"],
-                });
-                //Thursday
-              } else if (
-                product["Day Of Week"][i] == "T" &&
-                product["Day Of Week"][i + 1] == "h"
-              ) {
-                this.state.list.push({
-                  title: product["Name"] + " (" + product["Type"] + ")",
-                  startTime: genTimeBlock("THU", start, start_min),
-                  endTime: genTimeBlock("THU", end, end_min),
-                  location: product["Location"],
-                });
-                //Friday
-              } else if (product["Day Of Week"][i] == "F") {
-                this.state.list.push({
-                  title: product["Name"] + " (" + product["Type"] + ")",
-                  startTime: genTimeBlock("FRI", start, start_min),
-                  endTime: genTimeBlock("FRI", end, end_min),
-                  location: product["Location"],
-                });
-                //Saterday
-              } else if (product["Day Of Week"][i] == "S") {
-                this.state.list.push({
-                  title: product["Name"] + " (" + product["Type"] + ")",
-                  startTime: genTimeBlock("SAT", start, start_min),
-                  endTime: genTimeBlock("SAT", end, end_min),
-                  location: product["Location"],
-                });
-                //Sunday
-              } else if (product["Day Of Week"][i] == "U") {
-                this.state.list.push({
-                  title: product["Name"] + " (" + product["Type"] + ")",
-                  startTime: genTimeBlock("SUN", start, start_min),
-                  endTime: genTimeBlock("SUN", end, end_min),
-                  location: product["Location"],
-                });
-              }
-            }
-          }
-        });
-        const uniqueArray = this.state.list.filter((value, index) => {
-          const _value = JSON.stringify(value);
-          return (
-            index ===
-            this.state.list.findIndex((obj) => {
-              return JSON.stringify(obj) === _value;
-            })
-          );
-        });
-        this.setState({ list: uniqueArray });
-        this.setState({ visible: !this.state.visible });
-        addSchedule(auth.currentUser?.uid, this.state.list);
-      })
-      .catch((error) => {
-        console.log(error);
-      });
-  };
-
-  exportDocumentFile = () => {
-    // exporting file as
-    
+  exportDocumentFile = async () => {
+    try {
+      const querySnapshot = await firestore().collection('events').get();
+      const events = querySnapshot.docs.map(doc => doc.data());
+      const fileContents = JSON.stringify(events);
+      const fileName = 'events.json';
+      const mimeType = 'application/json';
+      const fileUrl = `data:${mimeType};base64,${Buffer.from(fileContents).toString('base64')}`;
+      const link = document.createElement('a');
+      link.download = fileName;
+      link.href = fileUrl;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (error) {
+      console.error('Error exporting file:', error);
+    }
   };
 
   //navigate through calendar ui
@@ -458,6 +330,10 @@ export default class App extends Component {
                 }
               />
               <Button
+                title="Export schedule"
+                onPress={() => this.exportDocumentFile()}>
+                </Button>
+              <Button
                 title="Import schedule"
                 onPress={() => this.openDocumentFile()}
               />
@@ -470,10 +346,6 @@ export default class App extends Component {
                 title="Compare schedule"
                 onPress = {() => navigation.navigate('Compare Screen')}
                 ></Button>
-              <Button
-                title="Export schedule"
-                onPress={() => this.exportDocumentFile()}>
-                </Button>
               <Button
                 title="Close modal"
                 onPress={() => {
