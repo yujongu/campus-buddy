@@ -78,6 +78,7 @@ export default class App extends Component {
     this.state = {
       visible: false,
       list: [],
+      calendarEventList: [],
       midterms: [],
       holidays: [],
       testlist: [],
@@ -107,6 +108,7 @@ export default class App extends Component {
       startTime: null,
       endDate: null,
       endTime: null,
+      points: 0,
       // This is the starting date for the current calendar UI.
       weekViewStartDate: new Date(),
       monthViewData: [],
@@ -125,6 +127,7 @@ export default class App extends Component {
     // Getting schedules from database
     const res = await userSchedule(auth.currentUser?.uid);
     const result = [];
+    const eventResult = [];
     if (res != null) {
       res["things"].map((element) => {
         const sp = element.data.split(",");
@@ -151,11 +154,14 @@ export default class App extends Component {
           location: events["event"][i]["location"],
           color: events["event"][i]["color"],
         };
-        result.push(temp);
+        eventResult.push(temp);
       }
     }
 
     this.checkList(result);
+    this.setState({ calendarEventList: eventResult });
+
+
 
     const userDocRef = doc(db, "users", auth.currentUser.uid);
     onSnapshot(userDocRef, (doc) => {
@@ -266,12 +272,12 @@ export default class App extends Component {
         eventETime,
         this.location,
         "test",
-        10,
+        this.points,
         eventColor,
         0
       );
 
-      this.state.list.push({
+      this.state.calendarEventList.push({
         category: EventCategory.EVENT,
         title: this.title,
         startTime: eventSTime,
@@ -296,6 +302,9 @@ export default class App extends Component {
     this.location = location;
   };
 
+  setPoints = (points) => {
+    this.points = points;
+  };
   scrollViewRef = (ref) => {
     this.timetableRef = ref;
   };
@@ -427,13 +436,13 @@ export default class App extends Component {
     if (querySnapShot.exists()) {
       const result = querySnapShot.data();
       console.log(result["start"].toDate());
-      this.state.testlist.push({
+      this.state.calendarEventList.push({
         title: result["title"],
         startTime: result["start"],
         endTime: result["end"],
         location: result["location"],
       });
-      console.log(this.state.list);
+      console.log(this.state.calendarEventList);
     }
   };
 
@@ -735,6 +744,7 @@ export default class App extends Component {
   );
 
   toggleCalendarView = () => {
+    alert(this.state.calendarEventList);
     switch (this.state.calendarView) {
       case CalendarViewType.WEEK:
         this.setState({ calendarView: CalendarViewType.MONTH });
@@ -757,7 +767,6 @@ export default class App extends Component {
       colorPicker,
       eventColor,
       weekViewStartDate: weekViewStartDate,
-
       repetition,
       openDate,
     } = this.state;
@@ -894,6 +903,40 @@ export default class App extends Component {
                 </View>
               </View>
               {/* <View style={styles.row}> */}
+              <View style={styles.row}>
+                <Text
+                  style={{
+                    textAlign: "center",
+                    margin: 5,
+                    paddingTop: 10,
+                    paddingLeft: 80,
+                    color: "#2F4858",
+                  }}
+                >
+                  Points
+                </Text>
+                <ScrollView
+                  keyboardShouldPersistTaps='handled'
+                >
+                  <TextInput
+                    placeholderTextColor="#8b9cb5"
+                    style={{
+                      color: "black",
+                      borderWidth: 1,
+                      borderColor: "#8b9cb5",
+                      marginLeft: 10,
+                      marginTop:5,
+                      width:50,
+                      height:30,
+                      textAlign: 'center',
+                    }}
+                    value={this.state.points}
+                    defaultValue={0}
+                    keyboardType="numeric"
+                    onChangeText={(text) => this.setPoints(text)}
+                  ></TextInput>
+                  </ScrollView>
+                </View>
               <View style={styles.row}>
                 <Text
                   style={{
@@ -1260,6 +1303,49 @@ export default class App extends Component {
                           </View>
                         </View>
                       ))}
+                      
+                    </View>
+                    <View style={{}}>
+                      {Array.from(Array(24).keys()).map((index) => (
+                        <View
+                          key={index}
+                          style={{
+                            height: dailyHeight,
+                            flexDirection: "row",
+                          }}
+                        >
+                          <View
+                            key={`NT-${index}`}
+                            style={{
+                              height: dailyHeight,
+                              flex: 1,
+                              flexDirection: "row",
+                            }}
+                          >
+                            {this.state.calendarEventList.map((event) => {
+                              return index == event.startTime.getHours() &&
+                                makeVisible(
+                                  this.state.weekViewStartDate,
+                                  event
+                                ) ? (
+                                <EventItem
+                                  key={`EITEM-${index}-${event.title}-${event.startTime}`}
+                                  category={event.category}
+                                  day={event.startTime.getDay()}
+                                  startTime={new Date(event.startTime)}
+                                  endTime={new Date(event.endTime)}
+                                  title={event.title}
+                                  location={event.location}
+                                  color={event.color}
+                                />
+                              ) : (
+                                <View />
+                              );
+                            })}
+                          </View>
+                        </View>
+                      ))}
+                      
                     </View>
                   </ScrollView>
                 </View>
@@ -1466,7 +1552,7 @@ const styles = StyleSheet.create({
   modal: {
     backgroundColor: "white",
     width: 350,
-    height: 450,
+    height: 475,
     justifyContent: "center",
     alignItems: "center",
   },
