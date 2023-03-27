@@ -1,4 +1,4 @@
-import { arrayRemove, doc, onSnapshot, updateDoc, arrayUnion } from "@firebase/firestore";
+import { arrayRemove, doc, onSnapshot, updateDoc, arrayUnion, onSnapshotsInSync } from "@firebase/firestore";
 import { auth, db } from "../firebaseConfig";
 import { async } from "@firebase/util";
 import { StatusBar } from "expo-status-bar";
@@ -69,7 +69,28 @@ export default class NotificationScreen extends Component{
       this.setState({noti: notis[0]})
       this.setState({loading: false})
     })
-    return () => subscriber();
+    onSnapshot(doc(db, "events", auth.currentUser?.uid), (doc) => {
+      if(doc.data() != undefined){
+        doc.data()['event']
+        .map(data => {
+          if(data.startTime.toDate() <= new Date() && data.endTime.toDate() >= new Date()){
+            const event = 
+            "event/"+
+            "Event title: " + data.title + "\n" +
+            "Event location: " + data.location + "\n" +
+            "Event point: " + data.point_value + "\n" +
+            "Until event ends: " + 
+            Math.floor((data.endTime.toDate() - data.startTime.toDate())/(1000*60*60))
+            + " hour(s)\n"
+            console.log(event)
+            this.setState({noti: [...this.state.noti, event]})
+            console.log(this.state.noti)
+          }
+        }
+      )
+      }
+    })
+    
   }
 
   renderItem = (item) => {
@@ -88,6 +109,10 @@ export default class NotificationScreen extends Component{
         </View>
       </View>
       );
+    }else if(words[0] == "event"){
+      <View style = {styles.item}>
+        <Text>{item}</Text>
+      </View>
     }
   }
   
