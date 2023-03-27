@@ -104,10 +104,6 @@ export default class App extends Component {
       eventStartTime: new Date(),
       eventEndDate: new Date(),
       eventEndTime: new Date(),
-      startDate: null,
-      startTime: null,
-      endDate: null,
-      endTime: null,
       points: 0,
       // This is the starting date for the current calendar UI.
       weekViewStartDate: new Date(),
@@ -122,7 +118,7 @@ export default class App extends Component {
     tempDate.setDate(tempDate.getDate() - tempDate.getDay());
     this.setState({ weekViewStartDate: tempDate });
 
-    //Set month view calendar UI with the start date
+    //Set month view calendar UI with the start date and store in monthViewData
     this.createMonthViewData(tempDate);
     // Getting schedules from database
     const res = await userSchedule(auth.currentUser?.uid);
@@ -142,6 +138,8 @@ export default class App extends Component {
       });
     }
 
+    this.setState({ list: result });
+
     // Getting events from database
     const events = await getUserEvents(auth.currentUser?.uid);
     if (events != null) {
@@ -158,8 +156,7 @@ export default class App extends Component {
       }
     }
 
-    this.checkList(result);
-    this.setState({ calendarEventList: eventResult });
+    this.checkList(eventResult); //Checks for events that go over multiple days and corrects it
 
     const userDocRef = doc(db, "users", auth.currentUser.uid);
     onSnapshot(userDocRef, (doc) => {
@@ -186,7 +183,6 @@ export default class App extends Component {
 
         let longEvent = event;
         result.splice(index, 1);
-        let sD = longEvent.endTime.getDate() - 1;
 
         let nEventEndSide = {
           category: longEvent.category,
@@ -202,12 +198,31 @@ export default class App extends Component {
         };
         result.splice(index, 0, nEventEndSide);
 
-        // console.log(nEventEndSide);
-        // for (let i = sD; i >= longEvent.startTime.getDate() + 1; i--) {
-        //   console.log(nEventEndSide);
-        // }
-
-        // console.log("End OF DAY");
+        let eD = new Date(
+          longEvent.endTime.getFullYear(),
+          longEvent.endTime.getMonth(),
+          longEvent.endTime.getDate()
+        );
+        eD.setDate(eD.getDate() - 1);
+        while (eD.getDate() > longEvent.startTime.getDate()) {
+          let middleFullDay = {
+            category: longEvent.category,
+            color: longEvent.color,
+            endTime: new Date(
+              eD.getFullYear(),
+              eD.getMonth(),
+              eD.getDate(),
+              23,
+              59,
+              59
+            ),
+            location: longEvent.location,
+            startTime: new Date(eD.getFullYear(), eD.getMonth(), eD.getDate()),
+            title: longEvent.title,
+          };
+          result.splice(index, 0, middleFullDay);
+          eD.setDate(eD.getDate() - 1);
+        }
 
         let endOfDay = new Date(
           longEvent.startTime.getFullYear(),
@@ -228,7 +243,31 @@ export default class App extends Component {
         result.splice(index, 0, nEventStartSide);
       }
     });
-    this.setState({ list: result });
+
+    this.setState({ calendarEventList: result });
+    this.applyEventDataToMonthViewData();
+  };
+
+  applyEventDataToMonthViewData = (monthData = this.state.monthViewData) => {
+    let eventList = this.state.calendarEventList;
+    let currDate = this.state.weekViewStartDate;
+    this.setState({ monthViewData: [] });
+    let temp = [...monthData];
+
+    for (let i = 0; i < eventList.length; i++) {
+      let currEvent = eventList[i];
+
+      if (
+        currEvent.startTime.getFullYear() == currDate.getFullYear() &&
+        currEvent.startTime.getMonth() == currDate.getMonth()
+      ) {
+        let index = temp.findIndex(
+          (obj) => obj.isThisMonth && obj.date == currEvent.startTime.getDate()
+        );
+        temp[index].hasEvent = true;
+      }
+    }
+    this.setState({ monthViewData: temp });
   };
 
   submitEvent = (eventColor) => {
@@ -639,7 +678,12 @@ export default class App extends Component {
   goToday = () => {
     let tempDate = new Date();
     tempDate.setDate(tempDate.getDate() - tempDate.getDay());
-
+    if (
+      this.state.selectedCountryCode != null &&
+      this.state.selectedCountryCode.length > 0
+    ) {
+      this.getHolidays(this.state.selectedCountryCode, tempDate.getFullYear());
+    }
     this.setState({ weekViewStartDate: tempDate });
     this.createMonthViewData(tempDate);
   };
@@ -689,7 +733,8 @@ export default class App extends Component {
         }
       }
     }
-    this.setState({ monthViewData: monthData });
+    this.applyEventDataToMonthViewData(monthData);
+    // this.setState({ monthViewData: monthData });
   };
 
   onEventStartDateSelected = (event, value) => {
@@ -1033,9 +1078,13 @@ export default class App extends Component {
                   }
                   icon={(props) => <Octicons name="triangle-left" {...props} />}
                 />
-                <Pressable style={{ padding: 10 }} onPress={this.goToday}>
+                <Pressable
+                  style={{ padding: 10 }}
+                  onPress={() => this.goToday()}
+                >
                   <Text style={{ fontSize: 15 }}>Today</Text>
                 </Pressable>
+
                 <IconButton
                   style={{}}
                   color={Colors.grey}
@@ -1100,43 +1149,11 @@ export default class App extends Component {
             //           justifyContent: "center",
             //         }}
             //       >
-            //         <View style={styles.daysContainer}>
-            //           <TopHeaderDays
-            //             day={0}
-            //             holidays={this.state.holidays}
-            //             startDay={this.state.weekViewStartDate}
-            //           />
-            //           <TopHeaderDays
-            //             day={1}
-            //             holidays={this.state.holidays}
-            //             startDay={this.state.weekViewStartDate}
-            //           />
-            //           <TopHeaderDays
-            //             day={2}
-            //             holidays={this.state.holidays}
-            //             startDay={this.state.weekViewStartDate}
-            //           />
-            //           <TopHeaderDays
-            //             day={3}
-            //             holidays={this.state.holidays}
-            //             startDay={this.state.weekViewStartDate}
-            //           />
-            //           <TopHeaderDays
-            //             day={4}
-            //             holidays={this.state.holidays}
-            //             startDay={this.state.weekViewStartDate}
-            //           />
-            //           <TopHeaderDays
-            //             day={5}
-            //             holidays={this.state.holidays}
-            //             startDay={this.state.weekViewStartDate}
-            //           />
-            //           <TopHeaderDays
-            //             day={6}
-            //             holidays={this.state.holidays}
-            //             startDay={this.state.weekViewStartDate}
-            //           />
-            //         </View>
+
+            //         <TopHeaderDays
+            //           holidays={this.state.holidays}
+            //           startDay={this.state.weekViewStartDate}
+            //         />
             //       </View>
             //       {/* This is the vertically scrolling content. */}
             //       <ScrollViewVerticallySynced
@@ -1192,43 +1209,10 @@ export default class App extends Component {
                 horizontal={true}
               >
                 <View style={{ flexDirection: "column" }}>
-                  <View style={styles.daysContainer}>
-                    <TopHeaderDays
-                      day={0}
-                      holidays={this.state.holidays}
-                      startDay={this.state.weekViewStartDate}
-                    />
-                    <TopHeaderDays
-                      day={1}
-                      holidays={this.state.holidays}
-                      startDay={this.state.weekViewStartDate}
-                    />
-                    <TopHeaderDays
-                      day={2}
-                      holidays={this.state.holidays}
-                      startDay={this.state.weekViewStartDate}
-                    />
-                    <TopHeaderDays
-                      day={3}
-                      holidays={this.state.holidays}
-                      startDay={this.state.weekViewStartDate}
-                    />
-                    <TopHeaderDays
-                      day={4}
-                      holidays={this.state.holidays}
-                      startDay={this.state.weekViewStartDate}
-                    />
-                    <TopHeaderDays
-                      day={5}
-                      holidays={this.state.holidays}
-                      startDay={this.state.weekViewStartDate}
-                    />
-                    <TopHeaderDays
-                      day={6}
-                      holidays={this.state.holidays}
-                      startDay={this.state.weekViewStartDate}
-                    />
-                  </View>
+                  <TopHeaderDays
+                    holidays={this.state.holidays}
+                    startDay={this.state.weekViewStartDate}
+                  />
 
                   <ScrollView
                     style={{
@@ -1478,9 +1462,6 @@ const styles = StyleSheet.create({
     backgroundColor: "#F8F8F8",
     alignItems: "center",
     justifyContent: "center",
-  },
-  daysContainer: {
-    flexDirection: "row",
   },
   daysWithDate: {
     width: dailyWidth,

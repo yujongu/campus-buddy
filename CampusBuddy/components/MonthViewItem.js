@@ -1,5 +1,6 @@
 // Import React and Component
 import React, { useState } from "react";
+import Icon from "react-native-vector-icons/Entypo";
 
 import {
   StyleSheet,
@@ -25,11 +26,20 @@ const MonthViewItem = ({ date, hasEvent, isThisMonth }) => {
         margin: 3,
         borderRadius: "10",
         height: Dimensions.get("window").width / 6,
+        justifyContent: "space-between",
       }}
     >
       <Text style={{ color: isThisMonth ? "white" : "grey" }}>{date}</Text>
-
-      <Text></Text>
+      {hasEvent ? (
+        <Icon
+          name="hand"
+          size={15}
+          color="white"
+          style={{ alignSelf: "flex-end" }}
+        />
+      ) : (
+        <View />
+      )}
     </View>
   );
 };
