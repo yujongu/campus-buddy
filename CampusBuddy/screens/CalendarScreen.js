@@ -104,10 +104,6 @@ export default class App extends Component {
       eventStartTime: new Date(),
       eventEndDate: new Date(),
       eventEndTime: new Date(),
-      startDate: null,
-      startTime: null,
-      endDate: null,
-      endTime: null,
       points: 0,
       // This is the starting date for the current calendar UI.
       weekViewStartDate: new Date(),
@@ -122,8 +118,8 @@ export default class App extends Component {
     tempDate.setDate(tempDate.getDate() - tempDate.getDay());
     this.setState({ weekViewStartDate: tempDate });
 
-    //Set month view calendar UI with the start date
-    this.createMonthViewData();
+    //Set month view calendar UI with the start date and store in monthViewData
+    this.createMonthViewData(tempDate);
     // Getting schedules from database
     const res = await userSchedule(auth.currentUser?.uid);
     const result = [];
@@ -142,6 +138,8 @@ export default class App extends Component {
       });
     }
 
+    this.setState({ list: result });
+
     // Getting events from database
     const events = await getUserEvents(auth.currentUser?.uid);
     if (events != null) {
@@ -158,10 +156,7 @@ export default class App extends Component {
       }
     }
 
-    this.checkList(result);
-    this.setState({ calendarEventList: eventResult });
-
-
+    this.checkList(eventResult); //Checks for events that go over multiple days and corrects it
 
     const userDocRef = doc(db, "users", auth.currentUser.uid);
     onSnapshot(userDocRef, (doc) => {
@@ -181,7 +176,6 @@ export default class App extends Component {
 
   //Format event list so it works with the calendar view.
   checkList = (result) => {
-    // console.log("HI");
     result.forEach((event, index) => {
       //For events that go over on day
       if (event.startTime.getDate() != event.endTime.getDate()) {
@@ -189,7 +183,6 @@ export default class App extends Component {
 
         let longEvent = event;
         result.splice(index, 1);
-        let sD = longEvent.endTime.getDate() - 1;
 
         let nEventEndSide = {
           category: longEvent.category,
@@ -205,12 +198,31 @@ export default class App extends Component {
         };
         result.splice(index, 0, nEventEndSide);
 
-        // console.log(nEventEndSide);
-        // for (let i = sD; i >= longEvent.startTime.getDate() + 1; i--) {
-        //   console.log(nEventEndSide);
-        // }
-
-        // console.log("End OF DAY");
+        let eD = new Date(
+          longEvent.endTime.getFullYear(),
+          longEvent.endTime.getMonth(),
+          longEvent.endTime.getDate()
+        );
+        eD.setDate(eD.getDate() - 1);
+        while (eD.getDate() > longEvent.startTime.getDate()) {
+          let middleFullDay = {
+            category: longEvent.category,
+            color: longEvent.color,
+            endTime: new Date(
+              eD.getFullYear(),
+              eD.getMonth(),
+              eD.getDate(),
+              23,
+              59,
+              59
+            ),
+            location: longEvent.location,
+            startTime: new Date(eD.getFullYear(), eD.getMonth(), eD.getDate()),
+            title: longEvent.title,
+          };
+          result.splice(index, 0, middleFullDay);
+          eD.setDate(eD.getDate() - 1);
+        }
 
         let endOfDay = new Date(
           longEvent.startTime.getFullYear(),
@@ -231,7 +243,31 @@ export default class App extends Component {
         result.splice(index, 0, nEventStartSide);
       }
     });
-    this.setState({ list: result });
+
+    this.setState({ calendarEventList: result });
+    this.applyEventDataToMonthViewData();
+  };
+
+  applyEventDataToMonthViewData = (monthData = this.state.monthViewData) => {
+    let eventList = this.state.calendarEventList;
+    let currDate = this.state.weekViewStartDate;
+    this.setState({ monthViewData: [] });
+    let temp = [...monthData];
+
+    for (let i = 0; i < eventList.length; i++) {
+      let currEvent = eventList[i];
+
+      if (
+        currEvent.startTime.getFullYear() == currDate.getFullYear() &&
+        currEvent.startTime.getMonth() == currDate.getMonth()
+      ) {
+        let index = temp.findIndex(
+          (obj) => obj.isThisMonth && obj.date == currEvent.startTime.getDate()
+        );
+        temp[index].hasEvent = true;
+      }
+    }
+    this.setState({ monthViewData: temp });
   };
 
   submitEvent = (eventColor) => {
@@ -430,23 +466,6 @@ export default class App extends Component {
     );
   };
 
-  addEventToCalendar = async () => {
-    const querySnapShot = await getDoc(
-      doc(db, "events", auth.currentUser?.uid)
-    );
-    if (querySnapShot.exists()) {
-      const result = querySnapShot.data();
-      console.log(result["start"].toDate());
-      this.state.calendarEventList.push({
-        title: result["title"],
-        startTime: result["start"],
-        endTime: result["end"],
-        location: result["location"],
-      });
-      console.log(this.state.calendarEventList);
-    }
-  };
-
   openDocumentFile = async () => {
     const res = await DocumentPicker.getDocumentAsync({});
     fetch(res.uri)
@@ -639,7 +658,7 @@ export default class App extends Component {
       this.getHolidays(this.state.selectedCountryCode, tempDate.getFullYear());
     }
     this.setState({ weekViewStartDate: tempDate });
-    this.createMonthViewData();
+    this.createMonthViewData(tempDate);
   };
   goNextMonth = () => {
     let currYear = this.state.weekViewStartDate.getFullYear();
@@ -653,28 +672,35 @@ export default class App extends Component {
       this.getHolidays(this.state.selectedCountryCode, tempDate.getFullYear());
     }
     this.setState({ weekViewStartDate: tempDate });
-    this.createMonthViewData();
+    this.createMonthViewData(tempDate);
   };
 
   goToday = () => {
     let tempDate = new Date();
     tempDate.setDate(tempDate.getDate() - tempDate.getDay());
+    if (
+      this.state.selectedCountryCode != null &&
+      this.state.selectedCountryCode.length > 0
+    ) {
+      this.getHolidays(this.state.selectedCountryCode, tempDate.getFullYear());
+    }
     this.setState({ weekViewStartDate: tempDate });
+    this.createMonthViewData(tempDate);
   };
 
-  createMonthViewData = () => {
+  createMonthViewData = (startDate) => {
     let prevMonthDate = new Date(
-      this.state.weekViewStartDate.getFullYear(),
-      this.state.weekViewStartDate.getMonth(),
+      startDate.getFullYear(),
+      startDate.getMonth(),
       0
     );
     let numDaysInPrevMonth = prevMonthDate.getDate();
     let monthDate = new Date(
-      this.state.weekViewStartDate.getFullYear(),
-      this.state.weekViewStartDate.getMonth() + 1,
+      startDate.getFullYear(),
+      startDate.getMonth() + 1,
       0
     );
-    const monthData = [];
+    let monthData = [];
     let numDaysInMonth = monthDate.getDate();
     monthDate.setDate(1);
     for (let i = 0; i < 42; i++) {
@@ -684,7 +710,8 @@ export default class App extends Component {
           hasEvent: false,
           isThisMonth: false,
         };
-        monthData.push(temp);
+        // monthData.push(temp);
+        monthData = [...monthData, temp];
       } else {
         if (i < monthDate.getDay() + numDaysInMonth) {
           const temp = {
@@ -693,18 +720,21 @@ export default class App extends Component {
             isThisMonth: true,
           };
 
-          monthData.push(temp);
+          // monthData.push(temp);
+          monthData = [...monthData, temp];
         } else {
           const temp = {
             date: i - numDaysInMonth - monthDate.getDay() + 1,
             hasEvent: false,
             isThisMonth: false,
           };
-          monthData.push(temp);
+          // monthData.push(temp);
+          monthData = [...monthData, temp];
         }
       }
     }
-    this.setState({ monthViewData: monthData });
+    this.applyEventDataToMonthViewData(monthData);
+    // this.setState({ monthViewData: monthData });
   };
 
   onEventStartDateSelected = (event, value) => {
@@ -740,7 +770,6 @@ export default class App extends Component {
   );
 
   toggleCalendarView = () => {
-    alert(this.state.calendarEventList);
     switch (this.state.calendarView) {
       case CalendarViewType.WEEK:
         this.setState({ calendarView: CalendarViewType.MONTH });
@@ -911,9 +940,7 @@ export default class App extends Component {
                 >
                   Points
                 </Text>
-                <ScrollView
-                  keyboardShouldPersistTaps='handled'
-                >
+                <ScrollView keyboardShouldPersistTaps="handled">
                   <TextInput
                     placeholderTextColor="#8b9cb5"
                     style={{
@@ -921,18 +948,18 @@ export default class App extends Component {
                       borderWidth: 1,
                       borderColor: "#8b9cb5",
                       marginLeft: 10,
-                      marginTop:5,
-                      width:50,
-                      height:30,
-                      textAlign: 'center',
+                      marginTop: 5,
+                      width: 50,
+                      height: 30,
+                      textAlign: "center",
                     }}
                     value={this.state.points}
                     defaultValue={0}
                     keyboardType="numeric"
                     onChangeText={(text) => this.setPoints(text)}
                   ></TextInput>
-                  </ScrollView>
-                </View>
+                </ScrollView>
+              </View>
               <View style={styles.row}>
                 <Text
                   style={{
@@ -1051,9 +1078,13 @@ export default class App extends Component {
                   }
                   icon={(props) => <Octicons name="triangle-left" {...props} />}
                 />
-                <Pressable style={{ padding: 10 }} onPress={this.goToday}>
+                <Pressable
+                  style={{ padding: 10 }}
+                  onPress={() => this.goToday()}
+                >
                   <Text style={{ fontSize: 15 }}>Today</Text>
                 </Pressable>
+
                 <IconButton
                   style={{}}
                   color={Colors.grey}
@@ -1118,43 +1149,11 @@ export default class App extends Component {
             //           justifyContent: "center",
             //         }}
             //       >
-            //         <View style={styles.daysContainer}>
-            //           <TopHeaderDays
-            //             day={0}
-            //             holidays={this.state.holidays}
-            //             startDay={this.state.weekViewStartDate}
-            //           />
-            //           <TopHeaderDays
-            //             day={1}
-            //             holidays={this.state.holidays}
-            //             startDay={this.state.weekViewStartDate}
-            //           />
-            //           <TopHeaderDays
-            //             day={2}
-            //             holidays={this.state.holidays}
-            //             startDay={this.state.weekViewStartDate}
-            //           />
-            //           <TopHeaderDays
-            //             day={3}
-            //             holidays={this.state.holidays}
-            //             startDay={this.state.weekViewStartDate}
-            //           />
-            //           <TopHeaderDays
-            //             day={4}
-            //             holidays={this.state.holidays}
-            //             startDay={this.state.weekViewStartDate}
-            //           />
-            //           <TopHeaderDays
-            //             day={5}
-            //             holidays={this.state.holidays}
-            //             startDay={this.state.weekViewStartDate}
-            //           />
-            //           <TopHeaderDays
-            //             day={6}
-            //             holidays={this.state.holidays}
-            //             startDay={this.state.weekViewStartDate}
-            //           />
-            //         </View>
+
+            //         <TopHeaderDays
+            //           holidays={this.state.holidays}
+            //           startDay={this.state.weekViewStartDate}
+            //         />
             //       </View>
             //       {/* This is the vertically scrolling content. */}
             //       <ScrollViewVerticallySynced
@@ -1192,6 +1191,8 @@ export default class App extends Component {
                               ? Colors.morningTimeColor
                               : Colors.eveningTimeColor,
                           width: 20,
+                          marginHorizontal: 4,
+                          textAlign: "center",
                         }}
                       >
                         {index}
@@ -1208,43 +1209,10 @@ export default class App extends Component {
                 horizontal={true}
               >
                 <View style={{ flexDirection: "column" }}>
-                  <View style={styles.daysContainer}>
-                    <TopHeaderDays
-                      day={0}
-                      holidays={this.state.holidays}
-                      startDay={this.state.weekViewStartDate}
-                    />
-                    <TopHeaderDays
-                      day={1}
-                      holidays={this.state.holidays}
-                      startDay={this.state.weekViewStartDate}
-                    />
-                    <TopHeaderDays
-                      day={2}
-                      holidays={this.state.holidays}
-                      startDay={this.state.weekViewStartDate}
-                    />
-                    <TopHeaderDays
-                      day={3}
-                      holidays={this.state.holidays}
-                      startDay={this.state.weekViewStartDate}
-                    />
-                    <TopHeaderDays
-                      day={4}
-                      holidays={this.state.holidays}
-                      startDay={this.state.weekViewStartDate}
-                    />
-                    <TopHeaderDays
-                      day={5}
-                      holidays={this.state.holidays}
-                      startDay={this.state.weekViewStartDate}
-                    />
-                    <TopHeaderDays
-                      day={6}
-                      holidays={this.state.holidays}
-                      startDay={this.state.weekViewStartDate}
-                    />
-                  </View>
+                  <TopHeaderDays
+                    holidays={this.state.holidays}
+                    startDay={this.state.weekViewStartDate}
+                  />
 
                   <ScrollView
                     style={{
@@ -1294,28 +1262,6 @@ export default class App extends Component {
                                 <View />
                               );
                             })}
-                          </View>
-                        </View>
-                      ))}
-                      
-                    </View>
-                    <View style={{}}>
-                      {Array.from(Array(24).keys()).map((index) => (
-                        <View
-                          key={index}
-                          style={{
-                            height: dailyHeight,
-                            flexDirection: "row",
-                          }}
-                        >
-                          <View
-                            key={`NT-${index}`}
-                            style={{
-                              height: dailyHeight,
-                              flex: 1,
-                              flexDirection: "row",
-                            }}
-                          >
                             {this.state.calendarEventList.map((event) => {
                               return index == event.startTime.getHours() &&
                                 makeVisible(
@@ -1339,7 +1285,6 @@ export default class App extends Component {
                           </View>
                         </View>
                       ))}
-                      
                     </View>
                   </ScrollView>
                 </View>
@@ -1353,10 +1298,15 @@ export default class App extends Component {
               }}
             >
               <FlatList
+                scrollEnabled={false}
                 data={this.state.monthViewData}
                 renderItem={({ item }) => (
                   // console.log(item)
-                  <MonthViewItem date={item.date} />
+                  <MonthViewItem
+                    date={item.date}
+                    hasEvent={item.hasEvent}
+                    isThisMonth={item.isThisMonth}
+                  />
                 )}
                 //Setting the number of column
                 numColumns={7}
@@ -1483,6 +1433,23 @@ const populateRows = (name, eventList, weekStartDate) =>
               <View />
             );
           })}
+          {this.state.calendarEventList.map((event) => {
+            return index == event.startTime.getHours() &&
+              makeVisible(this.state.weekViewStartDate, event) ? (
+              <EventItem
+                key={`EITEM-${index}-${event.title}-${event.startTime}`}
+                category={event.category}
+                day={event.startTime.getDay()}
+                startTime={new Date(event.startTime)}
+                endTime={new Date(event.endTime)}
+                title={event.title}
+                location={event.location}
+                color={event.color}
+              />
+            ) : (
+              <View />
+            );
+          })}
         </View>
       ));
 
@@ -1495,9 +1462,6 @@ const styles = StyleSheet.create({
     backgroundColor: "#F8F8F8",
     alignItems: "center",
     justifyContent: "center",
-  },
-  daysContainer: {
-    flexDirection: "row",
   },
   daysWithDate: {
     width: dailyWidth,

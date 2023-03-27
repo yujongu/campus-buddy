@@ -1,5 +1,6 @@
 // Import React and Component
 import React, { useState } from "react";
+import Icon from "react-native-vector-icons/Entypo";
 
 import {
   StyleSheet,
@@ -13,17 +14,32 @@ import {
   Dimensions,
   ScrollView,
 } from "react-native";
+import { Colors } from "../constants/colors";
 
-const MonthViewItem = ({ date }) => {
+const MonthViewItem = ({ date, hasEvent, isThisMonth }) => {
   return (
     <View
       style={{
         flex: 1,
-        borderWidth: 2,
-        height: Dimensions.get("window").width / 7,
+        backgroundColor: isThisMonth ? Colors.third : Colors.secondary,
+        padding: 10,
+        margin: 3,
+        borderRadius: "10",
+        height: Dimensions.get("window").width / 6,
+        justifyContent: "space-between",
       }}
     >
-      <Text>{date}</Text>
+      <Text style={{ color: isThisMonth ? "white" : "grey" }}>{date}</Text>
+      {hasEvent ? (
+        <Icon
+          name="flag"
+          size={15}
+          color="white"
+          style={{ alignSelf: "flex-end" }}
+        />
+      ) : (
+        <View />
+      )}
     </View>
   );
 };
