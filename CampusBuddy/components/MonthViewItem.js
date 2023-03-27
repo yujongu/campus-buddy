@@ -32,7 +32,7 @@ const MonthViewItem = ({ date, hasEvent, isThisMonth }) => {
       <Text style={{ color: isThisMonth ? "white" : "grey" }}>{date}</Text>
       {hasEvent ? (
         <Icon
-          name="hand"
+          name="flag"
           size={15}
           color="white"
           style={{ alignSelf: "flex-end" }}
