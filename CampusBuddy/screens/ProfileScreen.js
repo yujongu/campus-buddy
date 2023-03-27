@@ -16,6 +16,9 @@ export default function ProfileScreen({ navigation, route }) {
   const [id, setId] = useState("");
   const [password, setPassword] = useState("");
   const [mode,setMode] = useState(false);
+  //categories are not implemented yet, just using two dummy categories for now
+  const [schoolPoints, setSchoolPoints] = useState("");
+  const [fitnessPoints, setFitnessPoints] = useState("");
   const theme = useContext(ThemeContext);
 
   const handleSignOut = () => {
@@ -69,6 +72,11 @@ export default function ProfileScreen({ navigation, route }) {
     const unsubscribe = onSnapshot(userDocRef, (doc) => {
       if (doc.exists()) {
         setId(doc.data().id);
+        setSchoolPoints(doc.data().points["school"])
+        setFitnessPoints(doc.data().points["fitness"])
+        /*doc.data().points.map(([key, value]) => {
+          console.log(key, value)
+        })*/
       } else {
         console.log("No such document!");
       }
@@ -77,7 +85,11 @@ export default function ProfileScreen({ navigation, route }) {
       unsubscribe();
     };
   }, []);
- 
+  
+  //converts points to a width percentage for progress bar display
+  const getWidth = (points) => {
+    return (points-100*Math.floor(parseInt(points, 10)/100)).toString() + "%";
+  }
   return (
     <View style={[styles.container]}>
       <Text style = {[styles.textStyle, {color: theme.color}]}>{auth.currentUser?.uid}</Text>
@@ -100,6 +112,37 @@ export default function ProfileScreen({ navigation, route }) {
         secureTextEntry={true}
       />
       <Button title="Delete Account" onPress={handleDeleteAccount} />
+      <Text style={{fontSize:20, textAlign:"center", paddingTop:40, paddingBottom:10}}>
+        Points Progress
+      </Text>
+      <Text style={[styles.categoryText]}>
+        School Courses
+      </Text>
+      <View style={[styles.row]}>
+        <Text style={[styles.categoryText]}>
+          {Math.floor(parseInt(schoolPoints, 10)/100)}
+        </Text>
+        <View style={styles.progressBar}>
+          <View style={[[StyleSheet.absoluteFill], {backgroundColor: "#FFC2B0", width: getWidth(schoolPoints)}]}/>
+        </View>
+        <Text style={[styles.categoryText]}>
+          {Math.floor(parseInt(schoolPoints, 10)/100)+1}
+        </Text>
+      </View>
+      <Text style={[styles.categoryText]}>
+        Fitness
+      </Text>
+      <View style={[styles.row]}>
+        <Text style={[styles.categoryText]}>
+          {Math.floor(parseInt(fitnessPoints, 10)/100)}
+        </Text>
+        <View style={styles.progressBar}>
+          <View style={[[StyleSheet.absoluteFill], {backgroundColor: "#00ACBE", width: getWidth(fitnessPoints)}]}/>
+        </View>
+        <Text style={[styles.categoryText]}>
+          {Math.floor(parseInt(fitnessPoints, 10)/100)+1}
+        </Text>
+      </View>
     </View>
   );
 }
@@ -141,5 +184,29 @@ const styles = StyleSheet.create({
   },
   buttonClose: {
     backgroundColor: "#2196F3",
+  },
+  barContainer: {
+    flex: 1,
+    flexDirection: "column", //column direction
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingTop: 30,
+    backgroundColor: '#ecf0f1',
+    padding: 8,
+  },
+   progressBar: {
+    height: 30,
+    width: '80%',
+    backgroundColor: 'white',
+    borderColor: '#000',
+    borderWidth: 2,
+    borderRadius: 5,
+    marginBottom: 5
+  },
+  categoryText: {
+    padding: 5
+  },
+  row: {
+    flexDirection: "row",
   },
 });

@@ -94,7 +94,10 @@ export async function createUser(username, first, last, email, password) {
           last: last,
           email: email,
           password: password,
-          points: 0,
+          points: {
+            school: 0,
+            fitness: 0,
+          },
           points_privacy: false,
           calendar_privacy: false,
         });
@@ -219,6 +222,7 @@ export async function getUserEvents(user_token) {
     alert("Error getting user events: " + error);
   }
 }
+
 export async function userList() {
   var result = [];
   try {
