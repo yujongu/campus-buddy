@@ -38,8 +38,6 @@ import { createAppContainer } from "react-navigation";
 import CompareScreen from '../screens/CompareScreen';
 //import { useNavigation } from "react-router-dom";
 
-//const navigation = useNavigation();
-
 const MonthName = [
   "January",
   "February",
@@ -63,7 +61,7 @@ const dailyHeight = Dimensions.get("window").height / 10;
 
 
 export default class App extends Component {
-  constructor(props, navigation) {
+  constructor(props) {
     super(props);
     this.numOfDays = 7;
     this.pivotDate = genTimeBlock("mon");
@@ -148,6 +146,10 @@ export default class App extends Component {
   openCreateEvent = () => {
     this.setState({ visible: false });
     this.setState({ createEventVisible: true });
+  };
+
+  openCompareScreen = () => {
+
   };
 
   updateColor = (color) => {
@@ -292,6 +294,7 @@ export default class App extends Component {
 
   render() {
     const { openList, value, repetitionItems, colorPicker, eventColor } = this.state;
+    const { navigate } = this.props.navigation;
     if (colorPicker) {
       console.log("colorpicked")
       return <ColorWheel updateColor={this.updateColor}/>
@@ -344,7 +347,10 @@ export default class App extends Component {
               />
               <Button
                 title="Compare schedule"
-                onPress = {() => navigation.navigate('Compare Screen')}
+                onPress = {() => {
+                  navigate('Compare Screen')
+                  this.setState({ visible: !this.state.visible });
+                }}
                 ></Button>
               <Button
                 title="Close modal"
