@@ -7,6 +7,8 @@ import { Button, Alert, StyleSheet, Text, TouchableOpacity, View, ActivityIndica
 import { FlatList } from "react-native";
 import Icon from 'react-native-vector-icons/AntDesign'
 import ThemeContext  from "../components/ui/ThemeContext";
+import AntDesign from "react-native-vector-icons/AntDesign"
+import { Modal } from "react-native";
 
 
 export default class NotificationScreen extends Component{
@@ -14,7 +16,9 @@ export default class NotificationScreen extends Component{
     super();
     this.state = {
       loading: true,
-      noti: []
+      noti: [],
+      friend_request: [],
+      friend_modal: false,
     }
   }
 
@@ -62,17 +66,29 @@ export default class NotificationScreen extends Component{
     }
   }
 
-  componentDidMount() {
+  refresh_screen() {
+    this.setState({loading: true})
+    setTimeout(() => {
+      this.load_events()
+      this.load_friend()
+      this.setState({loading: false})
+    }, 1000)
+  }
+
+  load_friend() {
     const subscriber = onSnapshot(doc(db, "requests", auth.currentUser?.email), (doc) => {
       const notis = [];
       notis.push(doc.data()['from_request'])
-      this.setState({noti: notis[0]})
-      this.setState({loading: false})
+      this.setState({friend_request: notis[0]})
     })
-    onSnapshot(doc(db, "events", auth.currentUser?.uid), (doc) => {
+  }
+
+  load_events() {
+    const subs = onSnapshot(doc(db, "events", auth.currentUser?.uid), (doc) => {
+      let temp = [];
       if(doc.data() != undefined){
         doc.data()['event']
-        .map(data => {
+        .forEach(data => {
           if(data.startTime.toDate() <= new Date() && data.endTime.toDate() >= new Date()){
             const event = 
             "event/"+
@@ -80,17 +96,39 @@ export default class NotificationScreen extends Component{
             "Event location: " + data.location + "\n" +
             "Event point: " + data.point_value + "\n" +
             "Until event ends: " + 
-            Math.floor((data.endTime.toDate() - data.startTime.toDate())/(1000*60*60))
-            + " hour(s)\n"
-            console.log(event)
-            this.setState({noti: [...this.state.noti, event]})
-            console.log(this.state.noti)
+            Math.floor((data.endTime.toDate() - new Date())/(1000*60*60))
+            + " hour(s)"
+            temp.push(event)
           }
         }
-      )
+        )
       }
+      this.setState({noti: temp})
     })
-    
+  }
+
+  componentDidMount() {
+    this.props.navigation.setOptions({
+      headerRight: () => (
+        <View style={{flexDirection: "row"}}>
+          <TouchableOpacity style={{marginRight: 10}} onPress = {() => this.setState({friend_modal: !this.state.friend_modal})}>
+            <AntDesign name = {"addusergroup"} size = {20} />
+          </TouchableOpacity>
+          <TouchableOpacity style={{marginRight: 10}} onPress = {() => this.refresh_screen()}>
+            <AntDesign name = {"reload1"} size = {20} />
+          </TouchableOpacity>
+        </View>
+        
+      )
+    })
+    const subscriber = onSnapshot(doc(db, "requests", auth.currentUser?.email), (doc) => {
+      const notis = [];
+      notis.push(doc.data()['from_request'])
+      this.setState({friend_request: notis[0]})
+    })
+    this.load_friend()
+    this.load_events()
+    this.setState({loading: false})
   }
 
   renderItem = (item) => {
@@ -110,9 +148,11 @@ export default class NotificationScreen extends Component{
       </View>
       );
     }else if(words[0] == "event"){
-      <View style = {styles.item}>
-        <Text>{item}</Text>
-      </View>
+      return (
+        <View style = {styles.item}>
+          <Text>{words[1]}</Text>
+        </View>
+      )
     }
   }
   
@@ -121,6 +161,27 @@ export default class NotificationScreen extends Component{
   render() {
     return (
       <View style={styles.container}>
+        <Modal 
+          animationType="slide"
+          visible={this.state.friend_modal}
+        >
+          <View style={{flex: 1, justifyContent: 'center', alignItems: 'center'}}>
+            <View style={{width: '100%', height: '80%'}}>
+              {
+                this.state.loading ?
+                <ActivityIndicator />
+                :
+                <FlatList 
+                  data={this.state.friend_request}
+                  renderItem={({item}) => 
+                    this.renderItem(item)
+                  }
+                />
+              }
+              <Button title="Back" onPress={() => this.setState({friend_modal: !this.state.friend_modal})}/>
+            </View>
+          </View>
+        </Modal>
         {
           this.state.loading ?
           <ActivityIndicator />
