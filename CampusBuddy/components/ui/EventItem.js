@@ -1,3 +1,4 @@
+import { Pressable } from "@react-native-material/core";
 import React from "react";
 import { View, Text, Dimensions } from "react-native";
 const leftHeaderWidth = 50;
@@ -5,6 +6,9 @@ const topHeaderHeight = 20;
 const dailyWidth = (Dimensions.get("window").width - leftHeaderWidth) / 3;
 const dailyHeight = Dimensions.get("window").height / 10;
 export default class EventItem extends React.Component {
+  constructor(props) {
+    super(props);
+  }
   // category: "School Courses",
   //   startTime: "2019-07-04T17:30:00.000Z",
   //   endTime: "2019-07-04T18:45:00.000Z",
@@ -20,51 +24,86 @@ export default class EventItem extends React.Component {
     return duration / 60;
   }
 
+  JSClock = (time) => {
+    const hour = time.getHours();
+    const minute = time.getMinutes();
+    const second = time.getSeconds();
+    let temp = String(hour % 12);
+    if (temp === "0") {
+      temp = "12";
+    }
+    temp += (minute < 10 ? ":0" : ":") + minute;
+    if (second != 0) {
+      temp += (second < 10 ? ":0" : ":") + second;
+    }
+    temp += hour >= 12 ? " P.M." : " A.M.";
+    return temp;
+  };
+
+  showDetails(category, day, startTime, endTime, title, location, host, color) {
+    this.props.navigation.navigate("EventDetails", {
+      category,
+      day,
+      startTime: this.JSClock(startTime),
+      endTime: this.JSClock(endTime),
+      title,
+      location,
+      host,
+      color,
+    });
+  }
+
   render() {
     const { category, day, startTime, endTime, title, location, host, color } =
       this.props;
+
     let nHeight =
       category == "Empty"
         ? 0
         : dailyHeight * this.calculateEventHeight(startTime, endTime);
 
-    let startHeight = category == "Empty" ? 0 : 30 - startTime.getMinutes();
+    let startHeightOffset =
+      category == "Empty" ? 0 : 30 - startTime.getMinutes();
 
-    return category == "Empty" ? (
-      <View
-        key={title}
-        style={{
-          width: dailyWidth * 0.9,
-          height: nHeight,
-          justifyContent: "center",
-          alignItems: "center",
-          padding: 10,
-          borderRadius: 10,
-          zIndex: 2,
-        }}
-      ></View>
-    ) : (
-      <View
-        key={title}
-        style={{
-          position: "absolute",
-          left: day * dailyWidth,
-          top: dailyHeight / 2 - startHeight,
-          width: dailyWidth * 0.9,
-          height: nHeight,
-          justifyContent: "center",
-          alignItems: "center",
-          padding: 10,
-          marginLeft: dailyWidth * 0.05,
-          marginRight: dailyWidth * 0.05,
-          borderRadius: 10,
-          zIndex: 2,
-          backgroundColor: color == null ? "#D1FF96" : color,
-        }}
+    return (
+      <Pressable
+        onPress={() =>
+          this.showDetails(
+            category,
+            day,
+            startTime,
+            endTime,
+            title,
+            location,
+            host,
+            color
+          )
+        }
       >
-        <Text style={{ fontSize: 16 }}>{title}</Text>
-        <Text style={{ fontSize: 12 }}>{location}</Text>
-      </View>
+        <View
+          key={title}
+          style={{
+            position: "absolute",
+            left: day * dailyWidth,
+            top:
+              dailyHeight / 2 -
+              startHeightOffset +
+              startTime.getHours() * dailyHeight,
+            width: dailyWidth * 0.9,
+            height: nHeight,
+            justifyContent: "center",
+            alignItems: "center",
+            padding: 10,
+            marginLeft: dailyWidth * 0.05,
+            marginRight: dailyWidth * 0.05,
+            borderRadius: 10,
+            backgroundColor: color == null ? "#D1FF96" : color,
+          }}
+        >
+          <Text style={{ fontSize: 16 }}>{title}</Text>
+          <Text style={{ fontSize: 12 }}>{location}</Text>
+        </View>
+      </Pressable>
     );
   }
 }

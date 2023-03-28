@@ -28,7 +28,7 @@ import { genTimeBlock } from "react-native-timetable";
 import { addSchedule, addEvent } from "../firebaseConfig";
 import { auth, db, userSchedule, getUserEvents } from "../firebaseConfig";
 import EventItem from "../components/ui/EventItem";
-import { IconButton } from "@react-native-material/core";
+import { even, IconButton } from "@react-native-material/core";
 import TopHeaderDays from "../components/ui/TopHeaderDays";
 import { doc, onSnapshot, updateDoc, getDoc } from "firebase/firestore";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -108,7 +108,7 @@ export default class App extends Component {
       // This is the starting date for the current calendar UI.
       weekViewStartDate: new Date(),
       monthViewData: [],
-      calendarView: CalendarViewType.MONTH, //On click, go above a level. Once date is clicked, go into week view.
+      calendarView: CalendarViewType.WEEK, //On click, go above a level. Once date is clicked, go into week view.
     };
   }
 
@@ -1225,66 +1225,51 @@ export default class App extends Component {
                     scrollEventThrottle={16}
                     onScroll={this.scrollViewEventOne}
                   >
-                    <View style={{}}>
-                      {Array.from(Array(24).keys()).map((index) => (
-                        <View
-                          key={index}
-                          style={{
-                            height: dailyHeight,
-                            flexDirection: "row",
-                          }}
-                        >
-                          <View
-                            key={`NT-${index}`}
-                            style={{
-                              height: dailyHeight,
-                              flex: 1,
-                              flexDirection: "row",
-                            }}
-                          >
-                            {this.state.list.map((event) => {
-                              return index == event.startTime.getHours() &&
-                                makeVisible(
-                                  this.state.weekViewStartDate,
-                                  event
-                                ) ? (
-                                <EventItem
-                                  key={`EITEM-${index}-${event.title}-${event.startTime}`}
-                                  category={event.category}
-                                  day={event.startTime.getDay()}
-                                  startTime={new Date(event.startTime)}
-                                  endTime={new Date(event.endTime)}
-                                  title={event.title}
-                                  location={event.location}
-                                  color={event.color}
-                                />
-                              ) : (
-                                <View />
-                              );
-                            })}
-                            {this.state.calendarEventList.map((event) => {
-                              return index == event.startTime.getHours() &&
-                                makeVisible(
-                                  this.state.weekViewStartDate,
-                                  event
-                                ) ? (
-                                <EventItem
-                                  key={`EITEM-${index}-${event.title}-${event.startTime}`}
-                                  category={event.category}
-                                  day={event.startTime.getDay()}
-                                  startTime={new Date(event.startTime)}
-                                  endTime={new Date(event.endTime)}
-                                  title={event.title}
-                                  location={event.location}
-                                  color={event.color}
-                                />
-                              ) : (
-                                <View />
-                              );
-                            })}
-                          </View>
-                        </View>
-                      ))}
+                    <View
+                      style={{
+                        height: dailyHeight * 24,
+                      }}
+                    >
+                      {this.state.list.map((event) => {
+                        return makeVisible(
+                          this.state.weekViewStartDate,
+                          event
+                        ) ? (
+                          <EventItem
+                            key={`EITEM-${1}-${event.title}-${event.startTime}`}
+                            navigation={this.props.navigation}
+                            category={event.category}
+                            day={event.startTime.getDay()}
+                            startTime={new Date(event.startTime)}
+                            endTime={new Date(event.endTime)}
+                            title={event.title}
+                            location={event.location}
+                            color={event.color}
+                          />
+                        ) : (
+                          <View />
+                        );
+                      })}
+                      {this.state.calendarEventList.map((event) => {
+                        return makeVisible(
+                          this.state.weekViewStartDate,
+                          event
+                        ) ? (
+                          <EventItem
+                            key={`EITEM-${1}-${event.title}-${event.startTime}`}
+                            navigation={this.props.navigation}
+                            category={event.category}
+                            day={event.startTime.getDay()}
+                            startTime={new Date(event.startTime)}
+                            endTime={new Date(event.endTime)}
+                            title={event.title}
+                            location={event.location}
+                            color={event.color}
+                          />
+                        ) : (
+                          <View />
+                        );
+                      })}
                     </View>
                   </ScrollView>
                 </View>

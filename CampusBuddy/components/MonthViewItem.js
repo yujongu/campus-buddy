@@ -1,4 +1,3 @@
-// Import React and Component
 import React, { useState } from "react";
 import Icon from "react-native-vector-icons/Entypo";
 
