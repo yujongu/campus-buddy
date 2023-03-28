@@ -107,8 +107,9 @@ export default class App extends Component {
       points: 0,
       // This is the starting date for the current calendar UI.
       weekViewStartDate: new Date(),
+      currentDate: new Date(), // This is the selected date
       monthViewData: [],
-      calendarView: CalendarViewType.WEEK, //On click, go above a level. Once date is clicked, go into week view.
+      calendarView: CalendarViewType.DAY, //On click, go above a level. Once date is clicked, go into week view.
     };
   }
 
@@ -677,6 +678,7 @@ export default class App extends Component {
 
   goToday = () => {
     let tempDate = new Date();
+    this.setState({ currentDate: tempDate });
     tempDate.setDate(tempDate.getDate() - tempDate.getDay());
     if (
       this.state.selectedCountryCode != null &&
@@ -1286,6 +1288,8 @@ export default class App extends Component {
                     }}
                   >
                     <Text>HI this is day view</Text>
+                    <Text>{this.state.currentDate.getMonth() + 1}</Text>
+                    <Text>{this.state.currentDate.getDate()}</Text>
                   </View>
                 );
               default:
@@ -1300,39 +1304,6 @@ export default class App extends Component {
       </SafeAreaView>
     );
   }
-
-  weekUI = () => {
-    <div>
-      <Text>This is week ui</Text>
-    </div>;
-  };
-
-  monthUI = () => {
-    return (
-      <View
-        style={{
-          width: "100%",
-          height: "100%",
-        }}
-      >
-        <FlatList
-          scrollEnabled={false}
-          data={this.state.monthViewData}
-          renderItem={({ item }) => (
-            // console.log(item)
-            <MonthViewItem
-              date={item.date}
-              hasEvent={item.hasEvent}
-              isThisMonth={item.isThisMonth}
-            />
-          )}
-          //Setting the number of column
-          numColumns={7}
-          keyExtractor={(item, index) => index}
-        />
-      </View>
-    );
-  };
 }
 
 class ScrollViewVerticallySynced extends React.Component {
