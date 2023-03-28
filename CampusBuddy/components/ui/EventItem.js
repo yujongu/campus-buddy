@@ -6,6 +6,9 @@ const topHeaderHeight = 20;
 const dailyWidth = (Dimensions.get("window").width - leftHeaderWidth) / 3;
 const dailyHeight = Dimensions.get("window").height / 10;
 export default class EventItem extends React.Component {
+  constructor(props) {
+    super(props);
+  }
   // category: "School Courses",
   //   startTime: "2019-07-04T17:30:00.000Z",
   //   endTime: "2019-07-04T18:45:00.000Z",
@@ -21,8 +24,33 @@ export default class EventItem extends React.Component {
     return duration / 60;
   }
 
-  showDetails() {
-    console.log("HI");
+  JSClock = (time) => {
+    const hour = time.getHours();
+    const minute = time.getMinutes();
+    const second = time.getSeconds();
+    let temp = String(hour % 12);
+    if (temp === "0") {
+      temp = "12";
+    }
+    temp += (minute < 10 ? ":0" : ":") + minute;
+    if (second != 0) {
+      temp += (second < 10 ? ":0" : ":") + second;
+    }
+    temp += hour >= 12 ? " P.M." : " A.M.";
+    return temp;
+  };
+
+  showDetails(category, day, startTime, endTime, title, location, host, color) {
+    this.props.navigation.navigate("EventDetails", {
+      category,
+      day,
+      startTime: this.JSClock(startTime),
+      endTime: this.JSClock(endTime),
+      title,
+      location,
+      host,
+      color,
+    });
   }
 
   render() {
@@ -38,7 +66,20 @@ export default class EventItem extends React.Component {
       category == "Empty" ? 0 : 30 - startTime.getMinutes();
 
     return (
-      <Pressable onPress={this.showDetails}>
+      <Pressable
+        onPress={() =>
+          this.showDetails(
+            category,
+            day,
+            startTime,
+            endTime,
+            title,
+            location,
+            host,
+            color
+          )
+        }
+      >
         <View
           key={title}
           style={{

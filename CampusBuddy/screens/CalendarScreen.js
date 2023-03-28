@@ -1237,6 +1237,7 @@ export default class App extends Component {
                         ) ? (
                           <EventItem
                             key={`EITEM-${1}-${event.title}-${event.startTime}`}
+                            navigation={this.props.navigation}
                             category={event.category}
                             day={event.startTime.getDay()}
                             startTime={new Date(event.startTime)}
@@ -1256,6 +1257,7 @@ export default class App extends Component {
                         ) ? (
                           <EventItem
                             key={`EITEM-${1}-${event.title}-${event.startTime}`}
+                            navigation={this.props.navigation}
                             category={event.category}
                             day={event.startTime.getDay()}
                             startTime={new Date(event.startTime)}
