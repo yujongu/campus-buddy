@@ -1,3 +1,4 @@
+import { Pressable } from "@react-native-material/core";
 import React from "react";
 import { View, Text, Dimensions } from "react-native";
 const leftHeaderWidth = 50;
@@ -20,51 +21,48 @@ export default class EventItem extends React.Component {
     return duration / 60;
   }
 
+  showDetails() {
+    console.log("HI");
+  }
+
   render() {
     const { category, day, startTime, endTime, title, location, host, color } =
       this.props;
+
     let nHeight =
       category == "Empty"
         ? 0
         : dailyHeight * this.calculateEventHeight(startTime, endTime);
 
-    let startHeight = category == "Empty" ? 0 : 30 - startTime.getMinutes();
+    let startHeightOffset =
+      category == "Empty" ? 0 : 30 - startTime.getMinutes();
 
-    return category == "Empty" ? (
-      <View
-        key={title}
-        style={{
-          width: dailyWidth * 0.9,
-          height: nHeight,
-          justifyContent: "center",
-          alignItems: "center",
-          padding: 10,
-          borderRadius: 10,
-          zIndex: 2,
-        }}
-      ></View>
-    ) : (
-      <View
-        key={title}
-        style={{
-          position: "absolute",
-          left: day * dailyWidth,
-          top: dailyHeight / 2 - startHeight,
-          width: dailyWidth * 0.9,
-          height: nHeight,
-          justifyContent: "center",
-          alignItems: "center",
-          padding: 10,
-          marginLeft: dailyWidth * 0.05,
-          marginRight: dailyWidth * 0.05,
-          borderRadius: 10,
-          zIndex: 2,
-          backgroundColor: color == null ? "#D1FF96" : color,
-        }}
-      >
-        <Text style={{ fontSize: 16 }}>{title}</Text>
-        <Text style={{ fontSize: 12 }}>{location}</Text>
-      </View>
+    return (
+      <Pressable onPress={this.showDetails}>
+        <View
+          key={title}
+          style={{
+            position: "absolute",
+            left: day * dailyWidth,
+            top:
+              dailyHeight / 2 -
+              startHeightOffset +
+              startTime.getHours() * dailyHeight,
+            width: dailyWidth * 0.9,
+            height: nHeight,
+            justifyContent: "center",
+            alignItems: "center",
+            padding: 10,
+            marginLeft: dailyWidth * 0.05,
+            marginRight: dailyWidth * 0.05,
+            borderRadius: 10,
+            backgroundColor: color == null ? "#D1FF96" : color,
+          }}
+        >
+          <Text style={{ fontSize: 16 }}>{title}</Text>
+          <Text style={{ fontSize: 12 }}>{location}</Text>
+        </View>
+      </Pressable>
     );
   }
 }
