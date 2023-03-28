@@ -770,11 +770,25 @@ export default class App extends Component {
   );
 
   toggleCalendarView = () => {
+    // switch (this.state.calendarView) {
+    //   case CalendarViewType.WEEK:
+    //     this.setState({ calendarView: CalendarViewType.MONTH });
+    //     break;
+    //   case CalendarViewType.MONTH:
+    //     this.setState({ calendarView: CalendarViewType.WEEK });
+    //     break;
+    //   default:
+    //     console.error("Something Wrong with toggle calendar view");
+    //     break;
+    // }
     switch (this.state.calendarView) {
       case CalendarViewType.WEEK:
         this.setState({ calendarView: CalendarViewType.MONTH });
         break;
       case CalendarViewType.MONTH:
+        this.setState({ calendarView: CalendarViewType.DAY });
+        break;
+      case CalendarViewType.DAY:
         this.setState({ calendarView: CalendarViewType.WEEK });
         break;
       default:
@@ -1122,187 +1136,203 @@ export default class App extends Component {
               </View>
             </View>
           </View>
-          {this.state.calendarView == CalendarViewType.WEEK ? (
-            // <View
-            //   style={{
-            //     flexDirection: "row",
-            //   }}
-            // >
-            //   {/* This is the left vertical header */}
-            //   <ScrollViewVerticallySynced
-            //     style={{
-            //       width: leftHeaderWidth,
-            //       marginTop: topHeaderHeight,
-            //     }}
-            //     name="Time"
-            //     onScroll={this.scrollEvent}
-            //     scrollPosition={this.scrollPosition}
-            //     eventList={this.state.list}
-            //     weekStartDate={this.state.weekViewStartDate}
-            //   />
-            //   {/* This is the right vertical content */}
-            //   <ScrollView horizontal bounces={true}>
-            //     <View style={{ width: dailyWidth * 7 }}>
-            //       <View
-            //         style={{
-            //           height: topHeaderHeight,
-            //           justifyContent: "center",
-            //         }}
-            //       >
 
-            //         <TopHeaderDays
-            //           holidays={this.state.holidays}
-            //           startDay={this.state.weekViewStartDate}
-            //         />
-            //       </View>
-            //       {/* This is the vertically scrolling content. */}
-            //       <ScrollViewVerticallySynced
-            //         style={{
-            //           width: "100%",
-            //           backgroundColor: "#F8F8F8",
-            //         }}
-            //         name="notTime"
-            //         onScroll={this.scrollEvent}
-            //         scrollPosition={this.scrollPosition}
-            //         eventList={this.state.list}
-            //         weekStartDate={this.state.weekViewStartDate}
-            //       />
-            //     </View>
-            //   </ScrollView>
-            // </View>
-            <View style={{ flexDirection: "row", height: "100%" }}>
-              <View>
-                <View style={{ height: topHeaderHeight }} />
-                <ScrollView scrollEnabled={false} ref={this.svRef}>
-                  {Array.from(Array(24).keys()).map((index) => (
-                    <View
-                      // key={`TIME${name}-${index}`}
-                      key={index}
-                      style={{
-                        height: dailyHeight,
-                        // justifyContent: "center",
-                        flexDirection: "row",
-                      }}
-                    >
-                      <Text
-                        style={{
-                          color:
-                            index <= 12 && index > 0
-                              ? Colors.morningTimeColor
-                              : Colors.eveningTimeColor,
-                          width: 20,
-                          marginHorizontal: 4,
-                          textAlign: "center",
-                        }}
-                      >
-                        {index}
-                      </Text>
+          {(() => {
+            switch (this.state.calendarView) {
+              case CalendarViewType.WEEK:
+                return (
+                  <View style={{ flexDirection: "row", height: "100%" }}>
+                    <View>
+                      <View style={{ height: topHeaderHeight }} />
+                      <ScrollView scrollEnabled={false} ref={this.svRef}>
+                        {Array.from(Array(24).keys()).map((index) => (
+                          <View
+                            // key={`TIME${name}-${index}`}
+                            key={index}
+                            style={{
+                              height: dailyHeight,
+                              // justifyContent: "center",
+                              flexDirection: "row",
+                            }}
+                          >
+                            <Text
+                              style={{
+                                color:
+                                  index <= 12 && index > 0
+                                    ? Colors.morningTimeColor
+                                    : Colors.eveningTimeColor,
+                                width: 20,
+                                marginHorizontal: 4,
+                                textAlign: "center",
+                              }}
+                            >
+                              {index}
+                            </Text>
+                          </View>
+                        ))}
+                      </ScrollView>
                     </View>
-                  ))}
-                </ScrollView>
-              </View>
-              <ScrollView
-                style={{
-                  height: "100%",
-                  width: "100%",
-                }}
-                horizontal={true}
-              >
-                <View style={{ flexDirection: "column" }}>
-                  <TopHeaderDays
-                    holidays={this.state.holidays}
-                    startDay={this.state.weekViewStartDate}
-                  />
+                    <ScrollView
+                      style={{
+                        height: "100%",
+                        width: "100%",
+                      }}
+                      horizontal={true}
+                    >
+                      <View style={{ flexDirection: "column" }}>
+                        <TopHeaderDays
+                          holidays={this.state.holidays}
+                          startDay={this.state.weekViewStartDate}
+                        />
 
-                  <ScrollView
+                        <ScrollView
+                          style={{
+                            backgroundColor: "#F8F8F8",
+                            width: "100%",
+                            height: "100%",
+                          }}
+                          horizontal={false}
+                          nestedScrollEnabled
+                          scrollEventThrottle={16}
+                          onScroll={this.scrollViewEventOne}
+                        >
+                          <View
+                            style={{
+                              height: dailyHeight * 24,
+                            }}
+                          >
+                            {this.state.list.map((event) => {
+                              return makeVisible(
+                                this.state.weekViewStartDate,
+                                event
+                              ) ? (
+                                <EventItem
+                                  key={`EITEM-${1}-${event.title}-${
+                                    event.startTime
+                                  }`}
+                                  navigation={this.props.navigation}
+                                  category={event.category}
+                                  day={event.startTime.getDay()}
+                                  startTime={new Date(event.startTime)}
+                                  endTime={new Date(event.endTime)}
+                                  title={event.title}
+                                  location={event.location}
+                                  color={event.color}
+                                />
+                              ) : (
+                                <View />
+                              );
+                            })}
+                            {this.state.calendarEventList.map((event) => {
+                              return makeVisible(
+                                this.state.weekViewStartDate,
+                                event
+                              ) ? (
+                                <EventItem
+                                  key={`EITEM-${1}-${event.title}-${
+                                    event.startTime
+                                  }`}
+                                  navigation={this.props.navigation}
+                                  category={event.category}
+                                  day={event.startTime.getDay()}
+                                  startTime={new Date(event.startTime)}
+                                  endTime={new Date(event.endTime)}
+                                  title={event.title}
+                                  location={event.location}
+                                  color={event.color}
+                                />
+                              ) : (
+                                <View />
+                              );
+                            })}
+                          </View>
+                        </ScrollView>
+                      </View>
+                    </ScrollView>
+                  </View>
+                );
+              case CalendarViewType.MONTH:
+                return (
+                  <View
                     style={{
-                      backgroundColor: "#F8F8F8",
                       width: "100%",
                       height: "100%",
                     }}
-                    horizontal={false}
-                    nestedScrollEnabled
-                    scrollEventThrottle={16}
-                    onScroll={this.scrollViewEventOne}
                   >
-                    <View
-                      style={{
-                        height: dailyHeight * 24,
-                      }}
-                    >
-                      {this.state.list.map((event) => {
-                        return makeVisible(
-                          this.state.weekViewStartDate,
-                          event
-                        ) ? (
-                          <EventItem
-                            key={`EITEM-${1}-${event.title}-${event.startTime}`}
-                            navigation={this.props.navigation}
-                            category={event.category}
-                            day={event.startTime.getDay()}
-                            startTime={new Date(event.startTime)}
-                            endTime={new Date(event.endTime)}
-                            title={event.title}
-                            location={event.location}
-                            color={event.color}
-                          />
-                        ) : (
-                          <View />
-                        );
-                      })}
-                      {this.state.calendarEventList.map((event) => {
-                        return makeVisible(
-                          this.state.weekViewStartDate,
-                          event
-                        ) ? (
-                          <EventItem
-                            key={`EITEM-${1}-${event.title}-${event.startTime}`}
-                            navigation={this.props.navigation}
-                            category={event.category}
-                            day={event.startTime.getDay()}
-                            startTime={new Date(event.startTime)}
-                            endTime={new Date(event.endTime)}
-                            title={event.title}
-                            location={event.location}
-                            color={event.color}
-                          />
-                        ) : (
-                          <View />
-                        );
-                      })}
-                    </View>
-                  </ScrollView>
-                </View>
-              </ScrollView>
-            </View>
-          ) : (
-            <View
-              style={{
-                width: "100%",
-                height: "100%",
-              }}
-            >
-              <FlatList
-                scrollEnabled={false}
-                data={this.state.monthViewData}
-                renderItem={({ item }) => (
-                  // console.log(item)
-                  <MonthViewItem
-                    date={item.date}
-                    hasEvent={item.hasEvent}
-                    isThisMonth={item.isThisMonth}
-                  />
-                )}
-                //Setting the number of column
-                numColumns={7}
-                keyExtractor={(item, index) => index}
-              />
-            </View>
-          )}
+                    <FlatList
+                      scrollEnabled={false}
+                      data={this.state.monthViewData}
+                      renderItem={({ item }) => (
+                        // console.log(item)
+                        <MonthViewItem
+                          date={item.date}
+                          hasEvent={item.hasEvent}
+                          isThisMonth={item.isThisMonth}
+                        />
+                      )}
+                      //Setting the number of column
+                      numColumns={7}
+                      keyExtractor={(item, index) => index}
+                    />
+                  </View>
+                );
+              case CalendarViewType.DAY:
+                return (
+                  <View
+                    style={{
+                      width: "100%",
+                      height: "100%",
+                      backgroundColor: "teal",
+                    }}
+                  >
+                    <Text>HI this is day view</Text>
+                  </View>
+                );
+              default:
+                return (
+                  <View>
+                    <Text>Something went wrong...!</Text>
+                  </View>
+                );
+            }
+          })()}
         </View>
       </SafeAreaView>
     );
   }
+
+  weekUI = () => {
+    <div>
+      <Text>This is week ui</Text>
+    </div>;
+  };
+
+  monthUI = () => {
+    return (
+      <View
+        style={{
+          width: "100%",
+          height: "100%",
+        }}
+      >
+        <FlatList
+          scrollEnabled={false}
+          data={this.state.monthViewData}
+          renderItem={({ item }) => (
+            // console.log(item)
+            <MonthViewItem
+              date={item.date}
+              hasEvent={item.hasEvent}
+              isThisMonth={item.isThisMonth}
+            />
+          )}
+          //Setting the number of column
+          numColumns={7}
+          keyExtractor={(item, index) => index}
+        />
+      </View>
+    );
+  };
 }
 
 class ScrollViewVerticallySynced extends React.Component {
@@ -1386,20 +1416,6 @@ const populateRows = (name, eventList, weekStartDate) =>
             flexDirection: "row",
           }}
         >
-          {/* Horizontal Guide Line in the background */}
-          {/* <View
-            style={{
-              position: "absolute",
-              left: 0,
-              top: "50%",
-              width: dailyWidth * 7,
-              borderBottomColor: "black",
-              borderBottomWidth: 1,
-              zIndex: 1,
-              elevation: 1,
-            }}
-          /> */}
-
           {eventList.map((event) => {
             return index == event.startTime.getHours() &&
               makeVisible(weekStartDate, event) ? (
@@ -1414,7 +1430,6 @@ const populateRows = (name, eventList, weekStartDate) =>
                 color={event.color}
               />
             ) : (
-              // <EventItem category="Empty" />
               <View />
             );
           })}
