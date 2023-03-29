@@ -49,7 +49,7 @@ import {
   JSClock,
 } from "../helperFunctions/dateFunctions";
 import EventViewInRow from "../components/ui/EventViewInRow";
-import { createAppContainer } from "react-navigation";
+//import { createAppContainer } from "react-navigation";
 import CompareScreen from '../screens/CompareScreen';
 
 const leftHeaderWidth = 50;
