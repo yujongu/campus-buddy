@@ -24,6 +24,8 @@ import ForgotEmail from "./screens/ForgotEmail";
 import ForgotPassword from "./screens/ForgotPassword";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
+
+
 const Stack = createNativeStackNavigator();
 
 export default function App() {
@@ -92,10 +94,16 @@ export default function App() {
               component={EventDetailsScreen}
               options={{ headerShown: false }}
             />
+            <Stack.Screen
+              name = "Compare Screen"
+              component = {CompareScreen}
+              options = {{headerShown: false}}>
+            </Stack.Screen>
           </Stack.Navigator>
         </NavigationContainer>
       </ThemeContext.Provider>
     </SafeAreaProvider>
+
   );
 }
 
