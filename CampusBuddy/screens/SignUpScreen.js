@@ -4,6 +4,11 @@ import { createUser } from "../firebaseConfig";
 import { auth } from '../firebaseConfig'
 import HomeScreen from "../BottomTabContainer";
 import { SHA256 } from 'crypto-js';
+import { doc, getDocs, setDoc, collection, query, where } from "firebase/firestore";
+import { initializeApp } from 'firebase/app';
+import { getFirestore } from 'firebase/firestore';
+import {db} from '../firebaseConfig'
+
 
 import {
   StyleSheet,
@@ -91,17 +96,21 @@ export default function SignUpScreen({ navigation, route })  {
     setLoading(true);
 
     try {
-
-        createUser(userId, userFirstName, userLastName, userEmail, hashedPassword);
-
-        if(auth.currentUser?.uid != undefined){
-          navigation.navigate("Home")
-        }else{
-          navigation.navigate("SignIn")
-        }
+      const querySnapshot = await getDocs(query(collection(db, 'users'), where('id', '==', userId)));
+      if (!querySnapshot.empty) {
+        alert('Username already exists');
+        setLoading(false);
+        return;
+      }
+      await createUser(userId, userFirstName, userLastName, userEmail, hashedPassword);
+      if (auth.currentUser?.uid != undefined) {
+        navigation.navigate('Home')
+      } else {
+        navigation.navigate('SignIn')
+      }
     } catch (e) {
-        setIsRegistrationSuccess(false);
-        console.error("Error creating user: ", e);
+      setIsRegistrationSuccess(false);
+      console.error('Error creating user: ', e);
     }
     setIsRegistrationSuccess(true);
   }

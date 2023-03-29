@@ -1,12 +1,12 @@
-import React, { Component } from "react";
+import React, { Component, createRef } from "react";
 import { readString } from "react-native-csv";
 import {
   StyleSheet,
   Button,
   View,
-  SafeAreaView,
   Text,
   ScrollView,
+  FlatList,
   Alert,
   Linking,
   Dimensions,
@@ -14,44 +14,43 @@ import {
   Modal,
   Animated,
   TextInput,
+  Pressable,
 } from "react-native";
-import DateTimePicker from '@react-native-community/datetimepicker';
-import DropDownPicker from 'react-native-dropdown-picker';
-import {ColorWheel} from "../components/ui/ColorWheel";
-import { SelectList } from "react-native-dropdown-select-list";
+import DateTimePicker from "@react-native-community/datetimepicker";
+import { useEffect, useState, useContext } from "react";
+import DropDownPicker from "react-native-dropdown-picker";
+import { ColorWheel } from "../components/ui/ColorWheel";
 import { Colors } from "../constants/colors";
 import * as DocumentPicker from "expo-document-picker";
 import Icon from "react-native-vector-icons/FontAwesome";
-import FeatherIcon from "react-native-vector-icons/Feather";
-import TimeTableView, { genTimeBlock } from "react-native-timetable";
-import { addSchedule, userList } from "../firebaseConfig";
-import { auth, db, userSchedule } from "../firebaseConfig";
+import Octicons from "react-native-vector-icons/Octicons";
+import { genTimeBlock } from "react-native-timetable";
+import { addSchedule, addEvent, to_request } from "../firebaseConfig";
+import { auth, db, userSchedule, getUserEvents } from "../firebaseConfig";
 import EventItem from "../components/ui/EventItem";
-import { IconButton } from "@react-native-material/core";
-import { async } from "@firebase/util";
+import { even, IconButton } from "@react-native-material/core";
 import TopHeaderDays from "../components/ui/TopHeaderDays";
+import { doc, onSnapshot, updateDoc, getDoc } from "firebase/firestore";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { doc, onSnapshot, updateDoc } from "firebase/firestore";
-import firestore from 'firebase/firestore';
+import ThemeContext from "../components/ui/ThemeContext";
+import theme from "../components/ui/theme";
+import { EventCategory } from "../constants/eventCategory";
+import { CalendarViewType } from "../constants/calendarViewType";
+import HolidaySettingModal from "../components/ui/HolidaySettingModal";
+import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
+import { SafeAreaView, useSafeAreaFrame } from "react-native-safe-area-context";
+import MonthViewItem from "../components/MonthViewItem";
+import { MultiSelect } from 'react-native-element-dropdown';
+import AntDesign from 'react-native-vector-icons/AntDesign';
+import {
+  getMonthName,
+  getWeekDayName,
+  isOnSameDate,
+  JSClock,
+} from "../helperFunctions/dateFunctions";
+import EventViewInRow from "../components/ui/EventViewInRow";
 import { createAppContainer } from "react-navigation";
-//import { createStackNavigator } from '@react-navigation/stack';
 import CompareScreen from '../screens/CompareScreen';
-//import { useNavigation } from "react-router-dom";
-
-const MonthName = [
-  "January",
-  "February",
-  "March",
-  "April",
-  "May",
-  "June",
-  "July",
-  "August",
-  "September",
-  "October",
-  "November",
-  "December",
-];
 
 const leftHeaderWidth = 50;
 const topHeaderHeight = 60;
@@ -66,6 +65,8 @@ export default class App extends Component {
     this.numOfDays = 7;
     this.pivotDate = genTimeBlock("mon");
 
+    this.svRef = React.createRef();
+
     this.scrollPosition = new Animated.Value(0);
     this.scrollEvent = Animated.event(
       [{ nativeEvent: { contentOffset: { y: this.scrollPosition } } }],
@@ -75,12 +76,16 @@ export default class App extends Component {
     this.state = {
       visible: false,
       list: [],
+      calendarEventList: [],
       midterms: [],
       holidays: [],
+      testlist: [],
       holidayCountryList: [],
       selectedCountryCode: "",
       createEventVisible: false,
       holidaySettingVisible: false,
+      title: "",
+      location: "",
       colorPicker: false,
       eventColor: "#8b9cb5",
       openList: false,
@@ -91,25 +96,38 @@ export default class App extends Component {
         { label: "Weekly", value: 2 },
         { label: "Monthly", value: 3 },
       ],
+      openDate: false,
       repetition: 0,
+      eventStartDate: new Date(),
+      eventStartTime: new Date(),
+      eventEndDate: new Date(),
+      eventEndTime: new Date(),
+      points: 0,
       // This is the starting date for the current calendar UI.
-      startDay: new Date(),
+      weekViewStartDate: new Date(),
+      currentDate: new Date(), // This is the selected date
+      monthViewData: [],
+      calendarView: CalendarViewType.WEEK, //On click, go above a level. Once date is clicked, go into week view.
     };
   }
 
   async componentDidMount() {
-    const res = await userSchedule(auth.currentUser?.uid);
-    const result = [];
-
     //Set the calendar UI start date
     let tempDate = new Date();
     tempDate.setDate(tempDate.getDate() - tempDate.getDay());
-    this.setState({ startDay: tempDate });
+    this.setState({ weekViewStartDate: tempDate });
 
+    //Set month view calendar UI with the start date and store in monthViewData
+    this.createMonthViewData(tempDate);
+    // Getting schedules from database
+    const res = await userSchedule(auth.currentUser?.uid);
+    const result = [];
+    const eventResult = [];
     if (res != null) {
       res["things"].map((element) => {
         const sp = element.data.split(",");
         const temp = {
+          category: EventCategory.SCHOOLCOURSE,
           title: sp[3],
           startTime: new Date(sp[2]),
           endTime: new Date(sp[0]),
@@ -118,7 +136,27 @@ export default class App extends Component {
         result.push(temp);
       });
     }
+
     this.setState({ list: result });
+
+    // Getting events from database
+    const events = await getUserEvents(auth.currentUser?.uid);
+    if (events != null) {
+      for (let i = 0; i < events["event"].length; i++) {
+        const temp = {
+          category: EventCategory.EVENT,
+          title: events["event"][i]["title"],
+          startTime: new Date(events["event"][i]["startTime"].seconds * 1000), //multiply 1000 since Javascript uses milliseconds. Timestamp to date.
+          endTime: new Date(events["event"][i]["endTime"].seconds * 1000),
+          location: events["event"][i]["location"],
+          color: events["event"][i]["color"],
+        };
+        eventResult.push(temp);
+      }
+    }
+
+    this.checkList(eventResult); //Checks for events that go over multiple days and corrects it
+
     const userDocRef = doc(db, "users", auth.currentUser.uid);
     onSnapshot(userDocRef, (doc) => {
       if (doc.exists()) {
@@ -129,15 +167,225 @@ export default class App extends Component {
           let cPref = doc.data().holidayNationPref;
 
           this.setState({ selectedCountryCode: cPref });
-          this.getHolidays(cPref, this.state.startDay.getFullYear());
+          this.getHolidays(cPref, this.state.weekViewStartDate.getFullYear());
         }
       }
     });
+    const friends = doc(db, "friend_list", auth.currentUser?.email)
+    onSnapshot(friends, (doc) => {
+      this.setState({
+        friend_list: [...doc.data()["favorite"], ...doc.data()["friends"]],
+        searched: [...doc.data()["favorite"], ...doc.data()["friends"]]
+      })
+    })
+    console.log(this.state.friend_list)
   }
 
+  //Format event list so it works with the calendar view.
+  checkList = (result) => {
+    result.forEach((event, index) => {
+      //For events that go over on day
+      if (event.startTime.getDate() != event.endTime.getDate()) {
+        // console.log(event);
+
+        let longEvent = event;
+        result.splice(index, 1);
+
+        let nEventEndSide = {
+          category: longEvent.category,
+          color: longEvent.color,
+          endTime: longEvent.endTime,
+          location: longEvent.location,
+          startTime: new Date(
+            longEvent.endTime.getFullYear(),
+            longEvent.endTime.getMonth(),
+            longEvent.endTime.getDate()
+          ),
+          title: longEvent.title,
+        };
+        result.splice(index, 0, nEventEndSide);
+
+        let eD = new Date(
+          longEvent.endTime.getFullYear(),
+          longEvent.endTime.getMonth(),
+          longEvent.endTime.getDate()
+        );
+        eD.setDate(eD.getDate() - 1);
+        while (eD.getDate() > longEvent.startTime.getDate()) {
+          let middleFullDay = {
+            category: longEvent.category,
+            color: longEvent.color,
+            endTime: new Date(
+              eD.getFullYear(),
+              eD.getMonth(),
+              eD.getDate(),
+              23,
+              59,
+              59
+            ),
+            location: longEvent.location,
+            startTime: new Date(eD.getFullYear(), eD.getMonth(), eD.getDate()),
+            title: longEvent.title,
+          };
+          result.splice(index, 0, middleFullDay);
+          eD.setDate(eD.getDate() - 1);
+        }
+
+        let endOfDay = new Date(
+          longEvent.startTime.getFullYear(),
+          longEvent.startTime.getMonth(),
+          longEvent.startTime.getDate(),
+          23,
+          59,
+          59
+        );
+        let nEventStartSide = {
+          category: longEvent.category,
+          color: longEvent.color,
+          endTime: endOfDay,
+          location: longEvent.location,
+          startTime: longEvent.startTime,
+          title: longEvent.title,
+        };
+        result.splice(index, 0, nEventStartSide);
+      }
+    });
+
+    this.setState({ calendarEventList: result });
+    this.applyEventDataToMonthViewData();
+  };
+
+  applyEventDataToMonthViewData = (monthData = this.state.monthViewData) => {
+    let eventList = this.state.calendarEventList;
+    let currDate = this.state.weekViewStartDate;
+    this.setState({ monthViewData: [] });
+    let temp = [...monthData];
+
+    for (let i = 0; i < eventList.length; i++) {
+      let currEvent = eventList[i];
+
+      if (
+        currEvent.startTime.getFullYear() == currDate.getFullYear() &&
+        currEvent.startTime.getMonth() == currDate.getMonth()
+      ) {
+        let index = temp.findIndex(
+          (obj) => obj.isThisMonth && obj.date == currEvent.startTime.getDate()
+        );
+        temp[index].hasEvent = true;
+      }
+    }
+    this.setState({ monthViewData: temp });
+  };
+
+  submitEvent = (eventColor) => {
+    if (
+      this.location == undefined ||
+      this.title == undefined ||
+      this.location == "" ||
+      this.title == ""
+    ) {
+      alert("Enter title and location for the event");
+      this.setLocation("");
+      this.setTitle("");
+    } else {
+      var eventSTime = new Date(
+        this.state.eventStartDate.getFullYear(),
+        this.state.eventStartDate.getMonth(),
+        this.state.eventStartDate.getDate(),
+        this.state.eventStartTime.getHours(),
+        this.state.eventStartTime.getMinutes()
+      );
+
+      var eventETime = new Date(
+        this.state.eventEndDate.getFullYear(),
+        this.state.eventEndDate.getMonth(),
+        this.state.eventEndDate.getDate(),
+        this.state.eventEndTime.getHours(),
+        this.state.eventEndTime.getMinutes()
+      );
+
+      if (eventSTime > eventETime) {
+        alert("Invalid Time Frame");
+        return;
+      }
+
+      addEvent(
+        auth.currentUser?.uid,
+        this.title,
+        eventSTime,
+        eventETime,
+        this.location,
+        EventCategory.EVENT,
+        this.points,
+        eventColor,
+        0
+      );
+
+      this.state.calendarEventList.push({
+        category: EventCategory.EVENT,
+        title: this.title,
+        startTime: eventSTime,
+        endTime: eventETime,
+        location: this.location,
+        color: eventColor,
+      });
+
+      const message = 
+        EventCategory.EVENT + ";" + this.title + ";" + eventSTime.toString() + ";" +
+        eventETime.toString() + ";" + this.location + ";" + eventColor.toString() + ";" +
+        this.points.toString()
+      this.state.selected.map((email) => {
+        to_request(auth.currentUser?.email, email, "event", message);
+      })
+
+      this.setState({selected: []})
+      this.setState({ eventStartDate: new Date() });
+      this.setState({ eventStartTime: new Date() });
+      this.setState({ eventEndDate: new Date() });
+      this.setState({ eventEndTime: new Date() });
+      this.setLocation("");
+      this.setTitle("");
+    }
+  };
+  setTitle = (title) => {
+    this.title = title;
+  };
+
+  setLocation = (location) => {
+    this.location = location;
+  };
+
+  setPoints = (points) => {
+    this.points = points;
+  };
   scrollViewRef = (ref) => {
     this.timetableRef = ref;
   };
+
+  //render method for MutiselectBox on "Add event" panel
+  renderDataItem = (item) => {
+    return (
+        <View style={styles.item2}>
+            <Text style={styles.selectedTextStyle}>{item.user}</Text>
+            {
+              this.state.selected.indexOf(item.user) > -1 ?
+              <AntDesign style={styles.icon} color="black" name="check" size={20} />
+              :
+              <AntDesign style={styles.icon} color="black" name="plus" size={20} />
+            }
+        </View>
+    );
+  };
+
+  //search function for Mutiselect Box
+  filter_friends = (text) => {
+    const updatedData = this.state.friend_list.filter((item) => {
+      return item.user.includes(text)
+    });
+    if(updatedData.length > 0){
+      this.setState({searched: updatedData})
+    }
+  }
 
   onEventPress = (evt) => {
     Alert.alert("onEventPress", JSON.stringify(evt));
@@ -153,9 +401,9 @@ export default class App extends Component {
   };
 
   updateColor = (color) => {
-    this.setState({eventColor: color})
-    this.setState({colorPicker: false})
-  }
+    this.setState({ eventColor: color });
+    this.setState({ colorPicker: false });
+  };
 
   setHolidaySettings = () => {
     this.setState({ visible: false });
@@ -165,87 +413,42 @@ export default class App extends Component {
 
   setOpen = () => {
     this.setState({
-      openList: !this.state.openList
+      openList: !this.state.openList,
     });
-  }
+  };
+  setDateOpen = () => {
+    this.setState({
+      openDate: !this.state.openList,
+    });
+  };
 
-  setValue = (value) =>{
+  setValue = (value) => {
     this.setState({
-      repetition: value
+      repetition: value,
     });
     this.setState({
-      openList: false
+      openList: false,
     });
-  }
+  };
 
-  setItems = (items) =>{
+  setItems = (items) => {
     this.setState({
-      repetitionItems: items
+      repetitionItems: items,
     });
-  }
+  };
 
   setRepetition = (rep) => {
     this.setState({ repetition: rep });
     this.setState({
-      openList: false
+      openList: false,
     });
-  }
+  };
 
   clickHandler = () => {
     this.setState({ visible: true });
   };
 
-  openURL = (url) => {
-    Linking.openURL(url).catch((err) =>
-      console.error("An error occurred", err)
-    );
-  };
-
-  exportDocumentFile = async () => {
-    try {
-      const querySnapshot = await firestore().collection('events').get();
-      const events = querySnapshot.docs.map(doc => doc.data());
-      const fileContents = JSON.stringify(events);
-      const fileName = 'events.json';
-      const mimeType = 'application/json';
-      const fileUrl = `data:${mimeType};base64,${Buffer.from(fileContents).toString('base64')}`;
-      const link = document.createElement('a');
-      link.download = fileName;
-      link.href = fileUrl;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-    } catch (error) {
-      console.error('Error exporting file:', error);
-    }
-  };
-
-  //navigate through calendar ui
-  goPrevWeek = () => {
-    let currYear = this.state.startDay.getFullYear();
-    let tempDate = this.state.startDay;
-    tempDate.setDate(tempDate.getDate() - 7);
-    if (
-      tempDate.getFullYear() != currYear &&
-      this.state.selectedCountryCode != null
-    ) {
-      this.getHolidays(this.state.selectedCountryCode, tempDate.getFullYear());
-    }
-    this.setState({ startDay: tempDate });
-  };
-  goNextWeek = () => {
-    let currYear = this.state.startDay.getFullYear();
-    let tempDate = this.state.startDay;
-    tempDate.setDate(tempDate.getDate() + 7);
-    if (
-      tempDate.getFullYear() != currYear &&
-      this.state.selectedCountryCode != null
-    ) {
-      this.getHolidays(this.state.selectedCountryCode, tempDate.getFullYear());
-    }
-    this.setState({ startDay: tempDate });
-  };
-
+  //START Holiday Setting Modal Component Functions
   //fetch public holiday
   getHolidays = async (countryCode, year) => {
     try {
@@ -276,7 +479,7 @@ export default class App extends Component {
 
   storeData = async (value) => {
     this.setState({ selectedCountryCode: value });
-    this.getHolidays(value, this.state.startDay.getFullYear());
+    // this.getHolidays(value, this.state.weekViewStartDate.getFullYear());
     await updateDoc(doc(db, "users", auth.currentUser.uid), {
       holidayNationPref: value,
     });
@@ -292,15 +495,458 @@ export default class App extends Component {
     this.setState({ holidaySettingVisible: false });
   };
 
+  closeHolidaySettingModal = () => {
+    this.setState({ holidaySettingVisible: false });
+  };
+
+  selectCountryHolidaySettingModal = (country) => {
+    this.setState({ selectedCountry: country });
+  };
+
+  //END Holiday Setting Modal Component Functions
+
+  openURL = (url) => {
+    Linking.openURL(url).catch((err) =>
+      console.error("An error occurred", err)
+    );
+  };
+
+
+  openDocumentFile = async () => {
+    const res = await DocumentPicker.getDocumentAsync({});
+    fetch(res.uri)
+      .then(async (response) => {
+        const resp = await response.text();
+        var result = readString(resp, { header: true });
+        result.data.forEach((product) => {
+          console.log(product["Name"]);
+          if (
+            (product["Type"] == "Midterm Examination" ||
+              product["Type"] == "Final Examination") &&
+            product["Published End"] != null
+          ) {
+            this.state.midterms.push(
+              product["Type"] +
+                ";" +
+                product["Name"] +
+                ";" +
+                product["First Date"] +
+                ";" +
+                product["Published Start"] +
+                ";" +
+                product["Published End"] +
+                ";" +
+                product["Location"]
+            );
+          } else if (
+            /[0-9]/.test(product["Published Start"]) ||
+            product["Published Start"] == "noon"
+          ) {
+            const st =
+              product["Published Start"] == "noon"
+                ? 12
+                : product["Published Start"].split(":");
+            const ed = product["Published End"].split(":");
+            var start, start_min, end, end_min;
+            if (product["Published Start"].lastIndexOf("a") > -1) {
+              start = st[0];
+              start_min = st[1].replace("a", "");
+            } else if (product["Published Start"].lastIndexOf("p") > -1) {
+              st[0] != "12"
+                ? (start = parseInt(st[0], 10) + 12)
+                : (start = parseInt(st[0], 10));
+              start_min = st[1].replace("p", "");
+            } else {
+              start = st;
+              start_min = 0;
+            }
+            if (product["Published End"].lastIndexOf("a") > -1) {
+              end = ed[0];
+              end_min = ed[1].replace("a", "");
+            } else if (product["Published End"].lastIndexOf("p") > -1) {
+              ed[0] != "12"
+                ? (end = parseInt(ed[0], 10) + 12)
+                : (end = parseInt(ed[0], 10));
+              end_min = ed[1].replace("p", "");
+            }
+            for (var i = 0; i < product["Day Of Week"].length; i++) {
+              //Monday
+              if (product["Day Of Week"][i] == "M") {
+                this.state.list.push({
+                  title: product["Name"] + " (" + product["Type"] + ")",
+                  startTime: genTimeBlock("MON", start, start_min),
+                  endTime: genTimeBlock("MON", end, end_min),
+                  location: product["Location"],
+                  color: "#D1FF96",
+                });
+                //Tuesday
+              } else if (
+                product["Day Of Week"][i] == "T" &&
+                product["Day Of Week"].length > i + 1 &&
+                product["Day Of Week"][i + 1] != "h"
+              ) {
+                this.state.list.push({
+                  title: product["Name"] + " (" + product["Type"] + ")",
+                  startTime: genTimeBlock("TUE", start, start_min),
+                  endTime: genTimeBlock("TUE", end, end_min),
+                  location: product["Location"],
+                  color: "#D1FF96",
+                });
+                //Wednesday
+              } else if (product["Day Of Week"][i] == "W") {
+                this.state.list.push({
+                  title: product["Name"] + " (" + product["Type"] + ")",
+                  startTime: genTimeBlock("WED", start, start_min),
+                  endTime: genTimeBlock("WED", end, end_min),
+                  location: product["Location"],
+                  color: "#D1FF96",
+                });
+                //Thursday
+              } else if (
+                product["Day Of Week"][i] == "T" &&
+                product["Day Of Week"][i + 1] == "h"
+              ) {
+                this.state.list.push({
+                  title: product["Name"] + " (" + product["Type"] + ")",
+                  startTime: genTimeBlock("THU", start, start_min),
+                  endTime: genTimeBlock("THU", end, end_min),
+                  location: product["Location"],
+                  color: "#D1FF96",
+                });
+                //Friday
+              } else if (product["Day Of Week"][i] == "F") {
+                this.state.list.push({
+                  title: product["Name"] + " (" + product["Type"] + ")",
+                  startTime: genTimeBlock("FRI", start, start_min),
+                  endTime: genTimeBlock("FRI", end, end_min),
+                  location: product["Location"],
+                  color: "#D1FF96",
+                });
+                //Saterday
+              } else if (product["Day Of Week"][i] == "S") {
+                this.state.list.push({
+                  title: product["Name"] + " (" + product["Type"] + ")",
+                  startTime: genTimeBlock("SAT", start, start_min),
+                  endTime: genTimeBlock("SAT", end, end_min),
+                  location: product["Location"],
+                  color: "#D1FF96",
+                });
+                //Sunday
+              } else if (product["Day Of Week"][i] == "U") {
+                this.state.list.push({
+                  title: product["Name"] + " (" + product["Type"] + ")",
+                  startTime: genTimeBlock("SUN", start, start_min),
+                  endTime: genTimeBlock("SUN", end, end_min),
+                  location: product["Location"],
+                  color: "#D1FF96",
+                });
+              }
+            }
+          }
+        });
+        const uniqueArray = this.state.list.filter((value, index) => {
+          const _value = JSON.stringify(value);
+          return (
+            index ===
+            this.state.list.findIndex((obj) => {
+              return JSON.stringify(obj) === _value;
+            })
+          );
+        });
+        this.setState({ list: uniqueArray });
+        this.setState({ visible: !this.state.visible });
+        addSchedule(auth.currentUser?.uid, this.state.list);
+      })
+      .catch((error) => {
+        console.log(error);
+      });
+  };
+
+  //navigate through calendar ui
+  goPrevDay = () => {
+    let currYear = this.state.currentDate.getFullYear();
+
+    let tempCurr = this.state.currentDate;
+    tempCurr.setDate(tempCurr.getDate() - 1);
+    this.setState({ currDate: tempCurr });
+
+    if (tempCurr.getDay() == 6) {
+      //If new date is saturday, meaning it's a different week
+      let tempDate = this.state.weekViewStartDate;
+      tempDate.setDate(tempDate.getDate() - 7);
+
+      if (
+        tempDate.getFullYear() != currYear &&
+        this.state.selectedCountryCode != null &&
+        this.state.selectedCountryCode.length > 0
+      ) {
+        this.getHolidays(
+          this.state.selectedCountryCode,
+          tempDate.getFullYear()
+        );
+      }
+      this.setState({ weekViewStartDate: tempDate });
+    }
+  };
+
+  goNextDay = () => {
+    let currYear = this.state.currentDate.getFullYear();
+
+    let tempCurr = this.state.currentDate;
+    tempCurr.setDate(tempCurr.getDate() + 1);
+    this.setState({ currDate: tempCurr });
+
+    if (tempCurr.getDay() == 0) {
+      //If new date is saturday, meaning it's a different week
+      let tempDate = this.state.weekViewStartDate;
+      tempDate.setDate(tempDate.getDate() + 7);
+
+      if (
+        tempDate.getFullYear() != currYear &&
+        this.state.selectedCountryCode != null &&
+        this.state.selectedCountryCode.length > 0
+      ) {
+        this.getHolidays(
+          this.state.selectedCountryCode,
+          tempDate.getFullYear()
+        );
+      }
+      this.setState({ weekViewStartDate: tempDate });
+    }
+  };
+
+  goPrevWeek = () => {
+    let currYear = this.state.weekViewStartDate.getFullYear();
+
+    let tempCurr = this.state.currentDate;
+    tempCurr.setDate(tempCurr.getDate() - 7);
+    this.setState({ currDate: tempCurr });
+
+    let tempDate = this.state.weekViewStartDate;
+    tempDate.setDate(tempDate.getDate() - 7);
+
+    if (
+      tempDate.getFullYear() != currYear &&
+      this.state.selectedCountryCode != null &&
+      this.state.selectedCountryCode.length > 0
+    ) {
+      this.getHolidays(this.state.selectedCountryCode, tempDate.getFullYear());
+    }
+    this.setState({ weekViewStartDate: tempDate });
+  };
+  goNextWeek = () => {
+    let currYear = this.state.weekViewStartDate.getFullYear();
+
+    let tempCurr = this.state.currentDate;
+    tempCurr.setDate(tempCurr.getDate() + 7);
+    this.setState({ currDate: tempCurr });
+
+    let tempDate = this.state.weekViewStartDate;
+    tempDate.setDate(tempDate.getDate() + 7);
+    if (
+      tempDate.getFullYear() != currYear &&
+      this.state.selectedCountryCode != null &&
+      this.state.selectedCountryCode.length > 0
+    ) {
+      this.getHolidays(this.state.selectedCountryCode, tempDate.getFullYear());
+    }
+    this.setState({ weekViewStartDate: tempDate });
+  };
+  //navigate through calendar ui
+  goPrevMonth = () => {
+    let currYear = this.state.weekViewStartDate.getFullYear();
+
+    let tempCurr = this.state.currentDate;
+    tempCurr.setMonth(tempCurr.getMonth() - 1);
+    this.setState({ currDate: tempCurr });
+
+    let tempDate = this.state.weekViewStartDate;
+    tempDate.setMonth(tempDate.getMonth() - 1);
+
+    if (
+      tempDate.getFullYear() != currYear &&
+      this.state.selectedCountryCode != null &&
+      this.state.selectedCountryCode.length > 0
+    ) {
+      this.getHolidays(this.state.selectedCountryCode, tempDate.getFullYear());
+    }
+    this.setState({ weekViewStartDate: tempDate });
+    this.createMonthViewData(tempDate);
+  };
+  goNextMonth = () => {
+    let currYear = this.state.weekViewStartDate.getFullYear();
+
+    let tempCurr = this.state.currentDate;
+    tempCurr.setMonth(tempCurr.getMonth() + 1);
+    this.setState({ currDate: tempCurr });
+
+    let tempDate = this.state.weekViewStartDate;
+    tempDate.setMonth(tempDate.getMonth() + 1);
+    if (
+      tempDate.getFullYear() != currYear &&
+      this.state.selectedCountryCode != null &&
+      this.state.selectedCountryCode.length > 0
+    ) {
+      this.getHolidays(this.state.selectedCountryCode, tempDate.getFullYear());
+    }
+    this.setState({ weekViewStartDate: tempDate });
+    this.createMonthViewData(tempDate);
+  };
+
+  goToday = () => {
+    this.setState({ currentDate: new Date() });
+    let tempDate = new Date();
+    tempDate.setDate(tempDate.getDate() - tempDate.getDay());
+    if (
+      this.state.selectedCountryCode != null &&
+      this.state.selectedCountryCode.length > 0
+    ) {
+      this.getHolidays(this.state.selectedCountryCode, tempDate.getFullYear());
+    }
+    this.setState({ weekViewStartDate: tempDate });
+    this.createMonthViewData(tempDate);
+  };
+
+  createMonthViewData = (startDate) => {
+    let prevMonthDate = new Date(
+      startDate.getFullYear(),
+      startDate.getMonth(),
+      0
+    );
+    let numDaysInPrevMonth = prevMonthDate.getDate();
+    let monthDate = new Date(
+      startDate.getFullYear(),
+      startDate.getMonth() + 1,
+      0
+    );
+    let monthData = [];
+    let numDaysInMonth = monthDate.getDate();
+    monthDate.setDate(1);
+    for (let i = 0; i < 42; i++) {
+      if (i < monthDate.getDay()) {
+        const temp = {
+          date: numDaysInPrevMonth - monthDate.getDay() + i + 1,
+          hasEvent: false,
+          isThisMonth: false,
+        };
+        // monthData.push(temp);
+        monthData = [...monthData, temp];
+      } else {
+        if (i < monthDate.getDay() + numDaysInMonth) {
+          const temp = {
+            date: i - monthDate.getDay() + 1,
+            hasEvent: false,
+            isThisMonth: true,
+          };
+
+          // monthData.push(temp);
+          monthData = [...monthData, temp];
+        } else {
+          const temp = {
+            date: i - numDaysInMonth - monthDate.getDay() + 1,
+            hasEvent: false,
+            isThisMonth: false,
+          };
+          // monthData.push(temp);
+          monthData = [...monthData, temp];
+        }
+      }
+    }
+    this.applyEventDataToMonthViewData(monthData);
+    // this.setState({ monthViewData: monthData });
+  };
+
+  onEventStartDateSelected = (event, value) => {
+    this.setState({ eventStartDate: value });
+  };
+
+  onEventStartTimeSelected = (event, value) => {
+    this.setState({ eventStartTime: value });
+  };
+
+  onEventEndDateSelected = (event, value) => {
+    this.setState({ eventEndDate: value });
+  };
+
+  onEventEndTimeSelected = (event, value) => {
+    this.setState({ eventEndTime: value });
+  };
+
+  sayHi = (e) => {
+    console.log("HIIIIIIIIIIIIIIIIIIII");
+  };
+  scrollViewEventOne = (e) => {
+    this.svRef.current.scrollTo({
+      x: 0,
+      y: e.nativeEvent.contentOffset.y,
+      animated: true,
+    });
+  };
+
+  scrollEvent = Animated.event(
+    [{ nativeEvent: { contentOffset: { y: this.scrollPosition } } }],
+    { useNativeDriver: false }
+  );
+
+  toggleCalendarView = () => {
+    // switch (this.state.calendarView) {
+    //   case CalendarViewType.WEEK:
+    //     this.setState({ calendarView: CalendarViewType.MONTH });
+    //     break;
+    //   case CalendarViewType.MONTH:
+    //     this.setState({ calendarView: CalendarViewType.WEEK });
+    //     break;
+    //   default:
+    //     console.error("Something Wrong with toggle calendar view");
+    //     break;
+    // }
+    switch (this.state.calendarView) {
+      case CalendarViewType.DAY:
+        this.setState({ calendarView: CalendarViewType.WEEK });
+        break;
+      case CalendarViewType.WEEK:
+        this.setState({ calendarView: CalendarViewType.MONTH });
+        break;
+      case CalendarViewType.MONTH:
+        this.setState({ calendarView: CalendarViewType.DAY });
+        break;
+
+      default:
+        console.error("Something Wrong with toggle calendar view");
+        break;
+    }
+  };
+
   render() {
-    const { openList, value, repetitionItems, colorPicker, eventColor } = this.state;
+   
     const { navigate } = this.props.navigation;
+
+    const {
+      title,
+      location,
+      openList,
+      repetitionItems,
+      colorPicker,
+      eventColor,
+      weekViewStartDate: weekViewStartDate,
+      repetition,
+      openDate,
+    } = this.state;
+
     if (colorPicker) {
-      console.log("colorpicked")
-      return <ColorWheel updateColor={this.updateColor}/>
+      console.log("colorpicked");
+      return <ColorWheel updateColor={this.updateColor} />;
     }
     return (
       <SafeAreaView style={{ flex: 1 }}>
+        <TouchableOpacity
+          activeOpacity={0.7}
+          onPress={this.clickHandler}
+          style={styles.touchableOpacityStyle}
+        >
+          <Icon name="plus-circle" size={50} />
+        </TouchableOpacity>
+
         <Modal
           animationType="slide"
           transparent={true}
@@ -318,12 +964,7 @@ export default class App extends Component {
             }}
           >
             <View style={styles.modalView}>
-              {/*<Text style={styles.title}>
-                1. Click the Button{"\n"}
-                2. Sign in to your University account{"\n"}
-                3. Click the menu --> Personal Schedule{"\n"}
-                4. Export --> Export CSV{"\n"}
-                </Text>*/}
+              {/* Modal for calendar options */}
               <Button
                 title="Download schedule"
                 onPress={() =>
@@ -361,6 +1002,7 @@ export default class App extends Component {
             </View>
           </View>
         </Modal>
+        {/* Create event modal */}
         <Modal
           animationType="slide"
           visible={this.state.createEventVisible}
@@ -384,23 +1026,25 @@ export default class App extends Component {
                   <Icon name="times" size={20} color="#2F4858" />
                 </View>
               </TouchableOpacity>
+              {/* Creating a new View component with styles.row for each row in the modal for formatting */}
               <View style={styles.row}>
                 <Text style={styles.header_text}>Create Event</Text>
               </View>
               <View style={styles.row}>
-              <TouchableOpacity
-                onPress={() => this.setState({colorPicker: true})}
-              >
-                <View style={{paddingTop:5, paddingRight:15}}>
-                  <Icon name="square" size={40} color={eventColor} />
-                </View>
-              </TouchableOpacity>
-              <TextInput 
-                style={styles.titleInputStyle}
-                placeholder="Add title"
-                placeholderTextColor="#8b9cb5"
-              >
-              </TextInput>
+                {/* New row for color picker and title input */}
+                <TouchableOpacity
+                  onPress={() => this.setState({ colorPicker: true })}
+                >
+                  <View style={{ paddingTop: 5, paddingRight: 15 }}>
+                    <Icon name="square" size={40} color={eventColor} />
+                  </View>
+                </TouchableOpacity>
+                <TextInput
+                  style={styles.titleInputStyle}
+                  placeholder="Add title"
+                  placeholderTextColor="#8b9cb5"
+                  onChangeText={(text) => this.setTitle(text)}
+                ></TextInput>
               </View>
               <View style={styles.row}>
                 <View style={{ flex: 1, paddingTop: 10 }}>
@@ -411,6 +1055,7 @@ export default class App extends Component {
                     style={styles.inputStyle}
                     placeholder="Location"
                     placeholderTextColor="#8b9cb5"
+                    onChangeText={(text) => this.setLocation(text)}
                   ></TextInput>
                 </View>
               </View>
@@ -418,18 +1063,51 @@ export default class App extends Component {
                 <View style={{ flex: 1, paddingTop: 10 }}>
                   <Icon name="repeat" size={20} color="#2F4858" />
                 </View>
-                <View style={{flex:8}}>
-                {/*dropdown selection does not work :(*/}
-                <DropDownPicker
+                <View style={{ flex: 8 }}>
+                  {/*dropdown selection does not work :(*/}
+                  <DropDownPicker
                     open={openList}
-                    value={value}
+                    value={repetition}
                     items={repetitionItems}
-                    placeholder={value}
+                    placeholder={"Never"}
                     setValue={this.setValue}
                     setItems={this.setItems}
                     onPress={this.setOpen}
                   />
                 </View>
+              </View>
+              {/* <View style={styles.row}> */}
+              <View style={styles.row}>
+                <Text
+                  style={{
+                    textAlign: "center",
+                    margin: 5,
+                    paddingTop: 10,
+                    paddingLeft: 80,
+                    color: "#2F4858",
+                  }}
+                >
+                  Points
+                </Text>
+                <ScrollView keyboardShouldPersistTaps="handled">
+                  <TextInput
+                    placeholderTextColor="#8b9cb5"
+                    style={{
+                      color: "black",
+                      borderWidth: 1,
+                      borderColor: "#8b9cb5",
+                      marginLeft: 10,
+                      marginTop: 5,
+                      width: 50,
+                      height: 30,
+                      textAlign: "center",
+                    }}
+                    value={this.state.points}
+                    defaultValue={0}
+                    keyboardType="numeric"
+                    onChangeText={(text) => this.setPoints(text)}
+                  ></TextInput>
+                </ScrollView>
               </View>
               <View style={styles.row}>
                 <Text
@@ -443,14 +1121,16 @@ export default class App extends Component {
                   Start
                 </Text>
                 <DateTimePicker
-                  style={{ margin: 5 }}
-                  mode="date"
-                  value={new Date()}
+                  mode={"date"}
+                  value={this.state.eventStartDate}
+                  onChange={this.onEventStartDateSelected}
+                  style={{ marginLeft: 10, marginTop: 5 }}
                 />
                 <DateTimePicker
-                  style={{ margin: 5 }}
-                  mode="time"
-                  value={new Date()}
+                  mode={"time"}
+                  value={this.state.eventStartTime}
+                  onChange={this.onEventStartTimeSelected}
+                  style={{ marginLeft: 10, marginTop: 5 }}
                 />
               </View>
               <View style={styles.row}>
@@ -465,180 +1145,394 @@ export default class App extends Component {
                   End
                 </Text>
                 <DateTimePicker
-                  style={{ margin: 5 }}
-                  mode="date"
-                  value={new Date()}
+                  mode={"date"}
+                  value={this.state.eventEndDate}
+                  onChange={this.onEventEndDateSelected}
+                  style={{ marginLeft: 10, marginTop: 5 }}
                 />
                 <DateTimePicker
-                  style={{ margin: 5 }}
-                  mode="time"
-                  value={new Date()}
+                  mode={"time"}
+                  value={this.state.eventEndTime}
+                  onChange={this.onEventEndTimeSelected}
+                  style={{ marginLeft: 10, marginTop: 5 }}
                 />
               </View>
+              <View style={{width: '70%', margin: 10}}>
+                <MultiSelect
+                    style={styles.dropdown}
+                    placeholderStyle={styles.placeholderStyle}
+                    selectedTextStyle={styles.selectedTextStyle}
+                    inputSearchStyle={styles.inputSearchStyle}
+                    iconStyle={styles.iconStyle}
+                    data={this.state.searched}
+                    valueField="user"
+                    placeholder="Choose friends"
+                    value={this.state.selected}
+                    search
+                    searchQuery={(text) => {
+                      this.filter_friends(text)
+                      }
+                    }
+                    searchPlaceholder="Search..."
+                    onChange={item => {
+                        this.setState({selected: item})
+                    }}
+                    renderItem={this.renderDataItem}
+                    renderSelectedItem={(item, unSelect) => (
+                        <TouchableOpacity onPress={() => unSelect && unSelect(item)}>
+                            <View style={styles.selectedStyle}>
+                                <Text style={styles.textSelectedStyle}>{item.user}</Text>
+                                <AntDesign color="black" name="delete" size={17} />
+                            </View>
+                        </TouchableOpacity>
+                    )}
+                  />
+              </View>
+              <Button
+                title="Create new event"
+                onPress={() => {
+                  this.submitEvent(eventColor),
+                    this.setState({ createEventVisible: false });
+                }}
+              />
             </View>
           </View>
         </Modal>
 
-        <Modal
-          animationType="slide"
-          transparent={true}
-          // visible={false}
-          visible={this.state.holidaySettingVisible}
-          // onRequestClose={() => {
-          //   this.setState({
-          //     holidaySettingVisible: !this.state.holidaySettingVisible,
-          //   });
-          // }}
-        >
-          <View
-            style={{
-              flex: 1,
-              flexDirection: "column",
-              justifyContent: "center",
-              alignItems: "center",
-            }}
-          >
+        <HolidaySettingModal
+          holidaySettingVisible={this.state.holidaySettingVisible}
+          holidayCountryList={this.state.holidayCountryList}
+          selectedCountryCode={this.state.selectedCountryCode}
+          selectedCountry={this.state.selectedCountry}
+          closeHolidaySettingModal={this.closeHolidaySettingModal}
+          selectCountryHolidaySettingModal={
+            this.selectCountryHolidaySettingModal
+          }
+          storeData={this.storeData}
+          removeData={this.removeData}
+        />
+
+        {/* Bottom tab bar hides calendar screen. TODO Need to fix this.*/}
+        <View style={{ flex: 1, marginBottom: 15 }}>
+          {/* Info Above the calendar times */}
+          <View>
             <View
               style={{
-                backgroundColor: "white",
-                width: 300,
-                height: 450,
-                borderRadius: 20,
-                justifyContent: "space-between",
+                flexDirection: "row",
+                alignItems: "center",
+                justifyContent: "center",
+                paddingHorizontal: 10,
               }}
             >
-              <View>
-                <TouchableOpacity
-                  onPress={() =>
-                    this.setState({ holidaySettingVisible: false })
-                  }
-                >
-                  <View style={{ paddingLeft: 260, paddingTop: 10 }}>
-                    <Icon name="times" size={20} color="#2F4858" />
-                  </View>
-                </TouchableOpacity>
-
-                <View style={{ marginRight: 10, marginLeft: 10 }}>
-                  <Text>Country</Text>
-                  <SelectList
-                    setSelected={(val) =>
-                      this.setState({ selectedCountry: val })
-                    }
-                    data={this.state.holidayCountryList}
-                  />
-                  <View style={{ marginTop: 15, flexDirection: "row" }}>
-                    <Text style={{ fontWeight: "bold", marginRight: 10 }}>
-                      Current Selected Option:
-                    </Text>
-                    <Text>{this.state.selectedCountryCode}</Text>
-                  </View>
-                </View>
-              </View>
-
               <View
                 style={{
-                  flexDirection: "row",
-                  justifyContent: "space-between",
-                  marginLeft: 10,
-                  marginRight: 10,
-                }}
-              >
-                <Button
-                  onPress={() => this.storeData(this.state.selectedCountry)}
-                  title="Save"
-                />
-                <Button title="Hide holidays" onPress={this.removeData} />
-              </View>
-            </View>
-          </View>
-        </Modal>
-
-        <TouchableOpacity
-          activeOpacity={0.7}
-          onPress={this.clickHandler}
-          style={styles.touchableOpacityStyle}
-        >
-          <Icon name="plus-circle" size={50} />
-        </TouchableOpacity>
-        {/* Month Header Bar */}
-        <View style={styles.monthHeaderContainer}>
-          <IconButton
-            onPress={this.goPrevWeek}
-            icon={(props) => <FeatherIcon name="arrow-left" {...props} />}
-          />
-          <Text style={{ fontSize: 20 }}>
-            {MonthName[this.state.startDay.getMonth()]}
-          </Text>
-          <IconButton
-            onPress={this.goNextWeek}
-            icon={(props) => <FeatherIcon name="arrow-right" {...props} />}
-          />
-        </View>
-        <View style={{ flexDirection: "row" }}>
-          {/* This is the left vertical header */}
-          <ScrollViewVerticallySynced
-            style={{ width: leftHeaderWidth, marginTop: topHeaderHeight }}
-            name="Time"
-            onScroll={this.scrollEvent}
-            scrollPosition={this.scrollPosition}
-          />
-          {/* This is the right vertical content */}
-          <ScrollView horizontal bounces={true}>
-            <View style={{ width: dailyWidth * 7 }}>
-              <View
-                style={{
-                  height: topHeaderHeight,
+                  flex: 1,
+                  alignItems: "flex-start",
+                  flexDirection: "column",
                   justifyContent: "center",
                 }}
               >
-                <View style={styles.daysContainer}>
-                  <TopHeaderDays
-                    day={0}
-                    holidays={this.state.holidays}
-                    startDay={this.state.startDay}
-                  />
-                  <TopHeaderDays
-                    day={1}
-                    holidays={this.state.holidays}
-                    startDay={this.state.startDay}
-                  />
-                  <TopHeaderDays
-                    day={2}
-                    holidays={this.state.holidays}
-                    startDay={this.state.startDay}
-                  />
-                  <TopHeaderDays
-                    day={3}
-                    holidays={this.state.holidays}
-                    startDay={this.state.startDay}
-                  />
-                  <TopHeaderDays
-                    day={4}
-                    holidays={this.state.holidays}
-                    startDay={this.state.startDay}
-                  />
-                  <TopHeaderDays
-                    day={5}
-                    holidays={this.state.holidays}
-                    startDay={this.state.startDay}
-                  />
-                  <TopHeaderDays
-                    day={6}
-                    holidays={this.state.holidays}
-                    startDay={this.state.startDay}
-                  />
-                </View>
+                <Text style={{ fontSize: 20 }}>
+                  {this.state.calendarView == CalendarViewType.WEEK ||
+                  this.state.calendarView == CalendarViewType.MONTH
+                    ? getMonthName(this.state.weekViewStartDate.getMonth())
+                    : getMonthName(this.state.currentDate.getMonth())}
+                </Text>
+                <Text style={{ fontSize: 12 }}>
+                  {this.state.weekViewStartDate.getFullYear()}
+                </Text>
               </View>
-              {/* This is the vertically scrolling content. */}
-              <ScrollViewVerticallySynced
-                style={{ width: dailyWidth * 7 }}
-                name="notTime"
-                onScroll={this.scrollEvent}
-                scrollPosition={this.scrollPosition}
-                eventList={this.state.list}
-              />
+
+              <View
+                style={{
+                  flex: 1,
+                  alignItems: "center",
+                  flexDirection: "row",
+                  justifyContent: "center",
+                }}
+              >
+                <IconButton
+                  style={{}}
+                  color={Colors.grey}
+                  onPress={() => {
+                    switch (this.state.calendarView) {
+                      case CalendarViewType.DAY:
+                        return this.goPrevDay();
+                      case CalendarViewType.WEEK:
+                        return this.goPrevWeek();
+                      case CalendarViewType.MONTH:
+                        return this.goPrevMonth();
+                      default:
+                        return null;
+                    }
+                  }}
+                  icon={(props) => <Octicons name="triangle-left" {...props} />}
+                />
+                <Pressable
+                  style={{ padding: 10 }}
+                  onPress={() => this.goToday()}
+                >
+                  <Text style={{ fontSize: 15 }}>Today</Text>
+                </Pressable>
+
+                <IconButton
+                  style={{}}
+                  color={Colors.grey}
+                  onPress={() => {
+                    switch (this.state.calendarView) {
+                      case CalendarViewType.DAY:
+                        return this.goNextDay();
+                      case CalendarViewType.WEEK:
+                        return this.goNextWeek();
+                      case CalendarViewType.MONTH:
+                        return this.goNextMonth();
+                      default:
+                        return null;
+                    }
+                  }}
+                  icon={(props) => (
+                    <Octicons name="triangle-right" {...props} />
+                  )}
+                />
+              </View>
+              <View
+                style={{
+                  flex: 1,
+                  alignItems: "flex-end",
+                }}
+              >
+                <Pressable
+                  style={{
+                    alignItems: "center",
+                    padding: 10,
+                  }}
+                  onPress={this.toggleCalendarView}
+                >
+                  <Text
+                    style={{
+                      fontSize: 15,
+                    }}
+                  >
+                    {this.state.calendarView}
+                  </Text>
+                </Pressable>
+              </View>
             </View>
-          </ScrollView>
+          </View>
+
+          {(() => {
+            switch (this.state.calendarView) {
+              case CalendarViewType.WEEK:
+                return (
+                  <View style={{ flexDirection: "row", height: "100%" }}>
+                    <View>
+                      <View style={{ height: topHeaderHeight }} />
+                      <ScrollView scrollEnabled={false} ref={this.svRef}>
+                        {Array.from(Array(24).keys()).map((index) => (
+                          <View
+                            // key={`TIME${name}-${index}`}
+                            key={index}
+                            style={{
+                              height: dailyHeight,
+                              // justifyContent: "center",
+                              flexDirection: "row",
+                            }}
+                          >
+                            <Text
+                              style={{
+                                color:
+                                  index <= 12 && index > 0
+                                    ? Colors.morningTimeColor
+                                    : Colors.eveningTimeColor,
+                                width: 20,
+                                marginHorizontal: 4,
+                                textAlign: "center",
+                              }}
+                            >
+                              {index}
+                            </Text>
+                          </View>
+                        ))}
+                      </ScrollView>
+                    </View>
+                    <ScrollView
+                      style={{
+                        height: "100%",
+                        width: "100%",
+                      }}
+                      horizontal={true}
+                    >
+                      <View style={{ flexDirection: "column" }}>
+                        <TopHeaderDays
+                          holidays={this.state.holidays}
+                          startDay={this.state.weekViewStartDate}
+                        />
+
+                        <ScrollView
+                          style={{
+                            backgroundColor: "#F8F8F8",
+                            width: "100%",
+                            height: "100%",
+                          }}
+                          horizontal={false}
+                          nestedScrollEnabled
+                          scrollEventThrottle={16}
+                          onScroll={this.scrollViewEventOne}
+                        >
+                          <View
+                            style={{
+                              height: dailyHeight * 24,
+                            }}
+                          >
+                            {this.state.list.map((event) => {
+                              return makeVisible(
+                                this.state.weekViewStartDate,
+                                event
+                              ) ? (
+                                <EventItem
+                                  key={`EITEM-${1}-${event.title}-${
+                                    event.startTime
+                                  }`}
+                                  navigation={this.props.navigation}
+                                  category={event.category}
+                                  day={event.startTime.getDay()}
+                                  startTime={new Date(event.startTime)}
+                                  endTime={new Date(event.endTime)}
+                                  title={event.title}
+                                  location={event.location}
+                                  color={event.color}
+                                />
+                              ) : (
+                                <View />
+                              );
+                            })}
+                            {this.state.calendarEventList.map((event) => {
+                              return makeVisible(
+                                this.state.weekViewStartDate,
+                                event
+                              ) ? (
+                                <EventItem
+                                  key={`EITEM-${1}-${event.title}-${
+                                    event.startTime
+                                  }`}
+                                  navigation={this.props.navigation}
+                                  category={event.category}
+                                  day={event.startTime.getDay()}
+                                  startTime={new Date(event.startTime)}
+                                  endTime={new Date(event.endTime)}
+                                  title={event.title}
+                                  location={event.location}
+                                  color={event.color}
+                                />
+                              ) : (
+                                <View />
+                              );
+                            })}
+                          </View>
+                        </ScrollView>
+                      </View>
+                    </ScrollView>
+                  </View>
+                );
+              case CalendarViewType.MONTH:
+                return (
+                  <View
+                    style={{
+                      width: "100%",
+                      height: "100%",
+                    }}
+                  >
+                    <View
+                      style={{
+                        flexDirection: "row",
+                        justifyContent: "space-between",
+                        marginBottom: 8,
+                      }}
+                    >
+                      <Text style={styles.monthViewHeaderDayText}>Sun</Text>
+                      <Text style={styles.monthViewHeaderDayText}>Mon</Text>
+                      <Text style={styles.monthViewHeaderDayText}>Tues</Text>
+                      <Text style={styles.monthViewHeaderDayText}>Wed</Text>
+                      <Text style={styles.monthViewHeaderDayText}>Thur</Text>
+                      <Text style={styles.monthViewHeaderDayText}>Fri</Text>
+                      <Text style={styles.monthViewHeaderDayText}>Sat</Text>
+                    </View>
+                    <FlatList
+                      scrollEnabled={false}
+                      data={this.state.monthViewData}
+                      renderItem={({ item }) => (
+                        // console.log(item)
+                        <MonthViewItem
+                          date={item.date}
+                          hasEvent={item.hasEvent}
+                          isThisMonth={item.isThisMonth}
+                        />
+                      )}
+                      //Setting the number of column
+                      numColumns={7}
+                      keyExtractor={(item, index) => index}
+                    />
+                  </View>
+                );
+              case CalendarViewType.DAY:
+                return (
+                  <View
+                    style={{
+                      width: "100%",
+                      height: "100%",
+                      // backgroundColor: "teal",
+                    }}
+                  >
+                    <View
+                      style={{
+                        // backgroundColor: "red",
+                        flexDirection: "row",
+                        borderBottomWidth: 2,
+                        borderBottomLeftRadius: 12,
+                        borderBottomRightRadius: 12,
+                      }}
+                    >
+                      <View
+                        style={{
+                          flexDirection: "column",
+                          alignItems: "center",
+                          padding: 6,
+                        }}
+                      >
+                        <Text style={{ fontSize: 40 }}>
+                          {this.state.currentDate.getDate()}
+                        </Text>
+                        <Text>
+                          {getWeekDayName(this.state.currentDate.getDay())}
+                        </Text>
+                      </View>
+                    </View>
+                    {/* If event is on the date selected, show the event. */}
+                    {this.state.calendarEventList.map((event) => {
+                      if (
+                        isOnSameDate(event.startTime, this.state.currentDate)
+                      ) {
+                        console.log(event);
+                        return (
+                          <EventViewInRow
+                            title={event.title}
+                            location={event.location}
+                            startTime={JSClock(event.startTime)}
+                            endTime={JSClock(event.endTime)}
+                          />
+                        );
+                      }
+                    })}
+                  </View>
+                );
+              default:
+                return (
+                  <View>
+                    <Text>Something went wrong...!</Text>
+                  </View>
+                );
+            }
+          })()}
         </View>
       </SafeAreaView>
     );
@@ -656,7 +1550,7 @@ class ScrollViewVerticallySynced extends React.Component {
   }
 
   render() {
-    const { name, style, onScroll, eventList } = this.props;
+    const { name, style, onScroll, eventList, weekStartDate } = this.props;
     return (
       <ScrollView
         key={name}
@@ -667,25 +1561,42 @@ class ScrollViewVerticallySynced extends React.Component {
         bounces={false}
         showsVerticalScrollIndicator={false}
       >
-        {populateRows(name, eventList)}
+        {populateRows(name, eventList, weekStartDate)}
       </ScrollView>
     );
   }
 }
 
+const makeVisible = (weekStartDate, event) => {
+  //if event is school course, make visible
+  if (event.category == EventCategory.SCHOOLCOURSE) {
+    return true;
+  }
+  //week range start and end
+  let s = weekStartDate;
+  let e = new Date(weekStartDate);
+  e.setDate(e.getDate() + 6);
+
+  //if event is within the week time frame, make visible
+  if (event.startTime >= s && event.startTime <= e) {
+    return true;
+  }
+  return false;
+};
+
 // If name is Time, populate the hours 0 ~ 24.
 // TODO: Need to set which time the time's going to start.
 // If name is Days, populate the schedule.
-const populateRows = (name, eventList) =>
+const populateRows = (name, eventList, weekStartDate) =>
   name == "Time"
     ? Array.from(Array(24).keys()).map((index) => (
         <View
-          key={`${name}-${index}`}
+          key={`TIME${name}-${index}`}
           style={{
             height: dailyHeight,
             flex: 1,
             alignItems: "center",
-            justifyContent: "center",
+            // justifyContent: "center",
           }}
         >
           <Text
@@ -702,39 +1613,45 @@ const populateRows = (name, eventList) =>
       ))
     : Array.from(Array(24).keys()).map((index) => (
         <View
-          key={`${name}-${index}`}
+          key={`NT${name}-${index}`}
           style={{
             height: dailyHeight,
             flex: 1,
             flexDirection: "row",
           }}
         >
-          {/* Horizontal Guide Line in the background */}
-          {/* <View
-            style={{
-              position: "absolute",
-              left: 0,
-              top: "50%",
-              width: dailyWidth * 7,
-              borderBottomColor: "black",
-              borderBottomWidth: 1,
-              zIndex: 1,
-              elevation: 1,
-            }}
-          /> */}
-
           {eventList.map((event) => {
-            return index == event.startTime.getHours() ? (
+            return index == event.startTime.getHours() &&
+              makeVisible(weekStartDate, event) ? (
               <EventItem
-                category="School Courses"
+                key={`EITEM${name}-${index}-${event.title}-${event.startTime}`}
+                category={event.category}
                 day={event.startTime.getDay()}
                 startTime={new Date(event.startTime)}
                 endTime={new Date(event.endTime)}
                 title={event.title}
                 location={event.location}
+                color={event.color}
               />
             ) : (
-              <EventItem category="Empty" />
+              <View />
+            );
+          })}
+          {this.state.calendarEventList.map((event) => {
+            return index == event.startTime.getHours() &&
+              makeVisible(this.state.weekViewStartDate, event) ? (
+              <EventItem
+                key={`EITEM-${index}-${event.title}-${event.startTime}`}
+                category={event.category}
+                day={event.startTime.getDay()}
+                startTime={new Date(event.startTime)}
+                endTime={new Date(event.endTime)}
+                title={event.title}
+                location={event.location}
+                color={event.color}
+              />
+            ) : (
+              <View />
             );
           })}
         </View>
@@ -750,16 +1667,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  monthHeaderContainer: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingLeft: 10,
-    paddingRight: 10,
-  },
-  daysContainer: {
-    flexDirection: "row",
-  },
   daysWithDate: {
     width: dailyWidth,
     flexDirection: "column",
@@ -771,6 +1678,11 @@ const styles = StyleSheet.create({
   },
   date: {
     fontSize: 12,
+  },
+  monthViewHeaderDayText: {
+    width: Dimensions.get("window").width / 7,
+    textAlign: "center",
+    fontSize: 16,
   },
   touchableOpacityStyle: {
     position: "absolute",
@@ -792,7 +1704,8 @@ const styles = StyleSheet.create({
   row: {
     flex: 1,
     flexDirection: "row",
-    alignItems: "left",
+    //여기
+    alignItems: "center",
     justifyContent: "space-between",
     marginTop: 10,
     marginBottom: 10,
@@ -801,8 +1714,8 @@ const styles = StyleSheet.create({
   },
   modal: {
     backgroundColor: "white",
-    width: 300,
-    height: 450,
+    width: 350,
+    height: 585,
     justifyContent: "center",
     alignItems: "center",
   },
@@ -828,5 +1741,64 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     fontSize: 18,
     borderColor: "#8b9cb5",
+  },
+  dropdown: {
+    height: 50,
+    backgroundColor: 'white',
+    borderRadius: 12,
+    padding: 12,
+    shadowColor: '#000',
+    shadowOffset: {
+        width: 0,
+        height: 1,
+    },
+    shadowOpacity: 0.2,
+    shadowRadius: 1.41,
+
+    elevation: 2,
+  },
+  placeholderStyle: {
+    fontSize: 16,
+  },
+  selectedTextStyle: {
+      fontSize: 14,
+  },
+  iconStyle: {
+      width: 20,
+      height: 20,
+  },
+  inputSearchStyle: {
+      height: 40,
+      fontSize: 16,
+  },
+  selectedStyle: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 14,
+    backgroundColor: 'white',
+    shadowColor: '#000',
+    marginTop: 8,
+    marginRight: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    shadowOffset: {
+        width: 0,
+        height: 1,
+    },
+    shadowOpacity: 0.2,
+    shadowRadius: 1.41,
+
+    elevation: 2,
+  },
+  textSelectedStyle: {
+      marginRight: 5,
+      fontSize: 16,
+  },
+  item2: {
+    padding: 17,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
 });

@@ -1,5 +1,4 @@
-import { StatusBar } from "expo-status-bar";
-import { Button, StyleSheet, Text, View } from "react-native";
+import { StyleSheet, Text, View } from "react-native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import FeedScreen from "./screens/FeedScreen";
 import SearchScreen from "./screens/SearchScreen";
@@ -7,11 +6,11 @@ import CalendarScreen from "./screens/CalendarScreen";
 import ProfileScreen from "./screens/ProfileScreen";
 import NotificationScreen from "./screens/NotificationScreen";
 import Ionicons from "react-native-vector-icons/Ionicons";
-import SignUpScreen from './screens/SignUpScreen';
-import SignInScreen from "./screens/SignInScreen";
 import MaterialCommunityIcons from "react-native-vector-icons/MaterialCommunityIcons";
 import FontAwesome from "react-native-vector-icons/FontAwesome";
+import AntDesign from "react-native-vector-icons/AntDesign"
 import { Colors } from "./constants/colors";
+import { TouchableOpacity } from "react-native";
 
 const Tab = createBottomTabNavigator();
 
@@ -93,6 +92,11 @@ export default function HomeScreen() {
           },
           tabBarActiveTintColor: Colors.primary,
           tabBarInactiveTintColor: Colors.darkGrey,
+          headerRight: () => (
+            <TouchableOpacity style={{marginRight: 10}}>
+              <AntDesign name = {"addusergroup"} size = {20} />
+            </TouchableOpacity>
+          )
         }}
       />
     </Tab.Navigator>
