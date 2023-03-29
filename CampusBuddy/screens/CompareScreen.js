@@ -37,7 +37,6 @@ export default function CompareScreen({navigation}) {
         onPress = {() => navigation.navigate("Calendar")}
         >
         </Button>
-      <Text>우엉</Text>
       <Text>Enter schedule 1:</Text>
       <TextInput
         style={{ borderWidth: 1, padding: 5, margin: 10 }}
