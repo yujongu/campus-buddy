@@ -9,6 +9,7 @@ import {
 } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import CalendarScreen from "./screens/CalendarScreen";
+import CompareScreen from "./screens/CompareScreen";
 import HomeScreen from "./BottomTabContainer";
 import SignInScreen from "./screens/SignInScreen";
 import SignUpScreen from "./screens/SignUpScreen";
@@ -23,6 +24,8 @@ import theme from "./components/ui/theme";
 import ForgotEmail from "./screens/ForgotEmail";
 import ForgotPassword from "./screens/ForgotPassword";
 import { SafeAreaProvider } from "react-native-safe-area-context";
+
+
 
 const Stack = createNativeStackNavigator();
 
@@ -92,10 +95,16 @@ export default function App() {
               component={EventDetailsScreen}
               options={{ headerShown: false }}
             />
+            <Stack.Screen
+              name = "Compare Screen"
+              component = {CompareScreen}
+              options = {{headerShown: false}}>
+            </Stack.Screen>
           </Stack.Navigator>
         </NavigationContainer>
       </ThemeContext.Provider>
     </SafeAreaProvider>
+
   );
 }
 

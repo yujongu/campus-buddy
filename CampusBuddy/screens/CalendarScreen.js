@@ -50,11 +50,15 @@ import {
 } from "../helperFunctions/dateFunctions";
 import EventViewInRow from "../components/ui/EventViewInRow";
 import uuid from 'react-native-uuid';
+//import { createAppContainer } from "react-navigation";
+import CompareScreen from '../screens/CompareScreen';
 
 const leftHeaderWidth = 50;
 const topHeaderHeight = 60;
 const dailyWidth = (Dimensions.get("window").width - leftHeaderWidth) / 3;
 const dailyHeight = Dimensions.get("window").height / 10;
+
+
 
 export default class App extends Component {
   constructor(props) {
@@ -405,6 +409,10 @@ export default class App extends Component {
     this.setState({ createEventVisible: true });
   };
 
+  openCompareScreen = () => {
+
+  };
+
   updateColor = (color) => {
     this.setState({ eventColor: color });
     this.setState({ colorPicker: false });
@@ -515,6 +523,7 @@ export default class App extends Component {
       console.error("An error occurred", err)
     );
   };
+
 
   openDocumentFile = async () => {
     const res = await DocumentPicker.getDocumentAsync({});
@@ -947,6 +956,9 @@ export default class App extends Component {
   };
 
   render() {
+   
+    const { navigate } = this.props.navigation;
+
     const {
       title,
       location,
@@ -958,6 +970,7 @@ export default class App extends Component {
       repetition,
       openDate,
     } = this.state;
+
     if (colorPicker) {
       console.log("colorpicked");
       return <ColorWheel updateColor={this.updateColor} />;
@@ -999,6 +1012,10 @@ export default class App extends Component {
                 }
               />
               <Button
+                title="Export schedule"
+                onPress={() => this.exportDocumentFile()}>
+                </Button>
+              <Button
                 title="Import schedule"
                 onPress={() => this.openDocumentFile()}
               />
@@ -1007,6 +1024,13 @@ export default class App extends Component {
                 title="Holiday settings"
                 onPress={this.setHolidaySettings}
               />
+              <Button
+                title="Compare schedule"
+                onPress = {() => {
+                  navigate('Compare Screen')
+                  this.setState({ visible: !this.state.visible });
+                }}
+                ></Button>
               <Button
                 title="Close modal"
                 onPress={() => {
