@@ -7,7 +7,7 @@ import { auth } from "../firebaseConfig";
 import Icon from 'react-native-vector-icons/Feather';
 
 const handleRequest = (email, user_ID) => {
-  to_request(auth.currentUser?.email, email, "friend");
+  to_request(auth.currentUser?.email, email, "friend", "");
   alert("Sent a request to " + user_ID);
 }
 
@@ -30,6 +30,7 @@ const Item = ({ title }) => {
 };
 
 const renderItem = ({ item }) => <Item title={[item.email, item.first, item.id, item.last]} />;
+
 
 export default class SearchScreen extends Component {
   constructor(props) {

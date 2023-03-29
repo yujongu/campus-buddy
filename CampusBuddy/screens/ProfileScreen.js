@@ -1,20 +1,25 @@
 import { StatusBar } from "expo-status-bar";
-import { Button, StyleSheet, Text, Pressable, TextInput, View, Modal, Alert, TouchableOpacity, FlatList, ActivityIndicator } from "react-native";
+import { Switch, Button, StyleSheet, Text, Pressable, TextInput, View, Modal, Alert, TouchableOpacity, FlatList, ActivityIndicator } from "react-native";
 import { auth, db, userSchedule } from "../firebaseConfig"
 import { EmailAuthProvider } from "firebase/auth";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { signOut } from "firebase/auth"
 import { updateDoc, doc, arrayRemove, onSnapshot, arrayUnion } from "firebase/firestore";
-import { useState, useEffect } from "react";
+import React, { useState, useEffect, useContext } from "react";
 import { SHA256 } from 'crypto-js';
+import ThemeContext  from "../components/ui/ThemeContext";
+import theme from "../components/ui/theme";
+import {EventRegister} from "react-native-event-listeners";
 
 export default function ProfileScreen({ navigation, route }) {
   const [newId, setNewId] = useState("");
   const [id, setId] = useState("");
-  const [visible, setVisible] = useState(false);
-  const [list, setList] = useState(["No friends"]);
-  const [loading, setLoading] = useState(true);
   const [password, setPassword] = useState("");
+  const [mode,setMode] = useState(false);
+  //categories are not implemented yet, just using two dummy categories for now
+  const [schoolPoints, setSchoolPoints] = useState("");
+  const [fitnessPoints, setFitnessPoints] = useState("");
+  const theme = useContext(ThemeContext);
 
   const handleSignOut = () => {
     signOut(auth)
@@ -22,8 +27,6 @@ export default function ProfileScreen({ navigation, route }) {
         navigation.popToTop();
       })
   }
-
-
 
   const handleChangeId = () => {
     const userDocRef = doc(db, "users", auth.currentUser.uid);
@@ -65,19 +68,15 @@ export default function ProfileScreen({ navigation, route }) {
       });
   };
   useEffect(() => {
-    const subscriber = onSnapshot(doc(db, "friend_list", auth.currentUser?.email), (doc) => {
-      if(doc.data()['friends'] !== null){
-        setList(doc.data()['friends'])
-        setLoading(false)
-      }else{
-        setList(["No friends yet"])
-        setLoading(false)
-      }
-    })
     const userDocRef = doc(db, "users", auth.currentUser.uid);
     const unsubscribe = onSnapshot(userDocRef, (doc) => {
       if (doc.exists()) {
         setId(doc.data().id);
+        setSchoolPoints(doc.data().points["school"])
+        setFitnessPoints(doc.data().points["fitness"])
+        /*doc.data().points.map(([key, value]) => {
+          console.log(key, value)
+        })*/
       } else {
         console.log("No such document!");
       }
@@ -86,88 +85,64 @@ export default function ProfileScreen({ navigation, route }) {
       unsubscribe();
     };
   }, []);
-  const removeFriend = (item) => {
-    const me = doc(db, "friend_list", auth.currentUser?.email)
-    const friend = doc(db, "friend_list", item)
-    try{
-      updateDoc(me, {
-        friends: arrayRemove(item)
-      })
-      updateDoc(friend, {
-        friends: arrayRemove(auth.currentUser?.email)
-      })
-      alert(item+" has been unfriended")
-    } catch (e) {
-      console.error("Cancel friend: ", e);
-    }
-  }
-
-  const renderItem = (item) =>{
-    return (
-      <View style={styles.item}>
-        <TouchableOpacity onPress={(() => navigation.navigate("user_profile", {
-          email: item
-        }))}>
-          <Text style={{color: 'black', fontSize: 15}}>{item}</Text>
-        </TouchableOpacity>
-        <View style={{flexDirection: "row"}}>
-          <TouchableOpacity onPress={() => Alert.alert("Unfriend", "Do you really want to friend?", [
-            {text: 'Yes', onPress: () => removeFriend(item)},
-            {text: 'Cancel', style: 'cancel'}
-          ], {cancelable: false})}>
-            <Text>Unfriend</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-    )
-  }
-
-  return (
-    <View style={styles.container}>
-      <Modal
-          animationType="slide"
-          transparent={true}
-          visible={visible}
-          onRequestClose={() => {
-            setVisible(!visible)
-          }}
-        >
-          <View
-            style={{
-              flex: 1,
-              flexDirection: "column",
-              justifyContent: "center",
-              alignItems: "center",
-            }}
-          >
-            <View style={{width: '70%', height:'70%', backgroundColor: 'white'}}>
-              {
-                loading ?
-                <ActivityIndicator />
-                :
-                <FlatList 
-                  data={list}
-                  renderItem={({item}) => 
-                    renderItem(item)
-                  }
-                />
-              }
-            <Pressable
-                style={[styles.button, styles.buttonClose]}
-                onPress={() => setVisible(!visible)}
-            >
-                <Text style={styles.textStyle}>Close</Text>
-            </Pressable> 
-            </View>
-          </View>
-      </Modal>
-      <Text>{auth.currentUser?.uid}</Text>
   
-      <Text>Current Id: {id}</Text>
+  //converts points to a width percentage for progress bar display
+  const getWidth = (points) => {
+    return (points-100*Math.floor(parseInt(points, 10)/100)).toString() + "%";
+  }
+  return (
+    <View style={[styles.container]}>
+      <Text style = {[styles.textStyle, {color: theme.color}]}>{auth.currentUser?.uid}</Text>
+  
+      <Text style = {[styles.textStyle, {color: theme.color}]}>Current Id: {id}</Text>
+      <Switch 
+        value={mode} 
+        onValueChange={(value) => {
+        setMode(value);
+        EventRegister.emit("changeTheme", value);
+      }} />
       <Button title="Settings" onPress={() => navigation.navigate("Settings")} />
       <Button title="Sign Out" onPress={handleSignOut} />
-      <Button title="Friend list" onPress={() => setVisible(!visible)} />
+      <Button title="Friend page" onPress={() => navigation.navigate("Friend")} />
+      <TextInput
+        style={styles.input}
+        placeholder="Enter Password"
+        value={password}
+        onChangeText={(text) => setPassword(text)}
+        secureTextEntry={true}
+      />
       <Button title="Delete Account" onPress={handleDeleteAccount} />
+      <Text style={{fontSize:20, textAlign:"center", paddingTop:40, paddingBottom:10}}>
+        Points Progress
+      </Text>
+      <Text style={[styles.categoryText]}>
+        School Courses
+      </Text>
+      <View style={[styles.row]}>
+        <Text style={[styles.categoryText]}>
+          {Math.floor(parseInt(schoolPoints, 10)/100)}
+        </Text>
+        <View style={styles.progressBar}>
+          <View style={[[StyleSheet.absoluteFill], {backgroundColor: "#FFC2B0", width: getWidth(schoolPoints)}]}/>
+        </View>
+        <Text style={[styles.categoryText]}>
+          {Math.floor(parseInt(schoolPoints, 10)/100)+1}
+        </Text>
+      </View>
+      <Text style={[styles.categoryText]}>
+        Fitness
+      </Text>
+      <View style={[styles.row]}>
+        <Text style={[styles.categoryText]}>
+          {Math.floor(parseInt(fitnessPoints, 10)/100)}
+        </Text>
+        <View style={styles.progressBar}>
+          <View style={[[StyleSheet.absoluteFill], {backgroundColor: "#00ACBE", width: getWidth(fitnessPoints)}]}/>
+        </View>
+        <Text style={[styles.categoryText]}>
+          {Math.floor(parseInt(fitnessPoints, 10)/100)+1}
+        </Text>
+      </View>
     </View>
   );
 }
@@ -176,7 +151,6 @@ export default function ProfileScreen({ navigation, route }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#fff",
     alignItems: "center",
     justifyContent: "center",
   },
@@ -205,11 +179,34 @@ const styles = StyleSheet.create({
     elevation: 2
   },
   textStyle: {
-    color: "white",
     fontWeight: "bold",
     textAlign: "center"
   },
   buttonClose: {
     backgroundColor: "#2196F3",
+  },
+  barContainer: {
+    flex: 1,
+    flexDirection: "column", //column direction
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingTop: 30,
+    backgroundColor: '#ecf0f1',
+    padding: 8,
+  },
+   progressBar: {
+    height: 30,
+    width: '80%',
+    backgroundColor: 'white',
+    borderColor: '#000',
+    borderWidth: 2,
+    borderRadius: 5,
+    marginBottom: 5
+  },
+  categoryText: {
+    padding: 5
+  },
+  row: {
+    flexDirection: "row",
   },
 });
