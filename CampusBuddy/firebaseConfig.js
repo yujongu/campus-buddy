@@ -120,7 +120,7 @@ export async function createUser(username, first, last, email, password) {
     });
 }
 
-export async function addSchedule(user_token, data) {
+/*export async function addSchedule(user_token, data) {
   const docRef = doc(db, "schedule", user_token);
   var res = [];
   try {
@@ -133,12 +133,36 @@ export async function addSchedule(user_token, data) {
           "," +
           element.startTime +
           "," +
-          element.title,
+          element.title
       };
       res.push(str);
     });
+    
     setDoc(docRef, {
       things: res,
+    });
+    console.log("Document written with ID: ", docRef.id);
+  } catch (e) {
+    console.error("Error adding doc: ", e);
+  }
+}*/
+
+export async function addSchedule(user_token, data) {
+  const docRef = doc(db, "schedule", user_token);
+  var res = [];
+  try {
+    data.map((element) => {
+      const x = {
+        id: element.id,
+        title: element.title,
+        location: element.location,
+        startTime: element.startTime,
+        endTime: element.endTime
+      };
+      res.push(x);
+    });
+    setDoc(docRef, {
+      classes: res
     });
     console.log("Document written with ID: ", docRef.id);
   } catch (e) {

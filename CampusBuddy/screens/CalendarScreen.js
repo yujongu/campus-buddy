@@ -30,7 +30,7 @@ import { auth, db, userSchedule, getUserEvents } from "../firebaseConfig";
 import EventItem from "../components/ui/EventItem";
 import { even, IconButton } from "@react-native-material/core";
 import TopHeaderDays from "../components/ui/TopHeaderDays";
-import { doc, onSnapshot, updateDoc, getDoc } from "firebase/firestore";
+import { doc, onSnapshot, updateDoc, getDoc, arrayRemove } from "firebase/firestore";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import ThemeContext from "../components/ui/ThemeContext";
 import theme from "../components/ui/theme";
@@ -49,6 +49,7 @@ import {
   JSClock,
 } from "../helperFunctions/dateFunctions";
 import EventViewInRow from "../components/ui/EventViewInRow";
+import uuid from 'react-native-uuid';
 
 const leftHeaderWidth = 50;
 const topHeaderHeight = 60;
@@ -120,7 +121,7 @@ export default class App extends Component {
     const result = [];
     const eventResult = [];
     if (res != null) {
-      res["things"].map((element) => {
+      /*res["things"].map((element) => {
         const sp = element.data.split(",");
         const temp = {
           category: EventCategory.SCHOOLCOURSE,
@@ -130,9 +131,22 @@ export default class App extends Component {
           location: sp[1],
         };
         result.push(temp);
-      });
+      });*/
+      for (let i = 0; i < res["classes"].length; i++) {
+        const temp = {
+          category: EventCategory.SCHOOLCOURSE,
+          title: res["classes"][i]["title"],
+          startTime: new Date(res["classes"][i]["startTime"].seconds * 1000), //multiply 1000 since Javascript uses milliseconds. Timestamp to date.
+          endTime: new Date(res["classes"][i]["endTime"].seconds * 1000),
+          location: res["classes"][i]["location"],
+          color: "#D1FF96",
+          id: res["classes"][i]["id"],
+        };
+        result.push(temp);
+      }
     }
-
+    console.log(result)
+    
     this.setState({ list: result });
 
     // Getting events from database
@@ -150,7 +164,6 @@ export default class App extends Component {
         eventResult.push(temp);
       }
     }
-
     this.checkList(eventResult); //Checks for events that go over multiple days and corrects it
 
     const userDocRef = doc(db, "users", auth.currentUser.uid);
@@ -569,6 +582,7 @@ export default class App extends Component {
                   endTime: genTimeBlock("MON", end, end_min),
                   location: product["Location"],
                   color: "#D1FF96",
+                  id: uuid.v4(),
                 });
                 //Tuesday
               } else if (
@@ -582,6 +596,7 @@ export default class App extends Component {
                   endTime: genTimeBlock("TUE", end, end_min),
                   location: product["Location"],
                   color: "#D1FF96",
+                  id: uuid.v4(),
                 });
                 //Wednesday
               } else if (product["Day Of Week"][i] == "W") {
@@ -591,6 +606,7 @@ export default class App extends Component {
                   endTime: genTimeBlock("WED", end, end_min),
                   location: product["Location"],
                   color: "#D1FF96",
+                  id: uuid.v4(),
                 });
                 //Thursday
               } else if (
@@ -603,6 +619,7 @@ export default class App extends Component {
                   endTime: genTimeBlock("THU", end, end_min),
                   location: product["Location"],
                   color: "#D1FF96",
+                  id: uuid.v4(),
                 });
                 //Friday
               } else if (product["Day Of Week"][i] == "F") {
@@ -612,6 +629,7 @@ export default class App extends Component {
                   endTime: genTimeBlock("FRI", end, end_min),
                   location: product["Location"],
                   color: "#D1FF96",
+                  id: uuid.v4(),
                 });
                 //Saterday
               } else if (product["Day Of Week"][i] == "S") {
@@ -621,6 +639,7 @@ export default class App extends Component {
                   endTime: genTimeBlock("SAT", end, end_min),
                   location: product["Location"],
                   color: "#D1FF96",
+                  id: uuid.v4(),
                 });
                 //Sunday
               } else if (product["Day Of Week"][i] == "U") {
@@ -630,6 +649,7 @@ export default class App extends Component {
                   endTime: genTimeBlock("SUN", end, end_min),
                   location: product["Location"],
                   color: "#D1FF96",
+                  id: uuid.v4(),
                 });
               }
             }
@@ -879,6 +899,24 @@ export default class App extends Component {
     { useNativeDriver: false }
   );
 
+  handleEventCompletion = (category,id) => {
+    console.log(category)
+    console.log(id)
+    if (category == EventCategory.SCHOOLCOURSE ) {
+      const userDocRef = doc(db, "schedule", auth.currentUser.uid);
+      updateDoc(userDocRef, { classes: arrayRemove(id) })
+      .then(() => {
+        console.log("Successfully removed class from schedule.");
+      })
+      .catch((error) => {
+        console.error("Error removing class from schedule", error);
+      });
+    }
+    else {
+      const userDocRef = doc(db, "events", auth.currentUser.uid);
+    }
+    
+  }
   toggleCalendarView = () => {
     // switch (this.state.calendarView) {
     //   case CalendarViewType.WEEK:
@@ -1377,6 +1415,8 @@ export default class App extends Component {
                                   title={event.title}
                                   location={event.location}
                                   color={event.color}
+                                  id={event.id}
+                                  handleEventCompletion={this.handleEventCompletion}
                                 />
                               ) : (
                                 <View />
