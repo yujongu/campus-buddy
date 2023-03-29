@@ -94,11 +94,11 @@ export default function App() {
               component={EventDetailsScreen}
               options={{ headerShown: false }}
             />
-            <Stack.Screen
+            {/* <Stack.Screen
               name = "Compare Screen"
               component = {CompareScreen}
               options = {{headerShown: false}}>
-            </Stack.Screen>
+            </Stack.Screen> */}
           </Stack.Navigator>
         </NavigationContainer>
       </ThemeContext.Provider>
