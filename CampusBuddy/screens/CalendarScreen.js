@@ -52,6 +52,7 @@ import EventViewInRow from "../components/ui/EventViewInRow";
 import uuid from 'react-native-uuid';
 //import { createAppContainer } from "react-navigation";
 import CompareScreen from '../screens/CompareScreen';
+import { uuidv4 } from "@firebase/util";
 
 const leftHeaderWidth = 50;
 const topHeaderHeight = 60;
@@ -591,7 +592,6 @@ export default class App extends Component {
                   endTime: genTimeBlock("MON", end, end_min),
                   location: product["Location"],
                   color: "#D1FF96",
-                  id: uuid.v4(),
                 });
                 //Tuesday
               } else if (
@@ -605,7 +605,6 @@ export default class App extends Component {
                   endTime: genTimeBlock("TUE", end, end_min),
                   location: product["Location"],
                   color: "#D1FF96",
-                  id: uuid.v4(),
                 });
                 //Wednesday
               } else if (product["Day Of Week"][i] == "W") {
@@ -615,7 +614,6 @@ export default class App extends Component {
                   endTime: genTimeBlock("WED", end, end_min),
                   location: product["Location"],
                   color: "#D1FF96",
-                  id: uuid.v4(),
                 });
                 //Thursday
               } else if (
@@ -628,7 +626,6 @@ export default class App extends Component {
                   endTime: genTimeBlock("THU", end, end_min),
                   location: product["Location"],
                   color: "#D1FF96",
-                  id: uuid.v4(),
                 });
                 //Friday
               } else if (product["Day Of Week"][i] == "F") {
@@ -638,7 +635,6 @@ export default class App extends Component {
                   endTime: genTimeBlock("FRI", end, end_min),
                   location: product["Location"],
                   color: "#D1FF96",
-                  id: uuid.v4(),
                 });
                 //Saterday
               } else if (product["Day Of Week"][i] == "S") {
@@ -648,7 +644,6 @@ export default class App extends Component {
                   endTime: genTimeBlock("SAT", end, end_min),
                   location: product["Location"],
                   color: "#D1FF96",
-                  id: uuid.v4(),
                 });
                 //Sunday
               } else if (product["Day Of Week"][i] == "U") {
@@ -658,7 +653,6 @@ export default class App extends Component {
                   endTime: genTimeBlock("SUN", end, end_min),
                   location: product["Location"],
                   color: "#D1FF96",
-                  id: uuid.v4(),
                 });
               }
             }
@@ -673,6 +667,10 @@ export default class App extends Component {
             })
           );
         });
+        
+        for (let i = 0; i < uniqueArray.length; i++) {
+          uniqueArray[i].id=uuid.v4()
+        }
         this.setState({ list: uniqueArray });
         this.setState({ visible: !this.state.visible });
         addSchedule(auth.currentUser?.uid, this.state.list);
