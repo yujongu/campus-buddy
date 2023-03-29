@@ -40,21 +40,7 @@ import HolidaySettingModal from "../components/ui/HolidaySettingModal";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import { SafeAreaView, useSafeAreaFrame } from "react-native-safe-area-context";
 import MonthViewItem from "../components/MonthViewItem";
-
-const MonthName = [
-  "January",
-  "February",
-  "March",
-  "April",
-  "May",
-  "June",
-  "July",
-  "August",
-  "September",
-  "October",
-  "November",
-  "December",
-];
+import { getMonthName, getWeekDayName } from "../helperFunctions/dateFunctions";
 
 const leftHeaderWidth = 50;
 const topHeaderHeight = 60;
@@ -109,7 +95,7 @@ export default class App extends Component {
       weekViewStartDate: new Date(),
       currentDate: new Date(), // This is the selected date
       monthViewData: [],
-      calendarView: CalendarViewType.DAY, //On click, go above a level. Once date is clicked, go into week view.
+      calendarView: CalendarViewType.MONTH, //On click, go above a level. Once date is clicked, go into week view.
     };
   }
 
@@ -618,8 +604,65 @@ export default class App extends Component {
   };
 
   //navigate through calendar ui
+  goPrevDay = () => {
+    let currYear = this.state.currentDate.getFullYear();
+
+    let tempCurr = this.state.currentDate;
+    tempCurr.setDate(tempCurr.getDate() - 1);
+    this.setState({ currDate: tempCurr });
+
+    if (tempCurr.getDay() == 6) {
+      //If new date is saturday, meaning it's a different week
+      let tempDate = this.state.weekViewStartDate;
+      tempDate.setDate(tempDate.getDate() - 7);
+
+      if (
+        tempDate.getFullYear() != currYear &&
+        this.state.selectedCountryCode != null &&
+        this.state.selectedCountryCode.length > 0
+      ) {
+        this.getHolidays(
+          this.state.selectedCountryCode,
+          tempDate.getFullYear()
+        );
+      }
+      this.setState({ weekViewStartDate: tempDate });
+    }
+  };
+
+  goNextDay = () => {
+    let currYear = this.state.currentDate.getFullYear();
+
+    let tempCurr = this.state.currentDate;
+    tempCurr.setDate(tempCurr.getDate() + 1);
+    this.setState({ currDate: tempCurr });
+
+    if (tempCurr.getDay() == 0) {
+      //If new date is saturday, meaning it's a different week
+      let tempDate = this.state.weekViewStartDate;
+      tempDate.setDate(tempDate.getDate() + 7);
+
+      if (
+        tempDate.getFullYear() != currYear &&
+        this.state.selectedCountryCode != null &&
+        this.state.selectedCountryCode.length > 0
+      ) {
+        this.getHolidays(
+          this.state.selectedCountryCode,
+          tempDate.getFullYear()
+        );
+      }
+      this.setState({ weekViewStartDate: tempDate });
+    }
+  };
+
   goPrevWeek = () => {
     let currYear = this.state.weekViewStartDate.getFullYear();
+
+    let tempCurr = this.state.currentDate;
+    tempCurr.setDate(tempCurr.getDate() - 7);
+    this.setState({ currDate: tempCurr });
+
     let tempDate = this.state.weekViewStartDate;
     tempDate.setDate(tempDate.getDate() - 7);
 
@@ -634,6 +677,11 @@ export default class App extends Component {
   };
   goNextWeek = () => {
     let currYear = this.state.weekViewStartDate.getFullYear();
+
+    let tempCurr = this.state.currentDate;
+    tempCurr.setDate(tempCurr.getDate() + 7);
+    this.setState({ currDate: tempCurr });
+
     let tempDate = this.state.weekViewStartDate;
     tempDate.setDate(tempDate.getDate() + 7);
     if (
@@ -648,6 +696,11 @@ export default class App extends Component {
   //navigate through calendar ui
   goPrevMonth = () => {
     let currYear = this.state.weekViewStartDate.getFullYear();
+
+    let tempCurr = this.state.currentDate;
+    tempCurr.setMonth(tempCurr.getMonth() - 1);
+    this.setState({ currDate: tempCurr });
+
     let tempDate = this.state.weekViewStartDate;
     tempDate.setMonth(tempDate.getMonth() - 1);
 
@@ -663,6 +716,11 @@ export default class App extends Component {
   };
   goNextMonth = () => {
     let currYear = this.state.weekViewStartDate.getFullYear();
+
+    let tempCurr = this.state.currentDate;
+    tempCurr.setMonth(tempCurr.getMonth() + 1);
+    this.setState({ currDate: tempCurr });
+
     let tempDate = this.state.weekViewStartDate;
     tempDate.setMonth(tempDate.getMonth() + 1);
     if (
@@ -677,8 +735,8 @@ export default class App extends Component {
   };
 
   goToday = () => {
+    this.setState({ currentDate: new Date() });
     let tempDate = new Date();
-    this.setState({ currentDate: tempDate });
     tempDate.setDate(tempDate.getDate() - tempDate.getDay());
     if (
       this.state.selectedCountryCode != null &&
@@ -784,15 +842,16 @@ export default class App extends Component {
     //     break;
     // }
     switch (this.state.calendarView) {
+      case CalendarViewType.DAY:
+        this.setState({ calendarView: CalendarViewType.WEEK });
+        break;
       case CalendarViewType.WEEK:
         this.setState({ calendarView: CalendarViewType.MONTH });
         break;
       case CalendarViewType.MONTH:
         this.setState({ calendarView: CalendarViewType.DAY });
         break;
-      case CalendarViewType.DAY:
-        this.setState({ calendarView: CalendarViewType.WEEK });
-        break;
+
       default:
         console.error("Something Wrong with toggle calendar view");
         break;
@@ -1069,7 +1128,10 @@ export default class App extends Component {
                 }}
               >
                 <Text style={{ fontSize: 20 }}>
-                  {MonthName[this.state.weekViewStartDate.getMonth()]}
+                  {this.state.calendarView == CalendarViewType.WEEK ||
+                  this.state.calendarView == CalendarViewType.MONTH
+                    ? getMonthName(this.state.weekViewStartDate.getMonth())
+                    : getMonthName(this.state.currentDate.getMonth())}
                 </Text>
                 <Text style={{ fontSize: 12 }}>
                   {this.state.weekViewStartDate.getFullYear()}
@@ -1087,11 +1149,18 @@ export default class App extends Component {
                 <IconButton
                   style={{}}
                   color={Colors.grey}
-                  onPress={
-                    this.state.calendarView == CalendarViewType.WEEK
-                      ? this.goPrevWeek
-                      : this.goPrevMonth
-                  }
+                  onPress={() => {
+                    switch (this.state.calendarView) {
+                      case CalendarViewType.DAY:
+                        return this.goPrevDay();
+                      case CalendarViewType.WEEK:
+                        return this.goPrevWeek();
+                      case CalendarViewType.MONTH:
+                        return this.goPrevMonth();
+                      default:
+                        return null;
+                    }
+                  }}
                   icon={(props) => <Octicons name="triangle-left" {...props} />}
                 />
                 <Pressable
@@ -1104,11 +1173,18 @@ export default class App extends Component {
                 <IconButton
                   style={{}}
                   color={Colors.grey}
-                  onPress={
-                    this.state.calendarView == CalendarViewType.WEEK
-                      ? this.goNextWeek
-                      : this.goNextMonth
-                  }
+                  onPress={() => {
+                    switch (this.state.calendarView) {
+                      case CalendarViewType.DAY:
+                        return this.goNextDay();
+                      case CalendarViewType.WEEK:
+                        return this.goNextWeek();
+                      case CalendarViewType.MONTH:
+                        return this.goNextMonth();
+                      default:
+                        return null;
+                    }
+                  }}
                   icon={(props) => (
                     <Octicons name="triangle-right" {...props} />
                   )}
@@ -1261,6 +1337,21 @@ export default class App extends Component {
                       height: "100%",
                     }}
                   >
+                    <View
+                      style={{
+                        flexDirection: "row",
+                        justifyContent: "space-between",
+                        marginBottom: 8,
+                      }}
+                    >
+                      <Text style={styles.monthViewHeaderDayText}>Sun</Text>
+                      <Text style={styles.monthViewHeaderDayText}>Mon</Text>
+                      <Text style={styles.monthViewHeaderDayText}>Tues</Text>
+                      <Text style={styles.monthViewHeaderDayText}>Wed</Text>
+                      <Text style={styles.monthViewHeaderDayText}>Thur</Text>
+                      <Text style={styles.monthViewHeaderDayText}>Fri</Text>
+                      <Text style={styles.monthViewHeaderDayText}>Sat</Text>
+                    </View>
                     <FlatList
                       scrollEnabled={false}
                       data={this.state.monthViewData}
@@ -1287,9 +1378,14 @@ export default class App extends Component {
                       backgroundColor: "teal",
                     }}
                   >
-                    <Text>HI this is day view</Text>
-                    <Text>{this.state.currentDate.getMonth() + 1}</Text>
-                    <Text>{this.state.currentDate.getDate()}</Text>
+                    <View style={{}}>
+                      <Text style={{ fontSize: 40 }}>
+                        {this.state.currentDate.getDate()}
+                      </Text>
+                      <Text>
+                        {getWeekDayName(this.state.currentDate.getDay())}
+                      </Text>
+                    </View>
                   </View>
                 );
               default:
@@ -1445,6 +1541,11 @@ const styles = StyleSheet.create({
   },
   date: {
     fontSize: 12,
+  },
+  monthViewHeaderDayText: {
+    width: Dimensions.get("window").width / 7,
+    textAlign: "center",
+    fontSize: 16,
   },
   touchableOpacityStyle: {
     position: "absolute",

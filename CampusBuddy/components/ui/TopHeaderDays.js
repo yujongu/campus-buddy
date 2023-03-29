@@ -1,5 +1,6 @@
 import React from "react";
 import { StyleSheet, View, Text, Dimensions } from "react-native";
+import { getWeekDayName } from "../../helperFunctions/dateFunctions";
 const leftHeaderWidth = 50;
 const topHeaderHeight = 60;
 const dailyWidth = (Dimensions.get("window").width - leftHeaderWidth) / 3;
@@ -32,12 +33,11 @@ export default class TopHeaderDays extends React.Component {
 
   render() {
     const { holidays, startDay } = this.props;
-    let dayNames = ["Sun", "Mon", "Tues", "Wed", "Thur", "Fri", "Sat"];
 
     return (
       <View style={{ flexDirection: "row" }}>
         <View style={styles.daysWithDateContainer}>
-          <Text style={styles.days}>{dayNames[0]}</Text>
+          <Text style={styles.days}>{getWeekDayName(0)}</Text>
           <Text style={styles.date}>
             {this.getNextDay(startDay, 0).getDate()}
           </Text>
@@ -46,7 +46,7 @@ export default class TopHeaderDays extends React.Component {
           </Text>
         </View>
         <View style={styles.daysWithDateContainer}>
-          <Text style={styles.days}>{dayNames[1]}</Text>
+          <Text style={styles.days}>{getWeekDayName(1)}</Text>
           <Text style={styles.date}>
             {this.getNextDay(startDay, 1).getDate()}
           </Text>
@@ -55,7 +55,7 @@ export default class TopHeaderDays extends React.Component {
           </Text>
         </View>
         <View style={styles.daysWithDateContainer}>
-          <Text style={styles.days}>{dayNames[2]}</Text>
+          <Text style={styles.days}>{getWeekDayName(2)}</Text>
           <Text style={styles.date}>
             {this.getNextDay(startDay, 2).getDate()}
           </Text>
@@ -64,7 +64,7 @@ export default class TopHeaderDays extends React.Component {
           </Text>
         </View>
         <View style={styles.daysWithDateContainer}>
-          <Text style={styles.days}>{dayNames[3]}</Text>
+          <Text style={styles.days}>{getWeekDayName(3)}</Text>
           <Text style={styles.date}>
             {this.getNextDay(startDay, 3).getDate()}
           </Text>
@@ -73,7 +73,7 @@ export default class TopHeaderDays extends React.Component {
           </Text>
         </View>
         <View style={styles.daysWithDateContainer}>
-          <Text style={styles.days}>{dayNames[4]}</Text>
+          <Text style={styles.days}>{getWeekDayName(4)}</Text>
           <Text style={styles.date}>
             {this.getNextDay(startDay, 4).getDate()}
           </Text>
@@ -82,7 +82,7 @@ export default class TopHeaderDays extends React.Component {
           </Text>
         </View>
         <View style={styles.daysWithDateContainer}>
-          <Text style={styles.days}>{dayNames[5]}</Text>
+          <Text style={styles.days}>{getWeekDayName(5)}</Text>
           <Text style={styles.date}>
             {this.getNextDay(startDay, 5).getDate()}
           </Text>
@@ -91,7 +91,7 @@ export default class TopHeaderDays extends React.Component {
           </Text>
         </View>
         <View style={styles.daysWithDateContainer}>
-          <Text style={styles.days}>{dayNames[6]}</Text>
+          <Text style={styles.days}>{getWeekDayName(6)}</Text>
           <Text style={styles.date}>
             {this.getNextDay(startDay, 6).getDate()}
           </Text>
