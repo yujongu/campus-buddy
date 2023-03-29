@@ -1,6 +1,7 @@
 import { Pressable } from "@react-native-material/core";
 import React from "react";
 import { View, Text, Dimensions } from "react-native";
+import { JSClock } from "../../helperFunctions/dateFunctions";
 const leftHeaderWidth = 50;
 const topHeaderHeight = 20;
 const dailyWidth = (Dimensions.get("window").width - leftHeaderWidth) / 3;
@@ -24,28 +25,12 @@ export default class EventItem extends React.Component {
     return duration / 60;
   }
 
-  JSClock = (time) => {
-    const hour = time.getHours();
-    const minute = time.getMinutes();
-    const second = time.getSeconds();
-    let temp = String(hour % 12);
-    if (temp === "0") {
-      temp = "12";
-    }
-    temp += (minute < 10 ? ":0" : ":") + minute;
-    if (second != 0) {
-      temp += (second < 10 ? ":0" : ":") + second;
-    }
-    temp += hour >= 12 ? " P.M." : " A.M.";
-    return temp;
-  };
-
   showDetails(category, day, startTime, endTime, title, location, host, color) {
     this.props.navigation.navigate("EventDetails", {
       category,
       day,
-      startTime: this.JSClock(startTime),
-      endTime: this.JSClock(endTime),
+      startTime: JSClock(startTime),
+      endTime: JSClock(endTime),
       title,
       location,
       host,

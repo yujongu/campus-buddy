@@ -40,7 +40,13 @@ import HolidaySettingModal from "../components/ui/HolidaySettingModal";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import { SafeAreaView, useSafeAreaFrame } from "react-native-safe-area-context";
 import MonthViewItem from "../components/MonthViewItem";
-import { getMonthName, getWeekDayName } from "../helperFunctions/dateFunctions";
+import {
+  getMonthName,
+  getWeekDayName,
+  isOnSameDate,
+  JSClock,
+} from "../helperFunctions/dateFunctions";
+import EventViewInRow from "../components/ui/EventViewInRow";
 
 const leftHeaderWidth = 50;
 const topHeaderHeight = 60;
@@ -95,7 +101,7 @@ export default class App extends Component {
       weekViewStartDate: new Date(),
       currentDate: new Date(), // This is the selected date
       monthViewData: [],
-      calendarView: CalendarViewType.MONTH, //On click, go above a level. Once date is clicked, go into week view.
+      calendarView: CalendarViewType.DAY, //On click, go above a level. Once date is clicked, go into week view.
     };
   }
 
@@ -1375,17 +1381,49 @@ export default class App extends Component {
                     style={{
                       width: "100%",
                       height: "100%",
-                      backgroundColor: "teal",
+                      // backgroundColor: "teal",
                     }}
                   >
-                    <View style={{}}>
-                      <Text style={{ fontSize: 40 }}>
-                        {this.state.currentDate.getDate()}
-                      </Text>
-                      <Text>
-                        {getWeekDayName(this.state.currentDate.getDay())}
-                      </Text>
+                    <View
+                      style={{
+                        // backgroundColor: "red",
+                        flexDirection: "row",
+                        borderBottomWidth: 2,
+                        borderBottomLeftRadius: 12,
+                        borderBottomRightRadius: 12,
+                      }}
+                    >
+                      <View
+                        style={{
+                          flexDirection: "column",
+                          alignItems: "center",
+                          padding: 6,
+                        }}
+                      >
+                        <Text style={{ fontSize: 40 }}>
+                          {this.state.currentDate.getDate()}
+                        </Text>
+                        <Text>
+                          {getWeekDayName(this.state.currentDate.getDay())}
+                        </Text>
+                      </View>
                     </View>
+                    {/* If event is on the date selected, show the event. */}
+                    {this.state.calendarEventList.map((event) => {
+                      if (
+                        isOnSameDate(event.startTime, this.state.currentDate)
+                      ) {
+                        console.log(event);
+                        return (
+                          <EventViewInRow
+                            title={event.title}
+                            location={event.location}
+                            startTime={JSClock(event.startTime)}
+                            endTime={JSClock(event.endTime)}
+                          />
+                        );
+                      }
+                    })}
                   </View>
                 );
               default:
