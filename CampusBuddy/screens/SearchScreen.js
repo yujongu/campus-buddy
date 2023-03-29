@@ -7,7 +7,7 @@ import { auth } from "../firebaseConfig";
 import Icon from 'react-native-vector-icons/Feather';
 
 const handleRequest = (email, user_ID) => {
-  to_request(auth.currentUser?.email, email, "friend");
+  to_request(auth.currentUser?.email, email, "friend", "");
   alert("Sent a request to " + user_ID);
 }
 

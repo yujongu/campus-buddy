@@ -112,9 +112,23 @@ export default class FriendScreen extends Component {
         updateDoc(me, {
           favorite: arrayRemove(item),
         });
+        user_data.data()["favorite"].map((temp) => {
+          if (temp.user === auth.currentUser?.email) {
+            updateDoc(friend, {
+              favorite: arrayRemove(temp),
+            });
+          }
+        });
       }else{
         updateDoc(me, {
           friends: arrayRemove(item),
+        });
+        user_data.data()["friends"].map((temp) => {
+          if (temp.user === auth.currentUser?.email) {
+            updateDoc(friend, {
+              friends: arrayRemove(temp),
+            });
+          }
         });
       }
       const user_data = getDoc(friend);

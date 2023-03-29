@@ -83,10 +83,15 @@ export default class EventItem extends React.Component {
             marginRight: dailyWidth * 0.05,
             borderRadius: 10,
             backgroundColor: color == null ? "#D1FF96" : color,
+            overflow: "hidden",
           }}
         >
-          <Text style={{ fontSize: 16 }}>{title}</Text>
-          <Text style={{ fontSize: 12 }}>{location}</Text>
+          <Text style={{ fontSize: 16 }} numberOfLines={2}>
+            {title}
+          </Text>
+          <Text style={{ fontSize: 12 }} numberOfLines={1}>
+            {location}
+          </Text>
         </View>
       </Pressable>
     );
