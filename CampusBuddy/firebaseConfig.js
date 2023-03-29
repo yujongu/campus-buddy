@@ -17,6 +17,7 @@ import {
   arrayUnion,
   addDoc,
 } from "firebase/firestore";
+import uuid from 'react-native-uuid';
 
 // TODO: Add SDKs for Firebase products that you want to use
 // https://firebase.google.com/docs/web/setup#available-libraries
@@ -149,21 +150,33 @@ export async function createUser(username, first, last, email, password) {
 
 export async function addSchedule(user_token, data) {
   const docRef = doc(db, "schedule", user_token);
+  const querySnapShot = await getDoc(docRef);
+  if (!querySnapShot.exists()) {
+    setDoc(docRef, {
+      classes: [],
+    });
+  }
+
   var res = [];
   try {
     data.map((element) => {
       const x = {
-        id: element.id,
         title: element.title,
         location: element.location,
         startTime: element.startTime,
         endTime: element.endTime
       };
-      res.push(x);
+      //res.push(x);
+      const data = {
+        id: uuid.v4(),
+        class: x
+      }
+      console.log(data)
+      updateDoc(docRef, { 
+        classes: arrayUnion(data) 
+      });
     });
-    setDoc(docRef, {
-      classes: res
-    });
+
     console.log("Document written with ID: ", docRef.id);
   } catch (e) {
     console.error("Error adding doc: ", e);

@@ -49,10 +49,8 @@ import {
   JSClock,
 } from "../helperFunctions/dateFunctions";
 import EventViewInRow from "../components/ui/EventViewInRow";
-import uuid from 'react-native-uuid';
 //import { createAppContainer } from "react-navigation";
 import CompareScreen from '../screens/CompareScreen';
-import { uuidv4 } from "@firebase/util";
 
 const leftHeaderWidth = 50;
 const topHeaderHeight = 60;
@@ -140,17 +138,16 @@ export default class App extends Component {
       for (let i = 0; i < res["classes"].length; i++) {
         const temp = {
           category: EventCategory.SCHOOLCOURSE,
-          title: res["classes"][i]["title"],
-          startTime: new Date(res["classes"][i]["startTime"].seconds * 1000), //multiply 1000 since Javascript uses milliseconds. Timestamp to date.
-          endTime: new Date(res["classes"][i]["endTime"].seconds * 1000),
-          location: res["classes"][i]["location"],
+          title: res["classes"][i]["class"]["title"],
+          startTime: new Date(res["classes"][i]["class"]["startTime"].seconds * 1000), //multiply 1000 since Javascript uses milliseconds. Timestamp to date.
+          endTime: new Date(res["classes"][i]["class"]["endTime"].seconds * 1000),
+          location: res["classes"][i]["class"]["location"],
           color: "#D1FF96",
           id: res["classes"][i]["id"],
         };
         result.push(temp);
       }
     }
-    console.log(result)
     
     this.setState({ list: result });
 
@@ -668,9 +665,9 @@ export default class App extends Component {
           );
         });
         
-        for (let i = 0; i < uniqueArray.length; i++) {
+       /* for (let i = 0; i < uniqueArray.length; i++) {
           uniqueArray[i].id=uuid.v4()
-        }
+        }*/
         this.setState({ list: uniqueArray });
         this.setState({ visible: !this.state.visible });
         addSchedule(auth.currentUser?.uid, this.state.list);
@@ -906,18 +903,24 @@ export default class App extends Component {
     { useNativeDriver: false }
   );
 
-  handleEventCompletion = (category,id) => {
+  handleEventCompletion = async (category,id) => {
     console.log(category)
     console.log(id)
     if (category == EventCategory.SCHOOLCOURSE ) {
       const userDocRef = doc(db, "schedule", auth.currentUser.uid);
-      updateDoc(userDocRef, { classes: arrayRemove(id) })
-      .then(() => {
-        console.log("Successfully removed class from schedule.");
-      })
-      .catch((error) => {
-        console.error("Error removing class from schedule", error);
-      });
+      const res = await userSchedule(auth.currentUser?.uid);
+      for (let i = 0; i < res["classes"].length; i++) {
+        if (res["classes"][i]["id"] == id) {
+          updateDoc(userDocRef, { "classes": arrayRemove(res["classes"][i]) })
+          .then(() => {
+            console.log("Successfully removed class from schedule.");
+          })
+          .catch((error) => {
+            console.error("Error removing class from schedule", error);
+          });
+        }
+      }  
+     
     }
     else {
       const userDocRef = doc(db, "events", auth.currentUser.uid);
