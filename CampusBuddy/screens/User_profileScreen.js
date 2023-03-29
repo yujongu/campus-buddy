@@ -19,6 +19,7 @@ export default function User_profile({ navigation, route }) {
 }
 
 
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,

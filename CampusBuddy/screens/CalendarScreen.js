@@ -25,7 +25,7 @@ import * as DocumentPicker from "expo-document-picker";
 import Icon from "react-native-vector-icons/FontAwesome";
 import Octicons from "react-native-vector-icons/Octicons";
 import { genTimeBlock } from "react-native-timetable";
-import { addSchedule, addEvent } from "../firebaseConfig";
+import { addSchedule, addEvent, to_request } from "../firebaseConfig";
 import { auth, db, userSchedule, getUserEvents } from "../firebaseConfig";
 import EventItem from "../components/ui/EventItem";
 import { even, IconButton } from "@react-native-material/core";
@@ -40,6 +40,8 @@ import HolidaySettingModal from "../components/ui/HolidaySettingModal";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import { SafeAreaView, useSafeAreaFrame } from "react-native-safe-area-context";
 import MonthViewItem from "../components/MonthViewItem";
+import { MultiSelect } from 'react-native-element-dropdown';
+import AntDesign from 'react-native-vector-icons/AntDesign';
 
 const MonthName = [
   "January",
@@ -109,6 +111,10 @@ export default class App extends Component {
       weekViewStartDate: new Date(),
       monthViewData: [],
       calendarView: CalendarViewType.WEEK, //On click, go above a level. Once date is clicked, go into week view.
+      friend_list: [],
+      searched: [],
+      //selected in Mutilselect box
+      selected: []
     };
   }
 
@@ -172,6 +178,14 @@ export default class App extends Component {
         }
       }
     });
+    const friends = doc(db, "friend_list", auth.currentUser?.email)
+    onSnapshot(friends, (doc) => {
+      this.setState({
+        friend_list: [...doc.data()["favorite"], ...doc.data()["friends"]],
+        searched: [...doc.data()["favorite"], ...doc.data()["friends"]]
+      })
+    })
+    console.log(this.state.friend_list)
   }
 
   //Format event list so it works with the calendar view.
@@ -308,7 +322,7 @@ export default class App extends Component {
         eventSTime,
         eventETime,
         this.location,
-        "test",
+        EventCategory.EVENT,
         this.points,
         eventColor,
         0
@@ -323,6 +337,15 @@ export default class App extends Component {
         color: eventColor,
       });
 
+      const message = 
+        EventCategory.EVENT + ";" + this.title + ";" + eventSTime.toString() + ";" +
+        eventETime.toString() + ";" + this.location + ";" + eventColor.toString() + ";" +
+        this.points.toString()
+      this.state.selected.map((email) => {
+        to_request(auth.currentUser?.email, email, "event", message);
+      })
+
+      this.setState({selected: []})
       this.setState({ eventStartDate: new Date() });
       this.setState({ eventStartTime: new Date() });
       this.setState({ eventEndDate: new Date() });
@@ -345,6 +368,31 @@ export default class App extends Component {
   scrollViewRef = (ref) => {
     this.timetableRef = ref;
   };
+
+  //render method for MutiselectBox on "Add event" panel
+  renderDataItem = (item) => {
+    return (
+        <View style={styles.item2}>
+            <Text style={styles.selectedTextStyle}>{item.user}</Text>
+            {
+              this.state.selected.indexOf(item.user) > -1 ?
+              <AntDesign style={styles.icon} color="black" name="check" size={20} />
+              :
+              <AntDesign style={styles.icon} color="black" name="plus" size={20} />
+            }
+        </View>
+    );
+  };
+
+  //search function for Mutiselect Box
+  filter_friends = (text) => {
+    const updatedData = this.state.friend_list.filter((item) => {
+      return item.user.includes(text)
+    });
+    if(updatedData.length > 0){
+      this.setState({searched: updatedData})
+    }
+  }
 
   onEventPress = (evt) => {
     Alert.alert("onEventPress", JSON.stringify(evt));
@@ -1008,6 +1056,37 @@ export default class App extends Component {
                   style={{ marginLeft: 10, marginTop: 5 }}
                 />
               </View>
+              <View style={{width: '70%', margin: 10}}>
+                <MultiSelect
+                    style={styles.dropdown}
+                    placeholderStyle={styles.placeholderStyle}
+                    selectedTextStyle={styles.selectedTextStyle}
+                    inputSearchStyle={styles.inputSearchStyle}
+                    iconStyle={styles.iconStyle}
+                    data={this.state.searched}
+                    valueField="user"
+                    placeholder="Choose friends"
+                    value={this.state.selected}
+                    search
+                    searchQuery={(text) => {
+                      this.filter_friends(text)
+                      }
+                    }
+                    searchPlaceholder="Search..."
+                    onChange={item => {
+                        this.setState({selected: item})
+                    }}
+                    renderItem={this.renderDataItem}
+                    renderSelectedItem={(item, unSelect) => (
+                        <TouchableOpacity onPress={() => unSelect && unSelect(item)}>
+                            <View style={styles.selectedStyle}>
+                                <Text style={styles.textSelectedStyle}>{item.user}</Text>
+                                <AntDesign color="black" name="delete" size={17} />
+                            </View>
+                        </TouchableOpacity>
+                    )}
+                  />
+              </View>
               <Button
                 title="Create new event"
                 onPress={() => {
@@ -1480,7 +1559,8 @@ const styles = StyleSheet.create({
   row: {
     flex: 1,
     flexDirection: "row",
-    alignItems: "left",
+    //여기
+    alignItems: "center",
     justifyContent: "space-between",
     marginTop: 10,
     marginBottom: 10,
@@ -1490,7 +1570,7 @@ const styles = StyleSheet.create({
   modal: {
     backgroundColor: "white",
     width: 350,
-    height: 475,
+    height: 585,
     justifyContent: "center",
     alignItems: "center",
   },
@@ -1516,5 +1596,64 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     fontSize: 18,
     borderColor: "#8b9cb5",
+  },
+  dropdown: {
+    height: 50,
+    backgroundColor: 'white',
+    borderRadius: 12,
+    padding: 12,
+    shadowColor: '#000',
+    shadowOffset: {
+        width: 0,
+        height: 1,
+    },
+    shadowOpacity: 0.2,
+    shadowRadius: 1.41,
+
+    elevation: 2,
+  },
+  placeholderStyle: {
+    fontSize: 16,
+  },
+  selectedTextStyle: {
+      fontSize: 14,
+  },
+  iconStyle: {
+      width: 20,
+      height: 20,
+  },
+  inputSearchStyle: {
+      height: 40,
+      fontSize: 16,
+  },
+  selectedStyle: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 14,
+    backgroundColor: 'white',
+    shadowColor: '#000',
+    marginTop: 8,
+    marginRight: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    shadowOffset: {
+        width: 0,
+        height: 1,
+    },
+    shadowOpacity: 0.2,
+    shadowRadius: 1.41,
+
+    elevation: 2,
+  },
+  textSelectedStyle: {
+      marginRight: 5,
+      fontSize: 16,
+  },
+  item2: {
+    padding: 17,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
 });

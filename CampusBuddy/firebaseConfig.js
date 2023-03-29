@@ -252,7 +252,7 @@ export async function friendList(user_token) {
   }
 }
 
-export async function to_request(own, to_user, type) {
+export async function to_request(own, to_user, type, message) {
   const docRef = doc(db, "requests", own);
   const docRef_to = doc(db, "requests", to_user);
 
@@ -265,6 +265,18 @@ export async function to_request(own, to_user, type) {
         from_request: arrayUnion(own + "/" + type),
       });
       console.log("Successfully sent friend request: ", docRef.id);
+    } catch (e) {
+      console.error("Error adding doc: ", e);
+    }
+  }else if(type == "event") {
+    try {
+      updateDoc(docRef, {
+        to_request: arrayUnion(to_user + "/" + message + "/" + type),
+      });
+      updateDoc(docRef_to, {
+        from_request: arrayUnion(own + "/" + message + "/" + type),
+      });
+      console.log("Successfully sent event request: ", docRef.id);
     } catch (e) {
       console.error("Error adding doc: ", e);
     }
