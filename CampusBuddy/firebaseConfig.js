@@ -155,11 +155,9 @@ export async function addSchedule(user_token, data) {
 }
 
 export async function userSchedule(user_token) {
-  console.log("snap", user_token)
   try {
     const querySnapShot = await getDoc(doc(db, "schedule", user_token));
     if (querySnapShot.exists()) {
-      console.log("f1ound schedule", querySnapShot.data())
       const result = querySnapShot.data();
       return result;
     } else {
