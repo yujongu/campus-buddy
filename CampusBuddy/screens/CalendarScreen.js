@@ -919,9 +919,9 @@ export default class App extends Component {
           .catch((error) => {
             console.error("Error removing class from schedule", error);
           });
+          addPoints( auth.currentUser?.uid,"school", 0);    
         }
-      }  
-     
+      } 
     }
     else {
       const userDocRef = doc(db, "events", auth.currentUser.uid);
@@ -935,10 +935,10 @@ export default class App extends Component {
           .catch((error) => {
             console.error("Error removing event from event list", error);
           });
+          addPoints( auth.currentUser?.uid,res["event"][i]["category"], 0);    
         }
-      }  
+      }
     }
-    addPoints("school", 15);
   }
   toggleCalendarView = () => {
     // switch (this.state.calendarView) {
