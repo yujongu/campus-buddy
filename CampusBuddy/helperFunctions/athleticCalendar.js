@@ -35,3 +35,8 @@ export const extractTitle = (title) => {
   }
   return t;
 };
+
+export const rssParser = (str) => {
+  const temp = JSON.parse(str);
+  console.log(temp);
+};

@@ -48,8 +48,8 @@ import EventViewInRow from "../components/ui/EventViewInRow";
 import {
   extractTitle,
   getSportsFromTitle,
+  rssParser,
 } from "../helperFunctions/athleticCalendar";
-import { parseString } from "react-native-xml2js";
 
 const leftHeaderWidth = 50;
 const topHeaderHeight = 60;
@@ -686,47 +686,86 @@ export default class App extends Component {
 
   getAthleticEvents = async () => {
     let sportEventList = [];
+
     await fetch(
       "https://purduesports.com/calendar.ashx/calendar.rss?sport_id=0&_=clfue24hp0001359mrcd7qksl"
     )
       .then((response) => response.text())
       .then((response) => {
-        parseString(response, function (err, result) {
-          let dataLength = result.rss.channel[0].item.length;
-          for (let i = 0; i < dataLength; i++) {
-            let currItem = result.rss.channel[0].item[i];
-            const title = extractTitle(currItem.title[0]);
-            const sportType = getSportsFromTitle(title);
-            const description = currItem.description[0];
-            const startTime = new Date(currItem["ev:startdate"][0]);
-            const endTime = new Date(currItem["ev:enddate"][0]);
-            const location = currItem["ev:location"][0];
-            const teamLogo = currItem["s:teamlogo"][0];
-            const opponent = currItem["s:opponent"][0];
-            const opponentLogo = currItem["s:opponentlogo"][0];
-
-            const sportsEvent = {
-              category: EventCategory.SPORTS,
-              title,
-              sportType,
-              description,
-              startTime,
-              endTime,
-              location,
-              teamLogo,
-              opponent,
-              opponentLogo,
-              color: EventCategoryColors.SPORTS,
-            };
-            sportEventList.push(sportsEvent);
-          }
-        });
-        this.setState({ athleticEventList: sportEventList });
-        // return sportEventList;
-      })
-      .catch((err) => {
-        console.log("fetch", err);
+        rssParser(response);
       });
+    // await fetch(
+    //   "https://purduesports.com/calendar.ashx/calendar.rss?sport_id=0&_=clfue24hp0001359mrcd7qksl"
+    // )
+    //   .then((response) => response.text())
+    //   .then(
+    //     (response) => rssParser.parse(response)
+    // parseString(response, function (err, result) {
+    // let dataLength = result.rss.channel[0].item.length;
+    // for (let i = 0; i < dataLength; i++) {
+    //   let currItem = result.rss.channel[0].item[i];
+    //   const title = extractTitle(currItem.title[0]);
+    //   const sportType = getSportsFromTitle(title);
+    //   const description = currItem.description[0];
+    //   const startTime = new Date(currItem["ev:startdate"][0]);
+    //   const endTime = new Date(currItem["ev:enddate"][0]);
+    //   const location = currItem["ev:location"][0];
+    //   const teamLogo = currItem["s:teamlogo"][0];
+    //   const opponent = currItem["s:opponent"][0];
+    //   const opponentLogo = currItem["s:opponentlogo"][0];
+    //   const sportsEvent = {
+    //     category: EventCategory.SPORTS,
+    //     title,
+    //     sportType,
+    //     description,
+    //     startTime,
+    //     endTime,
+    //     location,
+    //     teamLogo,
+    //     opponent,
+    //     opponentLogo,
+    //     color: EventCategoryColors.SPORTS,
+    //   };
+    //   sportEventList.push(sportsEvent);
+    // }
+    // });
+    // this.setState({ athleticEventList: sportEventList });
+    // return sportEventList;
+    // )
+    // .then((rss) => {
+    //   // console.log(rss);
+    //   const dataLength = rss.items.length;
+
+    //   for (let i = 0; i < 1; i++) {
+    //     console.log(rss.items[i].itunes);
+    // let currItem = result.rss.channel[0].item[i];
+    // const title = extractTitle(currItem.title[0]);
+    // const sportType = getSportsFromTitle(title);
+    // const description = currItem.description[0];
+    // const startTime = new Date(currItem["ev:startdate"][0]);
+    // const endTime = new Date(currItem["ev:enddate"][0]);
+    // const location = currItem["ev:location"][0];
+    // const teamLogo = currItem["s:teamlogo"][0];
+    // const opponent = currItem["s:opponent"][0];
+    // const opponentLogo = currItem["s:opponentlogo"][0];
+    // const sportsEvent = {
+    //   category: EventCategory.SPORTS,
+    //   title,
+    //   sportType,
+    //   description,
+    //   startTime,
+    //   endTime,
+    //   location,
+    //   teamLogo,
+    //   opponent,
+    //   opponentLogo,
+    //   color: EventCategoryColors.SPORTS,
+    // };
+    //   }
+    // })
+    // .catch((err) => {
+    //   console.log("fetch", err);
+    // });
   };
 
   //navigate through calendar ui
