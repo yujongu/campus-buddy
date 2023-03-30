@@ -25,7 +25,7 @@ import * as DocumentPicker from "expo-document-picker";
 import Icon from "react-native-vector-icons/FontAwesome";
 import Octicons from "react-native-vector-icons/Octicons";
 import { genTimeBlock } from "react-native-timetable";
-import { addSchedule, addEvent, to_request } from "../firebaseConfig";
+import { addSchedule, addEvent, to_request, addPoints } from "../firebaseConfig";
 import { auth, db, userSchedule, getUserEvents } from "../firebaseConfig";
 import EventItem from "../components/ui/EventItem";
 import { even, IconButton } from "@react-native-material/core";
@@ -157,11 +157,12 @@ export default class App extends Component {
       for (let i = 0; i < events["event"].length; i++) {
         const temp = {
           category: EventCategory.EVENT,
-          title: events["event"][i]["title"],
-          startTime: new Date(events["event"][i]["startTime"].seconds * 1000), //multiply 1000 since Javascript uses milliseconds. Timestamp to date.
-          endTime: new Date(events["event"][i]["endTime"].seconds * 1000),
-          location: events["event"][i]["location"],
-          color: events["event"][i]["color"],
+          title: events["event"][i]["details"]["title"],
+          startTime: new Date(events["event"][i]["details"]["startTime"].seconds * 1000), //multiply 1000 since Javascript uses milliseconds. Timestamp to date.
+          endTime: new Date(events["event"][i]["details"]["endTime"].seconds * 1000),
+          location: events["event"][i]["details"]["location"],
+          color: events["event"][i]["details"]["color"],
+          id: events["event"][i]["id"],
         };
         eventResult.push(temp);
       }
@@ -924,8 +925,20 @@ export default class App extends Component {
     }
     else {
       const userDocRef = doc(db, "events", auth.currentUser.uid);
+      const res = await getUserEvents(auth.currentUser?.uid);
+      for (let i = 0; i < res["event"].length; i++) {
+        if (res["event"][i]["id"] == id) {
+          updateDoc(userDocRef, { "event": arrayRemove(res["event"][i]) })
+          .then(() => {
+            console.log("Successfully removed event from event list.");
+          })
+          .catch((error) => {
+            console.error("Error removing event from event list", error);
+          });
+        }
+      }  
     }
-    
+    addPoints("school", 15);
   }
   toggleCalendarView = () => {
     // switch (this.state.calendarView) {
@@ -1464,6 +1477,8 @@ export default class App extends Component {
                                   title={event.title}
                                   location={event.location}
                                   color={event.color}
+                                  id={event.id}
+                                  handleEventCompletion={this.handleEventCompletion}
                                 />
                               ) : (
                                 <View />

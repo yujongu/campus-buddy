@@ -18,6 +18,7 @@ import {
   addDoc,
 } from "firebase/firestore";
 import uuid from 'react-native-uuid';
+import { FieldValue } from "firebase/firestore";
 
 // TODO: Add SDKs for Firebase products that you want to use
 // https://firebase.google.com/docs/web/setup#available-libraries
@@ -121,33 +122,6 @@ export async function createUser(username, first, last, email, password) {
     });
 }
 
-/*export async function addSchedule(user_token, data) {
-  const docRef = doc(db, "schedule", user_token);
-  var res = [];
-  try {
-    data.map((element) => {
-      const str = {
-        data:
-          element.endTime +
-          "," +
-          element.location +
-          "," +
-          element.startTime +
-          "," +
-          element.title
-      };
-      res.push(str);
-    });
-    
-    setDoc(docRef, {
-      things: res,
-    });
-    console.log("Document written with ID: ", docRef.id);
-  } catch (e) {
-    console.error("Error adding doc: ", e);
-  }
-}*/
-
 export async function addSchedule(user_token, data) {
   const docRef = doc(db, "schedule", user_token);
   const querySnapShot = await getDoc(docRef);
@@ -157,7 +131,6 @@ export async function addSchedule(user_token, data) {
     });
   }
 
-  var res = [];
   try {
     data.map((element) => {
       const x = {
@@ -166,12 +139,10 @@ export async function addSchedule(user_token, data) {
         startTime: element.startTime,
         endTime: element.endTime
       };
-      //res.push(x);
       const data = {
         id: uuid.v4(),
         class: x
       }
-      console.log(data)
       updateDoc(docRef, { 
         classes: arrayUnion(data) 
       });
@@ -221,7 +192,7 @@ export async function addEvent(
   //   color: color,
   //   repetition: repetition
   // }
-  const data = {
+  const x = {
     title: title,
     startTime: startTime,
     endTime: endTime,
@@ -238,7 +209,10 @@ export async function addEvent(
         event: [],
       });
     }
-
+    const data = {
+      id: uuid.v4(),
+      details: x
+    }
     updateDoc(docRef, { event: arrayUnion(data) });
     console.log("Event doc written with ID: ", docRef.id);
   } catch (e) {
@@ -317,5 +291,20 @@ export async function to_request(own, to_user, type, message) {
     } catch (e) {
       console.error("Error adding doc: ", e);
     }
+  }
+}
+
+export async function addPoints(user_token, category, points) {
+  const docRef = doc(db, "user", user_token);
+  const querySnapShot = await getDoc(docRef);
+  const oldPoints = querySnapShot.data()
+  console.log(oldPoints)
+  try {
+    updateDoc(docRef, {
+      ['points.' + category]: oldPoints+points
+    });
+    console.log("Successfully updated points: ", docRef.id);
+  } catch (e) {
+    console.error("Error updating points: ", e);
   }
 }
