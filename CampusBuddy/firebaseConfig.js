@@ -155,9 +155,11 @@ export async function addSchedule(user_token, data) {
 }
 
 export async function userSchedule(user_token) {
+  console.log("snap", user_token)
   try {
     const querySnapShot = await getDoc(doc(db, "schedule", user_token));
     if (querySnapShot.exists()) {
+      console.log("f1ound schedule", querySnapShot.data())
       const result = querySnapShot.data();
       return result;
     } else {
@@ -263,6 +265,27 @@ export async function friendList(user_token) {
   }
 }
 
+export async function getUserId(email) {
+  var res = []
+  try {
+    const querySnapShot = await getDocs(collection(db, "users"));
+    querySnapShot.forEach(async (element) => {
+      if (element.data().email == email) {
+        console.log("id found", element.id)
+        res.push(element.id)
+       // const schedule = await userSchedule(element.id)
+       // console.log("schedule", schedule);
+
+      }
+    });
+    return res;
+
+  }
+  catch(e) {
+    console.error("Error getting user's id: ", e);
+  }
+}
+
 export async function to_request(own, to_user, type, message) {
   const docRef = doc(db, "requests", own);
   const docRef_to = doc(db, "requests", to_user);
@@ -295,10 +318,10 @@ export async function to_request(own, to_user, type, message) {
 }
 
 export async function addPoints(user_token, category, points) {
-  const docRef = doc(db, "user", user_token);
-  const querySnapShot = await getDoc(docRef);
-  const oldPoints = querySnapShot.data()
-  console.log(oldPoints)
+  const docRef = doc(db, "users", user_token);
+  const querySnapShot = await getDoc(doc(db, "users", user_token));
+  const oldPoints = querySnapShot.data().points.school;
+  console.log("snapshot", oldPoints)
   try {
     updateDoc(docRef, {
       ['points.' + category]: oldPoints+points
