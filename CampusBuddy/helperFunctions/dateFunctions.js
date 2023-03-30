@@ -55,3 +55,24 @@ export const JSClock = (time) => {
   temp += hour >= 12 ? " P.M." : " A.M.";
   return temp;
 };
+
+export const jsClockToDate = (str) => {
+  try {
+    let temp = str.split(":");
+    if (temp.length < 2) {
+      return null;
+    }
+    let hour = parseInt(temp[0]);
+    let minute = temp[1].substring(0, 2);
+    if (temp[1].substring(2).includes("PM")) {
+      hour += 12;
+    }
+    const res = new Date();
+    res.setHours(hour);
+    res.setMinutes(minute);
+    return res;
+  } catch (e) {
+    console.log(e);
+    console.log(str);
+  }
+};

@@ -43,13 +43,10 @@ import {
   getWeekDayName,
   isOnSameDate,
   JSClock,
+  jsClockToDate,
 } from "../helperFunctions/dateFunctions";
 import EventViewInRow from "../components/ui/EventViewInRow";
-import {
-  extractTitle,
-  getSportsFromTitle,
-  rssParser,
-} from "../helperFunctions/athleticCalendar";
+import AthleticEventData from "../helperFunctions/csvjson.json";
 
 const leftHeaderWidth = 50;
 const topHeaderHeight = 60;
@@ -113,7 +110,7 @@ export default class App extends Component {
 
   async componentDidMount() {
     //Get the athletic events
-    await this.getAthleticEvents();
+    this.getAthleticEvents();
 
     //Set the calendar UI start date
     let tempDate = new Date();
@@ -684,88 +681,49 @@ export default class App extends Component {
       });
   };
 
-  getAthleticEvents = async () => {
+  getAthleticEvents = () => {
     let sportEventList = [];
+    const dataLength = AthleticEventData.length;
+    for (let i = 0; i < dataLength; i++) {
+      let currItem = AthleticEventData[i];
+      const title = currItem.Event;
+      const sportType = currItem.Category;
+      const description = currItem.Description;
+      const location = currItem.Location;
 
-    await fetch(
-      "https://purduesports.com/calendar.ashx/calendar.rss?sport_id=0&_=clfue24hp0001359mrcd7qksl"
-    )
-      .then((response) => response.text())
-      .then((response) => {
-        rssParser(response);
-      });
-    // await fetch(
-    //   "https://purduesports.com/calendar.ashx/calendar.rss?sport_id=0&_=clfue24hp0001359mrcd7qksl"
-    // )
-    //   .then((response) => response.text())
-    //   .then(
-    //     (response) => rssParser.parse(response)
-    // parseString(response, function (err, result) {
-    // let dataLength = result.rss.channel[0].item.length;
-    // for (let i = 0; i < dataLength; i++) {
-    //   let currItem = result.rss.channel[0].item[i];
-    //   const title = extractTitle(currItem.title[0]);
-    //   const sportType = getSportsFromTitle(title);
-    //   const description = currItem.description[0];
-    //   const startTime = new Date(currItem["ev:startdate"][0]);
-    //   const endTime = new Date(currItem["ev:enddate"][0]);
-    //   const location = currItem["ev:location"][0];
-    //   const teamLogo = currItem["s:teamlogo"][0];
-    //   const opponent = currItem["s:opponent"][0];
-    //   const opponentLogo = currItem["s:opponentlogo"][0];
-    //   const sportsEvent = {
-    //     category: EventCategory.SPORTS,
-    //     title,
-    //     sportType,
-    //     description,
-    //     startTime,
-    //     endTime,
-    //     location,
-    //     teamLogo,
-    //     opponent,
-    //     opponentLogo,
-    //     color: EventCategoryColors.SPORTS,
-    //   };
-    //   sportEventList.push(sportsEvent);
-    // }
-    // });
-    // this.setState({ athleticEventList: sportEventList });
-    // return sportEventList;
-    // )
-    // .then((rss) => {
-    //   // console.log(rss);
-    //   const dataLength = rss.items.length;
+      const startTime = new Date(currItem["Start Date"]);
+      let st = jsClockToDate(currItem["Start Time"]);
+      if (st != null) {
+        startTime.setHours(jsClockToDate(currItem["Start Time"]).getHours());
+        startTime.setMinutes(
+          jsClockToDate(currItem["Start Time"]).getMinutes()
+        );
+      } else {
+        continue;
+      }
 
-    //   for (let i = 0; i < 1; i++) {
-    //     console.log(rss.items[i].itunes);
-    // let currItem = result.rss.channel[0].item[i];
-    // const title = extractTitle(currItem.title[0]);
-    // const sportType = getSportsFromTitle(title);
-    // const description = currItem.description[0];
-    // const startTime = new Date(currItem["ev:startdate"][0]);
-    // const endTime = new Date(currItem["ev:enddate"][0]);
-    // const location = currItem["ev:location"][0];
-    // const teamLogo = currItem["s:teamlogo"][0];
-    // const opponent = currItem["s:opponent"][0];
-    // const opponentLogo = currItem["s:opponentlogo"][0];
-    // const sportsEvent = {
-    //   category: EventCategory.SPORTS,
-    //   title,
-    //   sportType,
-    //   description,
-    //   startTime,
-    //   endTime,
-    //   location,
-    //   teamLogo,
-    //   opponent,
-    //   opponentLogo,
-    //   color: EventCategoryColors.SPORTS,
-    // };
-    //   }
-    // })
-    // .catch((err) => {
-    //   console.log("fetch", err);
-    // });
+      const endTime = new Date(currItem["End Date"]);
+      let et = jsClockToDate(currItem["End Time"]);
+      if (et != null) {
+        endTime.setHours(jsClockToDate(currItem["End Time"]).getHours());
+        endTime.setMinutes(jsClockToDate(currItem["End Time"]).getMinutes());
+      } else {
+        continue;
+      }
+
+      const sportsEvent = {
+        category: EventCategory.SPORTS,
+        title,
+        sportType,
+        description,
+        startTime,
+        endTime,
+        location,
+        color: Colors.grey,
+      };
+      sportEventList.push(sportsEvent);
+    }
+    this.setState({ athleticEventList: sportEventList });
   };
 
   //navigate through calendar ui
@@ -1591,7 +1549,7 @@ export default class App extends Component {
                         </View>
                       </View>
                       {/* If event is on the date selected, show the event. */}
-                      {this.state.calendarEventList.map((event) => {
+                      {this.state.totalCalendarList.map((event) => {
                         if (
                           isOnSameDate(event.startTime, this.state.currentDate)
                         ) {
@@ -1603,6 +1561,7 @@ export default class App extends Component {
                               location={event.location}
                               startTime={JSClock(event.startTime)}
                               endTime={JSClock(event.endTime)}
+                              color={event.color}
                             />
                           );
                         }
@@ -1714,6 +1673,10 @@ const makeVisible = (weekStartDate, event) => {
   }
   return false;
 };
+
+const visibilityFilter = (event) => {
+
+}
 
 // If name is Time, populate the hours 0 ~ 24.
 // TODO: Need to set which time the time's going to start.

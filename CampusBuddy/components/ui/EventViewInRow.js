@@ -3,9 +3,17 @@ import React from "react";
 import { StyleSheet, View, Text } from "react-native";
 import { Colors } from "../../constants/colors";
 
-const EventViewInRow = ({ title, location, startTime, endTime }) => {
+const EventViewInRow = ({ title, location, startTime, endTime, color }) => {
   return (
-    <View style={styles.container}>
+    <View
+      style={{
+        flexDirection: "column",
+        marginVertical: 8,
+        marginHorizontal: 6,
+        borderRadius: 10,
+        backgroundColor: color,
+      }}
+    >
       <View style={styles.topHeader}>
         <View style={styles.mainInfoWrapper}>
           <Text style={styles.titleText} numberOfLines={1}>
@@ -27,13 +35,6 @@ const EventViewInRow = ({ title, location, startTime, endTime }) => {
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flexDirection: "column",
-    backgroundColor: Colors.primary,
-    marginVertical: 8,
-    marginHorizontal: 6,
-    borderRadius: 10,
-  },
   topHeader: {
     flexDirection: "row",
     alignItems: "center",
