@@ -33,6 +33,13 @@ export const isOnSameDate = (dateA, dateB) => {
   return false;
 };
 
+export const JSGetDate = (time) => {
+  const monthName = getMonthName(time.getMonth());
+  const d = time.getDate();
+  const y = time.getFullYear();
+  return `${monthName} ${d}, ${y}`;
+};
+
 export const JSClock = (time) => {
   const hour = time.getHours();
   const minute = time.getMinutes();
