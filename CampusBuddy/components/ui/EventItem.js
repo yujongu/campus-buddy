@@ -82,7 +82,7 @@ export default class EventItem extends React.Component {
             marginLeft: dailyWidth * 0.05,
             marginRight: dailyWidth * 0.05,
             borderRadius: 10,
-            backgroundColor: color == null ? "#D1FF96" : color,
+            backgroundColor: color == null ? "#F8EFBA" : color,
             overflow: "hidden",
           }}
         >
