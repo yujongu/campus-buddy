@@ -80,10 +80,13 @@ export const jsClockToDate = (str) => {
 export const jsDateToDate = (str) => {
   let temp = str.split("/");
   if (temp.length == 3) {
-    const res = new Date();
-    res.setFullYear(temp[2]);
-    res.setMonth(temp[0] - 1);
-    res.setDate(temp[1]);
+    // const res = new Date();
+    // res.setDate(1);
+    // res.setFullYear(temp[2]);
+    // res.setMonth(parseInt(temp[0]) - 1);
+    // res.setDate(temp[1]);
+    const res = new Date(temp[2], parseInt(temp[0]) - 1, temp[1]);
+
     return res;
   }
   return null;
