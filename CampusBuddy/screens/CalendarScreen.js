@@ -103,6 +103,9 @@ export default class App extends Component {
       eventStartTime: new Date(),
       eventEndDate: new Date(),
       eventEndTime: new Date(),
+      selected: [],
+      searched: [],
+      friend_list: [],
       points: 0,
       // This is the starting date for the current calendar UI.
       weekViewStartDate: new Date(),
@@ -149,9 +152,7 @@ export default class App extends Component {
         result.push(temp);
       }
     }
-    
     this.setState({ list: result });
-
     // Getting events from database
     const events = await getUserEvents(auth.currentUser?.uid);
     if (events != null) {
@@ -168,6 +169,7 @@ export default class App extends Component {
         eventResult.push(temp);
       }
     }
+    console.log(eventResult)
     this.checkList(eventResult); //Checks for events that go over multiple days and corrects it
 
     const userDocRef = doc(db, "users", auth.currentUser.uid);
@@ -191,7 +193,6 @@ export default class App extends Component {
         searched: [...doc.data()["favorite"], ...doc.data()["friends"]]
       })
     })
-    console.log(this.state.friend_list)
   }
 
   //Format event list so it works with the calendar view.
