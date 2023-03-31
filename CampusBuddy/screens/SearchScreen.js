@@ -5,16 +5,18 @@ import { ListItem, SearchBar } from "react-native-elements";
 import { userList, to_request } from "../firebaseConfig";
 import { auth } from "../firebaseConfig";
 import Icon from 'react-native-vector-icons/Feather';
+import ThemeContext from "../components/ui/ThemeContext";
+import theme from "../components/ui/theme";
 
 const handleRequest = (email, user_ID) => {
   to_request(auth.currentUser?.email, email, "friend", "");
   alert("Sent a request to " + user_ID);
 }
 
-const Item = ({ title }) => {
+const Item = ({ title, color }) => {
   return (
     <View style={styles.item}>
-      <Text>
+      <Text style={{ color: color }}>
         {title[1] + " " + title[3] + " (" + title[2] + ")"}
         {'\n'}
         {title[0]}
@@ -23,16 +25,16 @@ const Item = ({ title }) => {
           activeOpacity={0.7}
           onPress={() => handleRequest(title[0], title[2])}
           style={styles.touchableOpacityStyle}>
-          <Icon name="user-plus" size={25} />
+          <Icon name="user-plus" size={25} color={color} />
       </TouchableOpacity>
     </View>
   );
 };
 
-const renderItem = ({ item }) => <Item title={[item.email, item.first, item.id, item.last]} />;
-
+const renderItem = ({ item, color }) => <Item title={[item.email, item.first, item.id, item.last]} color={color} />;
 
 export default class SearchScreen extends Component {
+  static contextType = ThemeContext;
   constructor(props) {
     super(props);
     this.state = {
@@ -59,23 +61,27 @@ export default class SearchScreen extends Component {
   };
 
   render() {
+    const currentTheme = theme[this.context.theme];
+    const { background, color } = currentTheme;
     return (
-      <View style={styles.container}>
+      <View style={[styles.container, { backgroundColor: background }]}>
         <SearchBar
           placeholder="Search Here..."
-          lightTheme
           round
           value={this.state.searchValue}
           onChangeText={(text) => this.searchFunction(text)}
           autoCorrect={false}
+          containerStyle={{ backgroundColor: background }}
+          inputContainerStyle={{ backgroundColor: background }}
+          inputStyle={{ color: color }}
         />
         {
           this.state.searchValue === "" ?
-          <Text style={{alignSelf: "center", paddingTop: "10%"}}>Search username</Text>
+          <Text style={{alignSelf: "center", paddingTop: "10%", color: color }}>Search username</Text>
           :
           <FlatList
             data={this.state.data}
-            renderItem={renderItem}
+            renderItem={(item) => renderItem({...item, color})}
             keyExtractor={(item) => item.email}
           />
         }
@@ -98,5 +104,3 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between'
   },
 });
-
-
