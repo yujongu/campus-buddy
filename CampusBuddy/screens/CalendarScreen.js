@@ -1148,7 +1148,7 @@ export default class App extends Component {
               <Button
                 title="Compare schedule"
                 onPress={() => {
-                  navigate("Compare Screen");
+                  navigate("CompareScreen");
                   this.setState({ visible: !this.state.visible });
                 }}
               ></Button>
