@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { View, Text, Button, TextInput, TouchableOpacity } from 'react-native';
-//import firebase from 'firebase/app';
-//import 'firebase/database';
+import { ListItem, SearchBar } from "react-native-elements";
+import { userList, to_request } from "../firebaseConfig";
+import { auth } from "../firebaseConfig";
 
 export default function CompareScreen({navigation}) {
   const [schedule1, setSchedule1] = useState('');
