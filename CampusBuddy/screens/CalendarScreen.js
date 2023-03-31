@@ -116,7 +116,6 @@ export default class App extends Component {
   async componentDidMount() {
     //Get the athletic events
     this.getAthleticEvents();
-
     //Set the calendar UI start date
     let tempDate = new Date();
     tempDate.setDate(tempDate.getDate() - tempDate.getDay());
@@ -176,14 +175,14 @@ export default class App extends Component {
         }
       }
     });
-    // const friends = doc(db, "friend_list", auth.currentUser?.email);
-    // onSnapshot(friends, (doc) => {
-    //   this.setState({
-    //     friend_list: [...doc.data()["favorite"], ...doc.data()["friends"]],
-    //     searched: [...doc.data()["favorite"], ...doc.data()["friends"]],
-    //   });
-    // });
-    // console.log(this.state.friend_list);
+    const friends = doc(db, "friend_list", auth.currentUser?.email);
+    onSnapshot(friends, (doc) => {
+      this.setState({
+        friend_list: [...doc.data()["favorite"], ...doc.data()["friends"]],
+        searched: [...doc.data()["favorite"], ...doc.data()["friends"]],
+      });
+    });
+    console.log(this.state.friend_list);
   }
 
   //Format event list so it works with the calendar view.
@@ -1559,7 +1558,7 @@ export default class App extends Component {
                         if (
                           isOnSameDate(event.startTime, this.state.currentDate)
                         ) {
-                          console.log(event);
+                          // console.log(event);
 
                           return (
                             <EventViewInRow
