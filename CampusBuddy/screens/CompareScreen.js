@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { View, Text, Button, TextInput, TouchableOpacity } from 'react-native';
-//import firebase from 'firebase/app';
-//import 'firebase/database';
+import { ListItem, SearchBar } from "react-native-elements";
+import { userList, to_request } from "../firebaseConfig";
+import { auth } from "../firebaseConfig";
 
 export default function CompareScreen({navigation}) {
   const [schedule1, setSchedule1] = useState('');
@@ -37,6 +38,7 @@ export default function CompareScreen({navigation}) {
         onPress = {() => navigation.navigate("Calendar")}
         >
         </Button>
+      <Text>Still Testing</Text>
       <Text>Enter schedule 1:</Text>
       <TextInput
         style={{ borderWidth: 1, padding: 5, margin: 10 }}
