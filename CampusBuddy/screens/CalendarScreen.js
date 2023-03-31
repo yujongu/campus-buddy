@@ -987,10 +987,10 @@ export default class App extends Component {
                   )
                 }
               />
-              <Button
+              {/* <Button
                 title="Export schedule"
                 onPress={() => this.exportDocumentFile()}>
-                </Button>
+                </Button> */}
               <Button
                 title="Import schedule"
                 onPress={() => this.openDocumentFile()}
@@ -999,10 +999,6 @@ export default class App extends Component {
               <Button
                 title="Holiday settings"
                 onPress={this.setHolidaySettings}
-              />
-              <Button
-                title="Calendar Theme"
-                onPress={this.setCalendarColor}
               />
               <Button
                 title="Compare schedule"

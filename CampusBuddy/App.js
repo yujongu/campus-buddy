@@ -95,6 +95,11 @@ export default function App() {
               component={EventDetailsScreen}
               options={{ headerShown: false }}
             />
+            <Stack.Screen
+              name = "CompareScreen"
+              component = {CompareScreen}
+              options = {{headerShown: false}}
+            />
             
           </Stack.Navigator>
         </NavigationContainer>

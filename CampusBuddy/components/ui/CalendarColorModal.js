@@ -2,6 +2,7 @@ import React from "react";
 import { View, Text, Modal, TouchableOpacity, Button } from "react-native";
 import Icon from "react-native-vector-icons/FontAwesome";
 import { SelectList } from "react-native-dropdown-select-list";
+
 export default class CalendarColorModal extends React.Component {
   constructor(props) {
     super(props);
@@ -23,14 +24,14 @@ export default class CalendarColorModal extends React.Component {
 
   render() {
     const {
-      calendarThemeVisible,
+      calendarColorVisible,
     } = this.props;
 
     return (
       <Modal
         animationType="slide"
         transparent={true}
-        visible={calendarThemeVisible}
+        visible={calendarColorVisible}
       >
         <View
           style={{
@@ -63,16 +64,16 @@ export default class CalendarColorModal extends React.Component {
 
               <View style={{ marginRight: 10, marginLeft: 10 }}>
                 <Text>Country</Text>
-                <SelectList
+                {/* <SelectList
                   setSelected={(val) => this.handleListChange(val)}
                   data={holidayCountryList}
-                />
-                <View style={{ marginTop: 15, flexDirection: "row" }}>
+                /> */}
+                {/* <View style={{ marginTop: 15, flexDirection: "row" }}>
                   <Text style={{ fontWeight: "bold", marginRight: 10 }}>
                     Current Selected Option:
                   </Text>
                   <Text>{selectedCountryCode}</Text>
-                </View>
+                </View> */}
               </View>
             </View>
 
