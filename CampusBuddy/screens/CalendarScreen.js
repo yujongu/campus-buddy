@@ -1767,48 +1767,6 @@ export default class App extends Component {
   }
 }
 
-class ScrollViewVerticallySynced extends React.Component {
-  componentDidMount() {
-    this.listener = this.props.scrollPosition.addListener((position) => {
-      this.instance.scrollTo({
-        y: position.value,
-        animated: false,
-      });
-    });
-  }
-
-  render() {
-    const {
-      name,
-      style,
-      onScroll,
-      eventList,
-      weekStartDate,
-      calendarFilter,
-      navigation,
-    } = this.props;
-    return (
-      <ScrollView
-        key={name}
-        ref={(ref) => (this.instance = ref)}
-        style={style}
-        scrollEventThrottle={1}
-        onScroll={onScroll}
-        bounces={false}
-        showsVerticalScrollIndicator={false}
-      >
-        {populateRows(
-          name,
-          eventList,
-          weekStartDate,
-          calendarFilter,
-          navigation
-        )}
-      </ScrollView>
-    );
-  }
-}
-
 const makeVisible = (weekStartDate, event, filterValues) => {
   // if event is school course, make visible
   if (!visibilityFilter(event, filterValues)) {
@@ -1829,8 +1787,6 @@ const makeVisible = (weekStartDate, event, filterValues) => {
   e.setMinutes(59);
   e.setSeconds(59);
 
-  console.log(event.startTime <= e);
-  console.log(JSGetDate(event.startTime));
   //if event is within the week time frame, make visible
   if (event.startTime >= s && event.startTime <= e) {
     return true;
@@ -1859,70 +1815,6 @@ const visibilityFilter = (event, filterValues) => {
       return false;
   }
 };
-
-// If name is Time, populate the hours 0 ~ 24.
-// TODO: Need to set which time the time's going to start.
-// If name is Days, populate the schedule.
-const populateRows = (
-  name,
-  eventList,
-  weekStartDate,
-  calendarFilter,
-  navigation
-) =>
-  name == "Time"
-    ? Array.from(Array(24).keys()).map((index) => (
-        <View
-          key={`TIME${name}-${index}`}
-          style={{
-            height: dailyHeight,
-            flex: 1,
-            alignItems: "center",
-            // justifyContent: "center",
-          }}
-        >
-          <Text
-            style={{
-              color:
-                index <= 12 && index > 0
-                  ? Colors.morningTimeColor
-                  : Colors.eveningTimeColor,
-            }}
-          >
-            {index}
-          </Text>
-        </View>
-      ))
-    : Array.from(Array(24).keys()).map((index) => (
-        <View
-          key={`NT${name}-${index}`}
-          style={{
-            height: dailyHeight,
-            flex: 1,
-            flexDirection: "row",
-          }}
-        >
-          {eventList.map((event) => {
-            return makeVisible(weekStartDate, event, calendarFilter) ? (
-              <EventItem
-                key={`EITEM-${1}-${event.title}-${event.startTime}`}
-                navigation={navigation}
-                category={event.category}
-                day={event.startTime.getDay()}
-                startTime={new Date(event.startTime)}
-                endTime={new Date(event.endTime)}
-                title={event.title}
-                location={event.location}
-                color={event.color}
-                id={event.id}
-                handleEventCompletion={this.handleEventCompletion}
-              />
-            ) : (
-              <View />
-            );
-          })}
-        </View>
-      ));
 
 const styles = StyleSheet.create({
   headerStyle: {
