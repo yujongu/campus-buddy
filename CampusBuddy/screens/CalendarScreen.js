@@ -749,6 +749,7 @@ export default class App extends Component {
       const description = currItem.Description;
       const location = currItem.Location;
       const startTime = jsDateToDate(currItem["Start Date"]);
+
       let st = jsClockToDate(currItem["Start Time"]);
       if (st != null) {
         startTime.setHours(jsClockToDate(currItem["Start Time"]).getHours());
@@ -780,6 +781,9 @@ export default class App extends Component {
       };
       sportEventList.push(sportsEvent);
     }
+    // for (let i = 0; i < sportEventList.length; i++) {
+    //   console.log(sportEventList[i].startTime.getMonth());
+    // }
     this.setState({ athleticEventList: sportEventList });
   };
 
