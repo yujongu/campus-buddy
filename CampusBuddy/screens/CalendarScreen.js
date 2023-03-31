@@ -177,10 +177,8 @@ export default class App extends Component {
     this.setState({ list: result });
     // Getting events from database
     const events = await getUserEvents(auth.currentUser?.uid);
-    // console.log(events);
-    if (events != null) {
+    if (events != null && events["event"] != undefined) {
       for (let i = 0; i < events["event"].length; i++) {
-        // console.log(events["event"][i]);
         const temp = {
           category: EventCategory.EVENT,
           title: events["event"][i]["details"]["title"],
@@ -197,7 +195,6 @@ export default class App extends Component {
         eventResult.push(temp);
       }
     }
-    // console.log(eventResult);
     this.checkList(eventResult); //Checks for events that go over multiple days and corrects it
     this.combineAllListsForCalendar(); // Combine list, calendarEventList, and athleticEventsList into one list "totalList"
 
@@ -229,8 +226,6 @@ export default class App extends Component {
     result.forEach((event, index) => {
       //For events that go over on day
       if (event.startTime.getDate() != event.endTime.getDate()) {
-        // console.log(event);
-
         let longEvent = event;
         result.splice(index, 1);
 
@@ -300,7 +295,6 @@ export default class App extends Component {
 
   combineAllListsForCalendar = () => {
     let tempTotal = [];
-    // console.log(this.state.athleticEventList);
     this.state.list.map((item) => {
       tempTotal.push(item);
     });
@@ -1496,7 +1490,11 @@ export default class App extends Component {
                       }}
                     >
                       <View>
-                        <View style={{ height: topHeaderHeight }} />
+                        <View
+                          style={{
+                            height: topHeaderHeight,
+                          }}
+                        />
                         <ScrollView scrollEnabled={false} ref={this.svRef}>
                           {Array.from(Array(24).keys()).map((index) => (
                             <View
@@ -1767,7 +1765,15 @@ class ScrollViewVerticallySynced extends React.Component {
   }
 
   render() {
-    const { name, style, onScroll, eventList, weekStartDate } = this.props;
+    const {
+      name,
+      style,
+      onScroll,
+      eventList,
+      weekStartDate,
+      calendarFilter,
+      navigation,
+    } = this.props;
     return (
       <ScrollView
         key={name}
@@ -1778,7 +1784,13 @@ class ScrollViewVerticallySynced extends React.Component {
         bounces={false}
         showsVerticalScrollIndicator={false}
       >
-        {populateRows(name, eventList, weekStartDate)}
+        {populateRows(
+          name,
+          eventList,
+          weekStartDate,
+          calendarFilter,
+          navigation
+        )}
       </ScrollView>
     );
   }
@@ -1830,7 +1842,13 @@ const visibilityFilter = (event, filterValues) => {
 // If name is Time, populate the hours 0 ~ 24.
 // TODO: Need to set which time the time's going to start.
 // If name is Days, populate the schedule.
-const populateRows = (name, eventList, weekStartDate) =>
+const populateRows = (
+  name,
+  eventList,
+  weekStartDate,
+  calendarFilter,
+  navigation
+) =>
   name == "Time"
     ? Array.from(Array(24).keys()).map((index) => (
         <View
@@ -1863,11 +1881,11 @@ const populateRows = (name, eventList, weekStartDate) =>
             flexDirection: "row",
           }}
         >
-          {this.state.totalCalendarList.map((event) => {
-            return makeVisible(this.state.weekViewStartDate, event) ? (
+          {eventList.map((event) => {
+            return makeVisible(weekStartDate, event, calendarFilter) ? (
               <EventItem
                 key={`EITEM-${1}-${event.title}-${event.startTime}`}
-                navigation={this.props.navigation}
+                navigation={navigation}
                 category={event.category}
                 day={event.startTime.getDay()}
                 startTime={new Date(event.startTime)}
@@ -1875,6 +1893,8 @@ const populateRows = (name, eventList, weekStartDate) =>
                 title={event.title}
                 location={event.location}
                 color={event.color}
+                id={event.id}
+                handleEventCompletion={this.handleEventCompletion}
               />
             ) : (
               <View />

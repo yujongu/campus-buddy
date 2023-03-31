@@ -17,33 +17,41 @@ export default class SyncScrollTest extends React.Component {
       <View style={{ flex: 1, marginTop: 20 }}>
         <View style={{ flexDirection: "row" }}>
           <ScrollViewVerticallySynced
-            style={{ width: 50, marginTop: 60 }}
-            name="C1"
-            color="#F2AFAD"
+            style={{
+              width: leftHeaderWidth,
+              marginTop: topHeaderHeight,
+            }}
+            name="Time"
             onScroll={this.scrollEvent}
             scrollPosition={this.scrollPosition}
           />
+          {/* This is the right vertical content */}
           <ScrollView horizontal bounces={true}>
-            <View style={{ width: 400 }}>
+            <View style={{ width: dailyWidth * 7 }}>
               <View
                 style={{
-                  height: 60,
+                  height: topHeaderHeight,
                   justifyContent: "center",
-                  backgroundColor: "#B8D2EC",
                 }}
               >
-                <Text>
-                  I am Column Header!! I am Column Header!! I am Column Header!!
-                  I am Column Header!! I am Column Header!! I am Column Header!!
-                  I am Column Header!!
-                </Text>
+                <TopHeaderDays
+                  holidays={this.state.holidays}
+                  startDay={this.state.weekViewStartDate}
+                />
               </View>
+              {/* This is the vertically scrolling content. */}
               <ScrollViewVerticallySynced
-                style={{ width: 400 }}
-                name="C2"
-                color="#D9E4AA"
+                style={{
+                  width: dailyWidth * 7,
+                  backgroundColor: "#F8F8F8",
+                }}
+                name="notTime"
                 onScroll={this.scrollEvent}
                 scrollPosition={this.scrollPosition}
+                eventList={this.state.totalCalendarList}
+                weekStartDate={this.state.weekViewStartDate}
+                calendarFilter={this.state.calendarUIVisibilityFilter}
+                navigation={this.props.navigation}
               />
             </View>
           </ScrollView>
