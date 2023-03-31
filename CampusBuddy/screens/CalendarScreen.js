@@ -1132,10 +1132,10 @@ export default class App extends Component {
                   )
                 }
               />
-//               <Button
+              {/* //               <Button
 //                 title="Export schedule"
 //                 onPress={() => this.exportDocumentFile()}
-//               ></Button>
+//               ></Button> */}
               <Button
                 title="Import schedule"
                 onPress={() => this.openDocumentFile()}
