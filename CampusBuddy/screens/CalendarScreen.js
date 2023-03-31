@@ -49,6 +49,7 @@ import {
 import EventViewInRow from "../components/ui/EventViewInRow";
 //import { createAppContainer } from "react-navigation";
 import CompareScreen from '../screens/CompareScreen';
+import uuid from 'react-native-uuid';
 
 const leftHeaderWidth = 50;
 const topHeaderHeight = 60;
@@ -321,6 +322,7 @@ export default class App extends Component {
         return;
       }
 
+      const eventId = uuid.v4()
       addEvent(
         auth.currentUser?.uid,
         this.title,
@@ -330,9 +332,10 @@ export default class App extends Component {
         EventCategory.EVENT,
         this.points,
         eventColor,
-        0
+        0,
+        eventId,
       );
-
+      
       this.state.calendarEventList.push({
         category: EventCategory.EVENT,
         title: this.title,
@@ -340,6 +343,7 @@ export default class App extends Component {
         endTime: eventETime,
         location: this.location,
         color: eventColor,
+        id: eventId
       });
 
       const message = 
@@ -919,7 +923,7 @@ export default class App extends Component {
           .catch((error) => {
             console.error("Error removing class from schedule", error);
           });
-          addPoints( auth.currentUser?.uid,"school", 0);    
+          addPoints( auth.currentUser?.uid,"school", 10);    
         }
       } 
     }
@@ -935,7 +939,7 @@ export default class App extends Component {
           .catch((error) => {
             console.error("Error removing event from event list", error);
           });
-          addPoints( auth.currentUser?.uid,res["event"][i]["category"], 0);    
+          addPoints( auth.currentUser?.uid,"school", parseInt(res["event"][i]["details"]["point_value"],10));    
         }
       }
     }
@@ -1788,6 +1792,10 @@ const styles = StyleSheet.create({
     paddingLeft: 10,
     borderWidth: 1,
     borderColor: "#8b9cb5",
+  },
+  box: {
+    flex: 1,
+    backgroundColor: "white",
   },
   titleInputStyle: {
     flex: 1,

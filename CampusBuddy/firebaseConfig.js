@@ -184,7 +184,8 @@ export async function addEvent(
   category,
   point_value,
   color,
-  repetition
+  repetition,
+  id
 ) {
   const docRef = doc(db, "events", user_token);
   // const data={
@@ -217,7 +218,7 @@ export async function addEvent(
       });
     }
     const data = {
-      id: uuid.v4(),
+      id: id,
       details: x
     }
     updateDoc(docRef, { event: arrayUnion(data) });
@@ -325,7 +326,7 @@ export async function addPoints(user_token, category, points) {
   const docRef = doc(db, "users", user_token);
   const querySnapShot = await getDoc(doc(db, "users", user_token));
   const oldPoints = querySnapShot.data().points.school;
-  console.log("snapshot", oldPoints)
+  console.log("snapshot", category, points)
   try {
     updateDoc(docRef, {
       ['points.' + category]: oldPoints+points
