@@ -23,14 +23,14 @@ export default class CalendarColorModal extends React.Component {
 
   render() {
     const {
-      CalendarThemeVisible,
+      calendarThemeVisible,
     } = this.props;
 
     return (
       <Modal
         animationType="slide"
         transparent={true}
-        visible={holidaySettingVisible}
+        visible={calendarThemeVisible}
       >
         <View
           style={{

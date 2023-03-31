@@ -1001,6 +1001,10 @@ export default class App extends Component {
                 onPress={this.setHolidaySettings}
               />
               <Button
+                title="Calendar Theme"
+                onPress={this.setCalendarColor}
+              />
+              <Button
                 title="Compare schedule"
                 onPress = {() => {
                   navigate('CompareScreen')
