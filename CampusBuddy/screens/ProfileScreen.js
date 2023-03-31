@@ -11,8 +11,10 @@ import ThemeContext  from "../components/ui/ThemeContext";
 import theme from "../components/ui/theme";
 import {EventRegister} from "react-native-event-listeners";
 import * as ImagePicker from 'expo-image-picker';
-import { getDownloadURL, ref, uploadBytes } from 'firebase/storage';
+import { getDownloadURL, ref, uploadBytesResumable } from 'firebase/storage';
 import { storage } from "../firebaseConfig";
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
 
 export default function ProfileScreen({ navigation, route }) {
   const [newId, setNewId] = useState("");
@@ -46,33 +48,35 @@ export default function ProfileScreen({ navigation, route }) {
       aspect: [4, 3],
       quality: 1,
     });
-  
-    console.log(result);
-  
-    if (!result.cancelled) {
+
+    if (!result.canceled) {
       setProfilePicture(result.uri);
       uploadImage(result.uri);
     }
   };
-  
+
   const uploadImage = async (uri) => {
     const response = await fetch(uri);
     const blob = await response.blob();
-    const userId = auth.currentUser.uid;
-  
-    const storageRef = ref(storage, `profile_pictures/${userId}`);
-    const uploadTask = uploadBytes(storageRef, blob);
-  
-    try {
-      await uploadTask;
-      const downloadURL = await getDownloadURL(storageRef);
-      console.log("Uploaded image to", downloadURL);
-  
-      const userDocRef = doc(db, "users", userId);
-      updateDoc(userDocRef, { profilePicture: downloadURL });
-    } catch (error) {
-      console.error("Error uploading image:", error);
-    }
+    const imageRef = ref(storage, `profilePictures/${auth.currentUser.uid}`);
+
+    const uploadTask = uploadBytesResumable(imageRef, blob);
+
+    uploadTask.on(
+      'state_changed',
+      (snapshot) => {
+        const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+        console.log(`Upload is ${progress}% done`);
+      },
+      (error) => {
+        console.error("Error uploading image:", error);
+      },
+      async () => {
+        const downloadURL = await getDownloadURL(imageRef);
+        setProfilePicture(downloadURL);
+        console.log("Image uploaded successfully");
+      }
+    );
   };
 
   const handleSignOut = () => {

@@ -773,7 +773,7 @@ export default class App extends Component {
       return <ColorWheel updateColor={this.updateColor} />;
     }
     return (
-      <SafeAreaView style={{ flex: 1 }}>
+      <SafeAreaView style={styles.box}>
         <TouchableOpacity
           activeOpacity={0.7}
           onPress={this.clickHandler}
@@ -1569,5 +1569,9 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     fontSize: 18,
     borderColor: "#8b9cb5",
+  },
+  box: {
+    flex: 1,
+    backgroundColor: "white",
   },
 });
