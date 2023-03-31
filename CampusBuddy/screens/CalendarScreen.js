@@ -1132,10 +1132,10 @@ export default class App extends Component {
                   )
                 }
               />
-//               <Button
-//                 title="Export schedule"
-//                 onPress={() => this.exportDocumentFile()}
-//               ></Button>
+               <Button
+                 title="Export schedule"
+                 onPress={() => this.exportDocumentFile()}
+               ></Button>
               <Button
                 title="Import schedule"
                 onPress={() => this.openDocumentFile()}
@@ -1581,6 +1581,7 @@ export default class App extends Component {
                                     location={event.location}
                                     color={event.color}
                                     id={event.id}
+                                    clickable={true}
                                     handleEventCompletion={
                                       this.handleEventCompletion
                                     }
@@ -1915,6 +1916,7 @@ const populateRows = (
                 location={event.location}
                 color={event.color}
                 id={event.id}
+                clickable={true}
                 handleEventCompletion={this.handleEventCompletion}
               />
             ) : (
