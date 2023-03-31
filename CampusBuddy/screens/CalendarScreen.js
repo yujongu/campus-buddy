@@ -118,6 +118,9 @@ export default class App extends Component {
       eventStartTime: new Date(),
       eventEndDate: new Date(),
       eventEndTime: new Date(),
+      selected: [],
+      searched: [],
+      friend_list: [],
       points: 0,
       // This is the starting date for the current calendar UI.
       weekViewStartDate: new Date(),
@@ -172,8 +175,6 @@ export default class App extends Component {
     }
 
     this.setState({ list: result });
-
-    console.log("HIIIII");
     // Getting events from database
     const events = await getUserEvents(auth.currentUser?.uid);
     console.log(events);
@@ -196,6 +197,7 @@ export default class App extends Component {
         eventResult.push(temp);
       }
     }
+    console.log(eventResult)
     this.checkList(eventResult); //Checks for events that go over multiple days and corrects it
     this.combineAllListsForCalendar(); // Combine list, calendarEventList, and athleticEventsList into one list "totalList"
 
@@ -217,10 +219,9 @@ export default class App extends Component {
     onSnapshot(friends, (doc) => {
       this.setState({
         friend_list: [...doc.data()["favorite"], ...doc.data()["friends"]],
-        searched: [...doc.data()["favorite"], ...doc.data()["friends"]],
-      });
-    });
-    console.log(this.state.friend_list);
+        searched: [...doc.data()["favorite"], ...doc.data()["friends"]]
+      })
+    })
   }
 
   //Format event list so it works with the calendar view.
