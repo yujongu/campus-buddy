@@ -9,7 +9,6 @@ import {
 } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import CalendarScreen from "./screens/CalendarScreen";
-import CompareScreen from "./screens/CompareScreen";
 import HomeScreen from "./BottomTabContainer";
 import SignInScreen from "./screens/SignInScreen";
 import SignUpScreen from "./screens/SignUpScreen";
