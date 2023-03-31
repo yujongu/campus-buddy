@@ -60,7 +60,9 @@ const dailyHeight = Dimensions.get("window").height / 10;
 
 
 export default class App extends Component {
+  
   constructor(props) {
+
     super(props);
     this.numOfDays = 7;
     this.pivotDate = genTimeBlock("mon");
@@ -990,7 +992,7 @@ export default class App extends Component {
       return <ColorWheel updateColor={this.updateColor} />;
     }
     return (
-      <SafeAreaView style={{ flex: 1 }}>
+      <SafeAreaView style={styles.box}>
         <TouchableOpacity
           activeOpacity={0.7}
           onPress={this.clickHandler}
