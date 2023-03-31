@@ -10,6 +10,7 @@ import { SHA256 } from 'crypto-js';
 import ThemeContext  from "../components/ui/ThemeContext";
 import theme from "../components/ui/theme";
 import {EventRegister} from "react-native-event-listeners";
+import { PointsProgressBar } from "../components/ui/PointsProgressBar";
 import * as ImagePicker from 'expo-image-picker';
 import { getDownloadURL, ref, uploadBytesResumable } from 'firebase/storage';
 import { storage } from "../firebaseConfig";
@@ -21,9 +22,6 @@ export default function ProfileScreen({ navigation, route }) {
   const [id, setId] = useState("");
   const [password, setPassword] = useState("");
   const [mode,setMode] = useState(false);
-  //categories are not implemented yet, just using two dummy categories for now
-  const [schoolPoints, setSchoolPoints] = useState("");
-  const [fitnessPoints, setFitnessPoints] = useState("");
   const theme = useContext(ThemeContext);
   const [profilePicture, setProfilePicture] = useState(null);
 
@@ -133,8 +131,6 @@ export default function ProfileScreen({ navigation, route }) {
     const unsubscribe = onSnapshot(userDocRef, (doc) => {
       if (doc.exists()) {
         setId(doc.data().id);
-        setSchoolPoints(doc.data().points["school"])
-        setFitnessPoints(doc.data().points["fitness"])
         /*doc.data().points.map(([key, value]) => {
           console.log(key, value)
         })*/
@@ -147,10 +143,6 @@ export default function ProfileScreen({ navigation, route }) {
     };
   }, []);
   
-  //converts points to a width percentage for progress bar display
-  const getWidth = (points) => {
-    return (points-100*Math.floor(parseInt(points, 10)/100)).toString() + "%";
-  }
   return (
     <View style={[styles.container]}>
       {profilePicture && (
@@ -180,37 +172,7 @@ export default function ProfileScreen({ navigation, route }) {
         secureTextEntry={true}
       />
       <Button title="Delete Account" onPress={handleDeleteAccount} />
-      <Text style={{fontSize:20, textAlign:"center", paddingTop:40, paddingBottom:10, color: theme.color}}>
-        Points Progress
-      </Text>
-      <Text style={[styles.categoryText, {color: theme.color}]}>
-        School Courses
-      </Text>
-      <View style={[styles.row]}>
-        <Text style={[styles.categoryText, {color: theme.color}]}>
-          {Math.floor(parseInt(schoolPoints, 10)/100)}
-        </Text>
-        <View style={styles.progressBar}>
-          <View style={[[StyleSheet.absoluteFill], {backgroundColor: "#FFC2B0", width: getWidth(schoolPoints)}]}/>
-        </View>
-        <Text style={[styles.categoryText, {color: theme.color}]}>
-          {Math.floor(parseInt(schoolPoints, 10)/100)+1}
-        </Text>
-      </View>
-      <Text style={[styles.categoryText, {color: theme.color}]}>
-        Fitness
-      </Text>
-      <View style={[styles.row]}>
-        <Text style={[styles.categoryText, {color: theme.color}]}>
-          {Math.floor(parseInt(fitnessPoints, 10)/100)}
-        </Text>
-        <View style={styles.progressBar}>
-          <View style={[[StyleSheet.absoluteFill], {backgroundColor: "#00ACBE", width: getWidth(fitnessPoints)}]}/>
-        </View>
-        <Text style={[styles.categoryText, {color: theme.color}]}>
-          {Math.floor(parseInt(fitnessPoints, 10)/100)+1}
-        </Text>
-      </View>
+      <PointsProgressBar id={auth.currentUser?.uid}/>
     </View>
   );
 }
@@ -221,6 +183,7 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
+    marginTop:20
   },
   input: {
     width: "80%",
