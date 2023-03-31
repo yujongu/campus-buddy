@@ -70,6 +70,11 @@ export default class App extends Component {
 
     this.state = {
       visible: false,
+      calendarUIVisibilityFilter: {
+        listEvents: true,
+        athleticEvents: false,
+        calendarEvents: true,
+      },
       list: [],
       calendarEventList: [],
       athleticEventList: [],
@@ -1451,7 +1456,8 @@ export default class App extends Component {
                               {this.state.totalCalendarList.map((event) => {
                                 return makeVisible(
                                   this.state.weekViewStartDate,
-                                  event
+                                  event,
+                                  this.state.calendarUIVisibilityFilter
                                 ) ? (
                                   <EventItem
                                     key={`EITEM-${1}-${event.title}-${
@@ -1587,9 +1593,13 @@ export default class App extends Component {
                   innerIconStyle={{ borderWidth: 2 }}
                   textStyle={{ textDecorationLine: "none" }}
                   style={{ marginRight: 25 }}
-                  isChecked={true}
+                  isChecked={this.state.calendarUIVisibilityFilter.listEvents}
                   onPress={(isChecked) => {
-                    console.log(isChecked + " 1");
+                    var filterState = {
+                      ...this.state.calendarUIVisibilityFilter,
+                    };
+                    filterState.listEvents = isChecked;
+                    this.setState({ calendarUIVisibilityFilter: filterState });
                   }}
                 />
                 <BouncyCheckbox
@@ -1601,9 +1611,15 @@ export default class App extends Component {
                   innerIconStyle={{ borderWidth: 2 }}
                   textStyle={{ textDecorationLine: "none" }}
                   style={{ marginRight: 25 }}
-                  isChecked={true}
+                  isChecked={
+                    this.state.calendarUIVisibilityFilter.athleticEvents
+                  }
                   onPress={(isChecked) => {
-                    console.log(isChecked + " 2");
+                    var filterState = {
+                      ...this.state.calendarUIVisibilityFilter,
+                    };
+                    filterState.athleticEvents = isChecked;
+                    this.setState({ calendarUIVisibilityFilter: filterState });
                   }}
                 />
                 <BouncyCheckbox
@@ -1615,9 +1631,15 @@ export default class App extends Component {
                   innerIconStyle={{ borderWidth: 2 }}
                   textStyle={{ textDecorationLine: "none" }}
                   style={{ marginRight: 25 }}
-                  isChecked={true}
+                  isChecked={
+                    this.state.calendarUIVisibilityFilter.calendarEvents
+                  }
                   onPress={(isChecked) => {
-                    console.log(isChecked + " 3");
+                    var filterState = {
+                      ...this.state.calendarUIVisibilityFilter,
+                    };
+                    filterState.calendarEvents = isChecked;
+                    this.setState({ calendarUIVisibilityFilter: filterState });
                   }}
                 />
               </ScrollView>
@@ -1657,8 +1679,12 @@ class ScrollViewVerticallySynced extends React.Component {
   }
 }
 
-const makeVisible = (weekStartDate, event) => {
-  //if event is school course, make visible
+const makeVisible = (weekStartDate, event, filterValues) => {
+  // if event is school course, make visible
+  if (!visibilityFilter(event, filterValues)) {
+    return false;
+  }
+
   if (event.category == EventCategory.SCHOOLCOURSE) {
     return true;
   }
@@ -1674,9 +1700,27 @@ const makeVisible = (weekStartDate, event) => {
   return false;
 };
 
-const visibilityFilter = (event) => {
-
-}
+const visibilityFilter = (event, filterValues) => {
+  switch (event.category) {
+    case EventCategory.EVENT:
+      if (filterValues.calendarEvents) {
+        return true;
+      }
+      break;
+    case EventCategory.SCHOOLCOURSE:
+      if (filterValues.listEvents) {
+        return true;
+      }
+      break;
+    case EventCategory.SPORTS:
+      if (filterValues.athleticEvents) {
+        return true;
+      }
+      break;
+    default:
+      return false;
+  }
+};
 
 // If name is Time, populate the hours 0 ~ 24.
 // TODO: Need to set which time the time's going to start.
