@@ -1,4 +1,4 @@
-import React, { Component } from "react";
+import React, { Component, useContext } from "react";
 import { readString } from "react-native-csv";
 import {
   StyleSheet,
@@ -64,12 +64,18 @@ import AthleticEventData from "../helperFunctions/csvjson.json";
 import CompareScreen from "../screens/CompareScreen";
 import uuid from "react-native-uuid";
 
+import ThemeContext from "../components/ui/ThemeContext";
+import themeCon from "../components/ui/theme";
+import theme from "../components/ui/theme";
+
 const leftHeaderWidth = 50;
 const topHeaderHeight = 60;
 const dailyWidth = (Dimensions.get("window").width - leftHeaderWidth) / 3;
 const dailyHeight = Dimensions.get("window").height / 10;
 
 export default class App extends Component {
+  static contextType = ThemeContext;
+
   constructor(props) {
     super(props);
 
@@ -1083,6 +1089,7 @@ export default class App extends Component {
 
   render() {
     const { navigate } = this.props.navigation;
+    const { theme } = this.context;
 
     const {
       title,
@@ -1101,13 +1108,22 @@ export default class App extends Component {
       return <ColorWheel updateColor={this.updateColor} />;
     }
     return (
-      <SafeAreaView style={styles.box}>
+      <SafeAreaView
+        style={[
+          styles.box,
+          { backgroundColor: themeCon[theme].calendarUIBackground },
+        ]}
+      >
         <TouchableOpacity
           activeOpacity={0.7}
           onPress={this.clickHandler}
           style={styles.touchableOpacityStyle}
         >
-          <Icon name="plus-circle" size={50} />
+          <Icon
+            name="plus-circle"
+            size={50}
+            color={themeCon[theme].plusModalColor}
+          />
         </TouchableOpacity>
 
         <Modal
@@ -1398,13 +1414,17 @@ export default class App extends Component {
                   justifyContent: "center",
                 }}
               >
-                <Text style={{ fontSize: 20 }}>
+                <Text
+                  style={{ fontSize: 20, color: themeCon[theme].fontColor }}
+                >
                   {this.state.calendarView == CalendarViewType.WEEK ||
                   this.state.calendarView == CalendarViewType.MONTH
                     ? getMonthName(this.state.weekViewStartDate.getMonth())
                     : getMonthName(this.state.currentDate.getMonth())}
                 </Text>
-                <Text style={{ fontSize: 12 }}>
+                <Text
+                  style={{ fontSize: 12, color: themeCon[theme].fontColor }}
+                >
                   {this.state.weekViewStartDate.getFullYear()}
                 </Text>
               </View>
@@ -1438,7 +1458,11 @@ export default class App extends Component {
                   style={{ padding: 10 }}
                   onPress={() => this.goToday()}
                 >
-                  <Text style={{ fontSize: 15 }}>Today</Text>
+                  <Text
+                    style={{ fontSize: 15, color: themeCon[theme].fontColor }}
+                  >
+                    Today
+                  </Text>
                 </Pressable>
 
                 <IconButton
@@ -1477,6 +1501,7 @@ export default class App extends Component {
                   <Text
                     style={{
                       fontSize: 15,
+                      color: themeCon[theme].fontColor,
                     }}
                   >
                     {this.state.calendarView}
@@ -1526,6 +1551,7 @@ export default class App extends Component {
                                     index <= 12 && index > 0
                                       ? Colors.morningTimeColor
                                       : Colors.eveningTimeColor,
+                                  // color: themeCon[theme].fontColor,
                                   width: 20,
                                   marginHorizontal: 4,
                                   textAlign: "center",
@@ -1548,13 +1574,15 @@ export default class App extends Component {
                           <TopHeaderDays
                             holidays={this.state.holidays}
                             startDay={this.state.weekViewStartDate}
+                            color={themeCon[theme].fontColor}
                           />
 
                           <ScrollView
                             style={{
-                              backgroundColor: "#F8F8F8",
                               width: "100%",
                               height: "100%",
+                              backgroundColor:
+                                themeCon[theme].calendarUIInnerBackground,
                             }}
                             horizontal={false}
                             nestedScrollEnabled
@@ -1614,13 +1642,62 @@ export default class App extends Component {
                           marginBottom: 8,
                         }}
                       >
-                        <Text style={styles.monthViewHeaderDayText}>Sun</Text>
-                        <Text style={styles.monthViewHeaderDayText}>Mon</Text>
-                        <Text style={styles.monthViewHeaderDayText}>Tues</Text>
-                        <Text style={styles.monthViewHeaderDayText}>Wed</Text>
-                        <Text style={styles.monthViewHeaderDayText}>Thur</Text>
-                        <Text style={styles.monthViewHeaderDayText}>Fri</Text>
-                        <Text style={styles.monthViewHeaderDayText}>Sat</Text>
+                        <Text
+                          style={[
+                            styles.monthViewHeaderDayText,
+                            { color: themeCon[theme].fontColor },
+                          ]}
+                        >
+                          Sun
+                        </Text>
+                        <Text
+                          style={[
+                            styles.monthViewHeaderDayText,
+                            { color: themeCon[theme].fontColor },
+                          ]}
+                        >
+                          Mon
+                        </Text>
+                        <Text
+                          style={[
+                            styles.monthViewHeaderDayText,
+                            { color: themeCon[theme].fontColor },
+                          ]}
+                        >
+                          Tues
+                        </Text>
+                        <Text
+                          style={[
+                            styles.monthViewHeaderDayText,
+                            { color: themeCon[theme].fontColor },
+                          ]}
+                        >
+                          Wed
+                        </Text>
+                        <Text
+                          style={[
+                            styles.monthViewHeaderDayText,
+                            { color: themeCon[theme].fontColor },
+                          ]}
+                        >
+                          Thur
+                        </Text>
+                        <Text
+                          style={[
+                            styles.monthViewHeaderDayText,
+                            { color: themeCon[theme].fontColor },
+                          ]}
+                        >
+                          Fri
+                        </Text>
+                        <Text
+                          style={[
+                            styles.monthViewHeaderDayText,
+                            { color: themeCon[theme].fontColor },
+                          ]}
+                        >
+                          Sat
+                        </Text>
                       </View>
                       <FlatList
                         scrollEnabled={false}
@@ -1654,6 +1731,7 @@ export default class App extends Component {
                           borderBottomWidth: 2,
                           borderBottomLeftRadius: 12,
                           borderBottomRightRadius: 12,
+                          borderColor: themeCon[theme].borderColor,
                         }}
                       >
                         <View
@@ -1663,10 +1741,15 @@ export default class App extends Component {
                             padding: 6,
                           }}
                         >
-                          <Text style={{ fontSize: 40 }}>
+                          <Text
+                            style={{
+                              fontSize: 40,
+                              color: themeCon[theme].fontColor,
+                            }}
+                          >
                             {this.state.currentDate.getDate()}
                           </Text>
-                          <Text>
+                          <Text style={{ color: themeCon[theme].fontColor }}>
                             {getWeekDayName(this.state.currentDate.getDay())}
                           </Text>
                         </View>
@@ -1898,7 +1981,6 @@ const styles = StyleSheet.create({
   },
   box: {
     flex: 1,
-    backgroundColor: "white",
   },
   titleInputStyle: {
     flex: 1,
