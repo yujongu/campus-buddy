@@ -32,8 +32,6 @@ import { even, IconButton } from "@react-native-material/core";
 import TopHeaderDays from "../components/ui/TopHeaderDays";
 import { doc, onSnapshot, updateDoc, getDoc, arrayRemove } from "firebase/firestore";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import ThemeContext from "../components/ui/ThemeContext";
-import theme from "../components/ui/theme";
 import { EventCategory } from "../constants/eventCategory";
 import { CalendarViewType } from "../constants/calendarViewType";
 import HolidaySettingModal from "../components/ui/HolidaySettingModal";

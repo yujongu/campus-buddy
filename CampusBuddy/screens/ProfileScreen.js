@@ -180,34 +180,34 @@ export default function ProfileScreen({ navigation, route }) {
         secureTextEntry={true}
       />
       <Button title="Delete Account" onPress={handleDeleteAccount} />
-      <Text style={{fontSize:20, textAlign:"center", paddingTop:40, paddingBottom:10}}>
+      <Text style={{fontSize:20, textAlign:"center", paddingTop:40, paddingBottom:10, color: theme.color}}>
         Points Progress
       </Text>
-      <Text style={[styles.categoryText]}>
+      <Text style={[styles.categoryText, {color: theme.color}]}>
         School Courses
       </Text>
       <View style={[styles.row]}>
-        <Text style={[styles.categoryText]}>
+        <Text style={[styles.categoryText, {color: theme.color}]}>
           {Math.floor(parseInt(schoolPoints, 10)/100)}
         </Text>
         <View style={styles.progressBar}>
           <View style={[[StyleSheet.absoluteFill], {backgroundColor: "#FFC2B0", width: getWidth(schoolPoints)}]}/>
         </View>
-        <Text style={[styles.categoryText]}>
+        <Text style={[styles.categoryText, {color: theme.color}]}>
           {Math.floor(parseInt(schoolPoints, 10)/100)+1}
         </Text>
       </View>
-      <Text style={[styles.categoryText]}>
+      <Text style={[styles.categoryText, {color: theme.color}]}>
         Fitness
       </Text>
       <View style={[styles.row]}>
-        <Text style={[styles.categoryText]}>
+        <Text style={[styles.categoryText, {color: theme.color}]}>
           {Math.floor(parseInt(fitnessPoints, 10)/100)}
         </Text>
         <View style={styles.progressBar}>
           <View style={[[StyleSheet.absoluteFill], {backgroundColor: "#00ACBE", width: getWidth(fitnessPoints)}]}/>
         </View>
-        <Text style={[styles.categoryText]}>
+        <Text style={[styles.categoryText, {color: theme.color}]}>
           {Math.floor(parseInt(fitnessPoints, 10)/100)+1}
         </Text>
       </View>
@@ -248,7 +248,8 @@ const styles = StyleSheet.create({
   },
   textStyle: {
     fontWeight: "bold",
-    textAlign: "center"
+    textAlign: "center",
+    color: theme.color
   },
   buttonClose: {
     backgroundColor: "#2196F3",
@@ -272,7 +273,9 @@ const styles = StyleSheet.create({
     marginBottom: 5
   },
   categoryText: {
-    padding: 5
+    padding: 5,
+    color: theme.color
+
   },
   row: {
     flexDirection: "row",
