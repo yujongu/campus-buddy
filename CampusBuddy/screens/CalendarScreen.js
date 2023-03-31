@@ -37,6 +37,7 @@ import theme from "../components/ui/theme";
 import { EventCategory } from "../constants/eventCategory";
 import { CalendarViewType } from "../constants/calendarViewType";
 import HolidaySettingModal from "../components/ui/HolidaySettingModal";
+import CalendarColorModal from "../components/ui/CalendarColorModal";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import { SafeAreaView, useSafeAreaFrame } from "react-native-safe-area-context";
 import MonthViewItem from "../components/MonthViewItem";
@@ -84,6 +85,8 @@ export default class App extends Component {
       selectedCountryCode: "",
       createEventVisible: false,
       holidaySettingVisible: false,
+      compareScheduleVisible : false,
+      calendarColorVisible :  false,
       title: "",
       location: "",
       colorPicker: false,
@@ -397,8 +400,13 @@ export default class App extends Component {
   };
 
   openCompareScreen = () => {
-
+    this.setState({ visible: false});
+    this.setState({ compareScheduleVisible: true});
   };
+
+  setCalendarColor = () => {
+    this.setState({ calendarColorVisible: true})
+  }
 
   updateColor = (color) => {
     this.setState({ eventColor: color });
@@ -447,6 +455,12 @@ export default class App extends Component {
   clickHandler = () => {
     this.setState({ visible: true });
   };
+
+  //START Calendar Color setting Modal
+  closeCalendarColorModal = () => {
+    this.setState({calendarColorVisible : false});
+  }
+  //END Calendar Color setting Modal
 
   //START Holiday Setting Modal Component Functions
   //fetch public holiday
@@ -989,10 +1003,14 @@ export default class App extends Component {
               <Button
                 title="Compare schedule"
                 onPress = {() => {
-                  navigate('Compare Screen')
+                  navigate('CompareScreen')
                   this.setState({ visible: !this.state.visible });
                 }}
-                ></Button>
+              />
+              <Button
+                title="Change theme"
+                onPress={this.setCalendarColor}
+              />
               <Button
                 title="Close modal"
                 onPress={() => {
@@ -1211,6 +1229,10 @@ export default class App extends Component {
           storeData={this.storeData}
           removeData={this.removeData}
         />
+
+          {/* <CalendarColorModal
+            calendarColorVisible={this.state.calendarColorVisible}
+          /> */}
 
         {/* Bottom tab bar hides calendar screen. TODO Need to fix this.*/}
         <View style={{ flex: 1, marginBottom: 15 }}>
