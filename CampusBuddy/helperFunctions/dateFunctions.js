@@ -76,3 +76,15 @@ export const jsClockToDate = (str) => {
     console.log(str);
   }
 };
+
+export const jsDateToDate = (str) => {
+  let temp = str.split("/");
+  if (temp.length == 3) {
+    const res = new Date();
+    res.setFullYear(temp[2]);
+    res.setMonth(temp[0] - 1);
+    res.setDate(temp[1]);
+    return res;
+  }
+  return null;
+};

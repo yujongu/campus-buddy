@@ -33,7 +33,7 @@ import {
 } from "../firebaseConfig";
 import { auth, db, userSchedule, getUserEvents } from "../firebaseConfig";
 import EventItem from "../components/ui/EventItem";
-import { IconButton } from "@react-native-material/core";
+import { even, IconButton } from "@react-native-material/core";
 import TopHeaderDays from "../components/ui/TopHeaderDays";
 import {
   doc,
@@ -55,6 +55,8 @@ import {
   isOnSameDate,
   JSClock,
   jsClockToDate,
+  jsDateToDate,
+  JSGetDate,
 } from "../helperFunctions/dateFunctions";
 import EventViewInRow from "../components/ui/EventViewInRow";
 import AthleticEventData from "../helperFunctions/csvjson.json";
@@ -376,6 +378,15 @@ export default class App extends Component {
       );
 
       this.state.calendarEventList.push({
+        category: EventCategory.EVENT,
+        title: this.title,
+        startTime: eventSTime,
+        endTime: eventETime,
+        location: this.location,
+        color: eventColor,
+        id: eventId,
+      });
+      this.state.totalCalendarList.push({
         category: EventCategory.EVENT,
         title: this.title,
         startTime: eventSTime,
@@ -732,13 +743,12 @@ export default class App extends Component {
     const dataLength = AthleticEventData.length;
     for (let i = 0; i < dataLength; i++) {
       let currItem = AthleticEventData[i];
-      // console.log(currItem);
+
       const title = currItem.Event;
       const sportType = currItem.Category;
       const description = currItem.Description;
       const location = currItem.Location;
-
-      const startTime = new Date(currItem["Start Date"]);
+      const startTime = jsDateToDate(currItem["Start Date"]);
       let st = jsClockToDate(currItem["Start Time"]);
       if (st != null) {
         startTime.setHours(jsClockToDate(currItem["Start Time"]).getHours());
@@ -749,7 +759,7 @@ export default class App extends Component {
         continue;
       }
 
-      const endTime = new Date(currItem["End Date"]);
+      const endTime = jsDateToDate(currItem["End Date"]);
       let et = jsClockToDate(currItem["End Time"]);
       if (et != null) {
         endTime.setHours(jsClockToDate(currItem["End Time"]).getHours());
@@ -1666,6 +1676,9 @@ export default class App extends Component {
 
                           return (
                             <EventViewInRow
+                              navigation={this.props.navigation}
+                              category={event.category}
+                              day={event.startTime.getDay()}
                               title={event.title}
                               location={event.location}
                               startTime={JSClock(event.startTime)}
@@ -1801,15 +1814,23 @@ const makeVisible = (weekStartDate, event, filterValues) => {
   if (!visibilityFilter(event, filterValues)) {
     return false;
   }
-
   if (event.category == EventCategory.SCHOOLCOURSE) {
     return true;
   }
+
   //week range start and end
   let s = weekStartDate;
+  s.setHours(0);
+  s.setMinutes(0);
+  s.setSeconds(0);
   let e = new Date(weekStartDate);
   e.setDate(e.getDate() + 6);
+  e.setHours(23);
+  e.setMinutes(59);
+  e.setSeconds(59);
 
+  console.log(event.startTime <= e);
+  console.log(JSGetDate(event.startTime));
   //if event is within the week time frame, make visible
   if (event.startTime >= s && event.startTime <= e) {
     return true;
