@@ -15,6 +15,7 @@ import SignInScreen from "./screens/SignInScreen";
 import SignUpScreen from "./screens/SignUpScreen";
 import User_profile from "./screens/User_profileScreen";
 import SettingsScreen from "./screens/SettingsScreen";
+import CompareScreen from "./screens/CompareScreen";
 import EventDetailsScreen from "./screens/EventDetailsScreen";
 import { auth } from "./firebaseConfig";
 import FriendScreen from "./screens/FriendScreen";
@@ -95,11 +96,7 @@ export default function App() {
               component={EventDetailsScreen}
               options={{ headerShown: false }}
             />
-            <Stack.Screen
-              name = "Compare Screen"
-              component = {CompareScreen}
-              options = {{headerShown: false}}>
-            </Stack.Screen>
+            
           </Stack.Navigator>
         </NavigationContainer>
       </ThemeContext.Provider>
