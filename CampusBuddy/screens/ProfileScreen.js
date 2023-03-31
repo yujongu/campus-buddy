@@ -164,6 +164,7 @@ export default function ProfileScreen({ navigation, route }) {
 
   return (
     <View style={[styles.container]}>
+      {console.log(theme)}
       {profilePicture && (
         <Image
           source={{ uri: profilePicture }}
@@ -195,7 +196,7 @@ export default function ProfileScreen({ navigation, route }) {
         onPress={() => navigation.navigate("Friend")}
       />
       <TextInput
-        style={styles.input}
+        style={[styles.input]}
         placeholder="Enter Password"
         value={password}
         onChangeText={(text) => setPassword(text)}

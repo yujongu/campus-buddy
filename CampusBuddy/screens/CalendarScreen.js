@@ -66,7 +66,6 @@ import uuid from "react-native-uuid";
 
 import ThemeContext from "../components/ui/ThemeContext";
 import themeCon from "../components/ui/theme";
-import theme from "../components/ui/theme";
 
 const leftHeaderWidth = 50;
 const topHeaderHeight = 60;
