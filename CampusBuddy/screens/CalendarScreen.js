@@ -177,10 +177,10 @@ export default class App extends Component {
     this.setState({ list: result });
     // Getting events from database
     const events = await getUserEvents(auth.currentUser?.uid);
-    console.log(events);
+    // console.log(events);
     if (events != null) {
       for (let i = 0; i < events["event"].length; i++) {
-        console.log(events["event"][i]);
+        // console.log(events["event"][i]);
         const temp = {
           category: EventCategory.EVENT,
           title: events["event"][i]["details"]["title"],
@@ -197,7 +197,7 @@ export default class App extends Component {
         eventResult.push(temp);
       }
     }
-    console.log(eventResult)
+    // console.log(eventResult);
     this.checkList(eventResult); //Checks for events that go over multiple days and corrects it
     this.combineAllListsForCalendar(); // Combine list, calendarEventList, and athleticEventsList into one list "totalList"
 
@@ -219,9 +219,9 @@ export default class App extends Component {
     onSnapshot(friends, (doc) => {
       this.setState({
         friend_list: [...doc.data()["favorite"], ...doc.data()["friends"]],
-        searched: [...doc.data()["favorite"], ...doc.data()["friends"]]
-      })
-    })
+        searched: [...doc.data()["favorite"], ...doc.data()["friends"]],
+      });
+    });
   }
 
   //Format event list so it works with the calendar view.
@@ -300,6 +300,7 @@ export default class App extends Component {
 
   combineAllListsForCalendar = () => {
     let tempTotal = [];
+    // console.log(this.state.athleticEventList);
     this.state.list.map((item) => {
       tempTotal.push(item);
     });
@@ -737,6 +738,7 @@ export default class App extends Component {
     const dataLength = AthleticEventData.length;
     for (let i = 0; i < dataLength; i++) {
       let currItem = AthleticEventData[i];
+      // console.log(currItem);
       const title = currItem.Event;
       const sportType = currItem.Category;
       const description = currItem.Description;
