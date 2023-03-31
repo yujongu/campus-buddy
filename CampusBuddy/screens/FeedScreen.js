@@ -10,6 +10,7 @@ export default function FeedScreen({ navigation, route }) {
   const theme = useContext(ThemeContext);
 
   return (
+
     <View style={[styles.container, {backgroundColor: theme.background}]}>
       <Text style={[styles.text, {color: theme.color}]}>This is feed screen</Text>
       <StatusBar style="auto" />

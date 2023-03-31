@@ -25,12 +25,23 @@ import * as DocumentPicker from "expo-document-picker";
 import Icon from "react-native-vector-icons/FontAwesome";
 import Octicons from "react-native-vector-icons/Octicons";
 import { genTimeBlock } from "react-native-timetable";
-import { addSchedule, addEvent, to_request } from "../firebaseConfig";
+import {
+  addSchedule,
+  addEvent,
+  to_request,
+  addPoints,
+} from "../firebaseConfig";
 import { auth, db, userSchedule, getUserEvents } from "../firebaseConfig";
 import EventItem from "../components/ui/EventItem";
 import { IconButton } from "@react-native-material/core";
 import TopHeaderDays from "../components/ui/TopHeaderDays";
-import { doc, onSnapshot, updateDoc } from "firebase/firestore";
+import {
+  doc,
+  onSnapshot,
+  updateDoc,
+  getDoc,
+  arrayRemove,
+} from "firebase/firestore";
 import { EventCategory, EventCategoryColors } from "../constants/eventCategory";
 import { CalendarViewType } from "../constants/calendarViewType";
 import HolidaySettingModal from "../components/ui/HolidaySettingModal";
@@ -47,6 +58,9 @@ import {
 } from "../helperFunctions/dateFunctions";
 import EventViewInRow from "../components/ui/EventViewInRow";
 import AthleticEventData from "../helperFunctions/csvjson.json";
+//import { createAppContainer } from "react-navigation";
+import CompareScreen from "../screens/CompareScreen";
+import uuid from "react-native-uuid";
 
 const leftHeaderWidth = 50;
 const topHeaderHeight = 60;
@@ -128,7 +142,7 @@ export default class App extends Component {
     const result = [];
     const eventResult = [];
     if (res != null) {
-      res["things"].map((element) => {
+      /*res["things"].map((element) => {
         const sp = element.data.split(",");
         const temp = {
           category: EventCategory.SCHOOLCOURSE,
@@ -138,29 +152,53 @@ export default class App extends Component {
           location: sp[1],
         };
         result.push(temp);
-      });
+      });*/
+      for (let i = 0; i < res["classes"].length; i++) {
+        const temp = {
+          category: EventCategory.SCHOOLCOURSE,
+          title: res["classes"][i]["class"]["title"],
+          startTime: new Date(
+            res["classes"][i]["class"]["startTime"].seconds * 1000
+          ), //multiply 1000 since Javascript uses milliseconds. Timestamp to date.
+          endTime: new Date(
+            res["classes"][i]["class"]["endTime"].seconds * 1000
+          ),
+          location: res["classes"][i]["class"]["location"],
+          color: "#D1FF96",
+          id: res["classes"][i]["id"],
+        };
+        result.push(temp);
+      }
     }
 
     this.setState({ list: result });
 
+    console.log("HIIIII");
     // Getting events from database
     const events = await getUserEvents(auth.currentUser?.uid);
+    console.log(events);
     if (events != null) {
       for (let i = 0; i < events["event"].length; i++) {
+        console.log(events["event"][i]);
         const temp = {
           category: EventCategory.EVENT,
-          title: events["event"][i]["title"],
-          startTime: new Date(events["event"][i]["startTime"].seconds * 1000), //multiply 1000 since Javascript uses milliseconds. Timestamp to date.
-          endTime: new Date(events["event"][i]["endTime"].seconds * 1000),
-          location: events["event"][i]["location"],
-          color: events["event"][i]["color"],
+          title: events["event"][i]["details"]["title"],
+          startTime: new Date(
+            events["event"][i]["details"]["startTime"].seconds * 1000
+          ), //multiply 1000 since Javascript uses milliseconds. Timestamp to date.
+          endTime: new Date(
+            events["event"][i]["details"]["endTime"].seconds * 1000
+          ),
+          location: events["event"][i]["details"]["location"],
+          color: events["event"][i]["details"]["color"],
+          id: events["event"][i]["id"],
         };
         eventResult.push(temp);
       }
     }
-
     this.checkList(eventResult); //Checks for events that go over multiple days and corrects it
     this.combineAllListsForCalendar(); // Combine list, calendarEventList, and athleticEventsList into one list "totalList"
+
     const userDocRef = doc(db, "users", auth.currentUser.uid);
     onSnapshot(userDocRef, (doc) => {
       if (doc.exists()) {
@@ -270,7 +308,6 @@ export default class App extends Component {
     this.state.athleticEventList.map((item) => {
       tempTotal.push(item);
     });
-
     this.setState({ totalCalendarList: tempTotal });
   };
 
@@ -328,6 +365,7 @@ export default class App extends Component {
         return;
       }
 
+      const eventId = uuid.v4();
       addEvent(
         auth.currentUser?.uid,
         this.title,
@@ -337,7 +375,8 @@ export default class App extends Component {
         EventCategory.EVENT,
         this.points,
         eventColor,
-        0
+        0,
+        eventId
       );
 
       this.state.calendarEventList.push({
@@ -347,6 +386,7 @@ export default class App extends Component {
         endTime: eventETime,
         location: this.location,
         color: eventColor,
+        id: eventId,
       });
 
       const message =
@@ -423,6 +463,8 @@ export default class App extends Component {
     this.setState({ visible: false });
     this.setState({ createEventVisible: true });
   };
+
+  openCompareScreen = () => {};
 
   updateColor = (color) => {
     this.setState({ eventColor: color });
@@ -676,6 +718,10 @@ export default class App extends Component {
             })
           );
         });
+
+        /* for (let i = 0; i < uniqueArray.length; i++) {
+          uniqueArray[i].id=uuid.v4()
+        }*/
         this.setState({ list: uniqueArray });
         this.setState({ visible: !this.state.visible });
         addSchedule(auth.currentUser?.uid, this.state.list);
@@ -956,6 +1002,45 @@ export default class App extends Component {
     { useNativeDriver: false }
   );
 
+  handleEventCompletion = async (category, id) => {
+    console.log(category);
+    console.log(id);
+    if (category == EventCategory.SCHOOLCOURSE) {
+      const userDocRef = doc(db, "schedule", auth.currentUser.uid);
+      const res = await userSchedule(auth.currentUser?.uid);
+      for (let i = 0; i < res["classes"].length; i++) {
+        if (res["classes"][i]["id"] == id) {
+          updateDoc(userDocRef, { classes: arrayRemove(res["classes"][i]) })
+            .then(() => {
+              console.log("Successfully removed class from schedule.");
+            })
+            .catch((error) => {
+              console.error("Error removing class from schedule", error);
+            });
+          addPoints(auth.currentUser?.uid, "school", 10);
+        }
+      }
+    } else {
+      const userDocRef = doc(db, "events", auth.currentUser.uid);
+      const res = await getUserEvents(auth.currentUser?.uid);
+      for (let i = 0; i < res["event"].length; i++) {
+        if (res["event"][i]["id"] == id) {
+          updateDoc(userDocRef, { event: arrayRemove(res["event"][i]) })
+            .then(() => {
+              console.log("Successfully removed event from event list.");
+            })
+            .catch((error) => {
+              console.error("Error removing event from event list", error);
+            });
+          addPoints(
+            auth.currentUser?.uid,
+            "school",
+            parseInt(res["event"][i]["details"]["point_value"], 10)
+          );
+        }
+      }
+    }
+  };
   toggleCalendarView = () => {
     // switch (this.state.calendarView) {
     //   case CalendarViewType.WEEK:
@@ -986,6 +1071,8 @@ export default class App extends Component {
   };
 
   render() {
+    const { navigate } = this.props.navigation;
+
     const {
       title,
       location,
@@ -997,12 +1084,13 @@ export default class App extends Component {
       repetition,
       openDate,
     } = this.state;
+
     if (colorPicker) {
       console.log("colorpicked");
       return <ColorWheel updateColor={this.updateColor} />;
     }
     return (
-      <SafeAreaView style={{ flex: 1 }}>
+      <SafeAreaView style={styles.box}>
         <TouchableOpacity
           activeOpacity={0.7}
           onPress={this.clickHandler}
@@ -1038,6 +1126,10 @@ export default class App extends Component {
                 }
               />
               <Button
+                title="Export schedule"
+                onPress={() => this.exportDocumentFile()}
+              ></Button>
+              <Button
                 title="Import schedule"
                 onPress={() => this.openDocumentFile()}
               />
@@ -1046,6 +1138,13 @@ export default class App extends Component {
                 title="Holiday settings"
                 onPress={this.setHolidaySettings}
               />
+              <Button
+                title="Compare schedule"
+                onPress={() => {
+                  navigate("Compare Screen");
+                  this.setState({ visible: !this.state.visible });
+                }}
+              ></Button>
               <Button
                 title="Close modal"
                 onPress={() => {
@@ -1247,8 +1346,8 @@ export default class App extends Component {
               <Button
                 title="Create new event"
                 onPress={() => {
-                  this.submitEvent(eventColor);
-                  this.setState({ createEventVisible: false });
+                  this.submitEvent(eventColor),
+                    this.setState({ createEventVisible: false });
                 }}
               />
             </View>
@@ -1470,6 +1569,10 @@ export default class App extends Component {
                                     title={event.title}
                                     location={event.location}
                                     color={event.color}
+                                    id={event.id}
+                                    handleEventCompletion={
+                                      this.handleEventCompletion
+                                    }
                                   />
                                 ) : (
                                   <View />
@@ -1852,6 +1955,10 @@ const styles = StyleSheet.create({
     paddingLeft: 10,
     borderWidth: 1,
     borderColor: "#8b9cb5",
+  },
+  box: {
+    flex: 1,
+    backgroundColor: "white",
   },
   titleInputStyle: {
     flex: 1,

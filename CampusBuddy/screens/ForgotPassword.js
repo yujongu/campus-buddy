@@ -20,7 +20,7 @@ export default function ForgotPassword({ navigation, route }) {
         const usersRef = collection(db, "users");
         const q = query(usersRef, where("email", "==", email));
         const querySnapshot = await getDocs(q);
-        if (querySnapshot.size === 0) {
+        if (querySnapshot.empty) {
           console.log("User not found.");
           return;
         }
