@@ -11,7 +11,6 @@ import React, { useState, useEffect } from "react";
 import Icon from "react-native-vector-icons/FontAwesome";
 import Octicons from "react-native-vector-icons/Octicons";
 import { IconButton } from "@react-native-material/core";
-import { SHA256 } from 'crypto-js';
 import {
   getMonthName,
   getWeekDayName,
@@ -20,14 +19,16 @@ import {
 } from "../helperFunctions/dateFunctions";
 import { SafeAreaView } from "react-native-safe-area-context";
 import EventItem from "../components/ui/EventItem";
+import { PointsProgressBar } from "../components/ui/PointsProgressBar";
 import { auth, db, userSchedule, getUserEvents, getUserId } from "../firebaseConfig";
 
 export default function User_profile({ navigation, route }) {
   const { email } = route.params;
   const [calendarVisible, setCalendar] = useState(false);
+  const [pointsVisible, setPoints] = useState(false);
   const [eventList, setEventList] = useState([]);
   const [weekViewStartDate,setStartDate] = useState(new Date());
-  const [currentDate,setCurrentDate] = useState(new Date());
+  const [friendId,setId] = useState("");
 
   // useEffect(() => {
   //   let tempDate = new Date();
@@ -70,6 +71,13 @@ export default function User_profile({ navigation, route }) {
     return false;
   };
 
+  const getPoints = async () => {
+    const id = await getUserId(email)
+    console.log("id", id)
+    setId(id[0])
+    setPoints(true)
+  }
+  
   const getEvents = async () => {
     const result = []
     const id = await getUserId(email)
@@ -210,7 +218,7 @@ export default function User_profile({ navigation, route }) {
     <SafeAreaView style={{justifyContent: "center", alignItems: 'center', flex:1}}>
         <Text>{email}'s profile page</Text>
         <Button title="View calendar" onPress={async ()=>{getEvents()}}/>
-        <Button title="View points" />
+        <Button title="View points" onPress={async()=>{getPoints()}}/>
         <Button title="Go back" onPress={() => navigation.goBack()}/>
         <Modal
           animationType="slide"
@@ -430,6 +438,27 @@ export default function User_profile({ navigation, route }) {
         </View>
         </Modal>
 
+
+        <Modal
+          animationType="slide"
+          visible={pointsVisible}
+          transparent={false}
+        >
+        <View style={{ flex: 1, margin: 60 }}>
+          <TouchableOpacity
+            activeOpacity={0.7}
+            onPress={()=>setPoints(false)}
+            style={{left:275}}
+          >
+            <Icon name="mail-reply" size={20} color="black" />
+          </TouchableOpacity>
+          <Text style={{fontSize:25, textAlign:"center"}}>{email}'s{'\n'}Points</Text>
+          <View style={{flex:1, top:-200}}>
+            <PointsProgressBar id={friendId}/>
+          </View>
+        </View>
+        </Modal>
+        
       </SafeAreaView>
 
     
