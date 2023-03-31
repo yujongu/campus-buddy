@@ -1247,8 +1247,8 @@ export default class App extends Component {
               <Button
                 title="Create new event"
                 onPress={() => {
-                  this.submitEvent(eventColor),
-                    this.setState({ createEventVisible: false });
+                  this.submitEvent(eventColor);
+                  this.setState({ createEventVisible: false });
                 }}
               />
             </View>
