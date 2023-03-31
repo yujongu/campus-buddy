@@ -277,7 +277,6 @@ export async function getUserId(email) {
       }
     });
     return res;
-
   }
   catch(e) {
     console.error("Error getting user's id: ", e);

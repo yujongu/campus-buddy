@@ -26,21 +26,29 @@ export default function User_profile({ navigation, route }) {
   const { email } = route.params;
   const [calendarVisible, setCalendar] = useState(false);
   const [pointsVisible, setPoints] = useState(false);
+  const [calendarPublic, setCalendarPublic] = useState(false);
+  const [pointsPublic, setPointsPublic] = useState(false);
   const [eventList, setEventList] = useState([]);
   const [weekViewStartDate,setStartDate] = useState(new Date());
   const [friendId,setId] = useState("");
 
-  // useEffect(() => {
-  //   let tempDate = new Date();
-  //   tempDate.setDate(tempDate.getDate() - tempDate.getDay());
-  //   setStartDate(tempDate)
-  // }, []);
-
-  // if (weekViewStartDate == null) {
-  //   return <Text>loading...</Text>
-  // }
-
-  //let weekViewStartDate= tempDate;
+  useEffect(() => {
+    const fetchData = async () => {
+      const id = await getUserId(email)
+      setId(id[0])
+      const userDocRef = doc(db, "users", id[0]);
+      const res = onSnapshot(userDocRef, (doc) => {
+        if (res != null) {
+          setCalendarPublic(doc.data().calendar_privacy)
+          setPointsPublic(doc.data().points_privacy)
+        } else {
+          console.log("No such document!");
+        }
+      });
+    }
+   
+    fetchData()
+  }, []);
 
   const leftHeaderWidth = 50;
   const topHeaderHeight = 60;
@@ -72,18 +80,13 @@ export default function User_profile({ navigation, route }) {
   };
 
   const getPoints = async () => {
-    const id = await getUserId(email)
-    console.log("id", id)
-    setId(id[0])
     setPoints(true)
   }
   
   const getEvents = async () => {
     const result = []
     const id = await getUserId(email)
-    console.log("id", id)
     const res = await userSchedule(id[0]);
-    console.log("DASCHEDGE ", res)
     if(res != null) {
       for (let i = 0; i < res["classes"].length; i++) {
         const temp = {
@@ -110,7 +113,6 @@ export default function User_profile({ navigation, route }) {
           color: events["event"][i]["details"]["color"],
           id: events["event"][i]["id"],
         };
-        console.log("temp", temp)
         result.push(temp);
       }
     }
@@ -122,8 +124,6 @@ export default function User_profile({ navigation, route }) {
     result.forEach((event, index) => {
       //For events that go over on day
       if (event.startTime.getDate() != event.endTime.getDate()) {
-        // console.log(event);
-
         let longEvent = event;
         result.splice(index, 1);
 
@@ -187,7 +187,6 @@ export default function User_profile({ navigation, route }) {
       }
     });
     setEventList(result)
-    console.log("results", result)
     setCalendar(true)
   };
 
@@ -210,8 +209,6 @@ export default function User_profile({ navigation, route }) {
     tempDate.setDate(tempDate.getDate() + 7);
     
     setStartDate(tempDate);
-    console.log(tempDate)
-    //weekViewStartDate= tempDate;
   };
 
   return (
@@ -228,7 +225,7 @@ export default function User_profile({ navigation, route }) {
             this.setState({ calendarVisible: false});
           }}
         >
-        
+       { calendarPublic ? 
         <View style={{ flex: 1, margin: 20 }}>
           {/* Info Above the calendar times */}
           <View>
@@ -435,28 +432,49 @@ export default function User_profile({ navigation, route }) {
           
             }
           )()}
-        </View>
-        </Modal>
-
+        </View> : 
+        <View style = {{flex:1, justifyContent:"center" }}>
+          <Text style = {{fontSize:20, textAlign:"center"}}> {email}'s calendar is private.</Text>
+          <TouchableOpacity
+                activeOpacity={0.7}
+                onPress={()=>setCalendar(false)}
+                style={{alignItems:"center", margin:30}}
+              >
+                <Icon name="mail-reply" size={30} color="black" />
+          </TouchableOpacity>
+        </View> }
+        </Modal> 
 
         <Modal
           animationType="slide"
           visible={pointsVisible}
           transparent={false}
         >
-        <View style={{ flex: 1, margin: 60 }}>
-          <TouchableOpacity
-            activeOpacity={0.7}
-            onPress={()=>setPoints(false)}
-            style={{left:275}}
-          >
-            <Icon name="mail-reply" size={20} color="black" />
-          </TouchableOpacity>
-          <Text style={{fontSize:25, textAlign:"center"}}>{email}'s{'\n'}Points</Text>
-          <View style={{flex:1, top:-200}}>
-            <PointsProgressBar id={friendId}/>
-          </View>
-        </View>
+        { pointsPublic ?
+          <View style={{ flex: 1, margin: 60 }}>
+            <TouchableOpacity
+              activeOpacity={0.7}
+              onPress={()=>setPoints(false)}
+              style={{left:275}}
+            >
+              <Icon name="mail-reply" size={20} color="black" />
+            </TouchableOpacity>
+            <Text style={{fontSize:25, textAlign:"center"}}>{email}'s{'\n'}Points</Text>
+            <View style={{flex:1, top:-200}}>
+              <PointsProgressBar id={friendId}/>
+            </View>
+          </View> :
+
+          <View style = {{flex:1, justifyContent:"center" }}>
+            <Text style = {{fontSize:20, textAlign:"center"}}> {email}'s points are private.</Text>
+            <TouchableOpacity
+                  activeOpacity={0.7}
+                  onPress={()=>setPoints(false)}
+                  style={{alignItems:"center", margin:30}}
+                >
+                  <Icon name="mail-reply" size={30} color="black" />
+            </TouchableOpacity>
+          </View> }
         </Modal>
         
       </SafeAreaView>
@@ -464,8 +482,6 @@ export default function User_profile({ navigation, route }) {
     
   )
 }
-
-
 
 const styles = StyleSheet.create({
   container: {
