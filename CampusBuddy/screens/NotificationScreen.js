@@ -92,13 +92,14 @@ export default class NotificationScreen extends Component{
       if(doc.data() != undefined){
         doc.data()['event']
         .forEach(data => {
-          if(new Date(data.startTime) <= new Date() && new Date(data.endTime) >= new Date()){
+          data = data['details']
+          if(new Date(data.startTime.toDate()) <= new Date() && new Date(data.endTime.toDate()) >= new Date()){
             const event = 
             "Event title: " + data.title + "\n" +
             "Event location: " + data.location + "\n" +
             "Event point: " + data.point_value + "\n" +
             "Until event ends: " + 
-            Math.floor((new Date(data.endTime) - new Date())/(1000*60*60))
+            Math.floor((new Date(data.endTime.toDate()) - new Date())/(1000*60*60))
             + " hour(s)" + "/alert"
             temp.push(event)
           }
@@ -229,8 +230,8 @@ export default class NotificationScreen extends Component{
       )
     }else if(type == "alert"){
       return (
-        <View style = {styles.item}>
-          <Text>{words[1]}</Text>
+        <View style = {[styles.item, {justifyContent: 'flex-start'}]}>
+          <Text>{words[0]}</Text>
         </View>
       )
     }
