@@ -1994,7 +1994,7 @@ const styles = StyleSheet.create({
   dropdown: {
     height: 50,
     backgroundColor: "white",
-    borderRadius: 12,
+    borderRadius: "12px",
     padding: 12,
     shadowColor: "#000",
     shadowOffset: {
@@ -2024,7 +2024,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "center",
     alignItems: "center",
-    borderRadius: 14,
+    borderRadius: "14px",
     backgroundColor: "white",
     shadowColor: "#000",
     marginTop: 8,
