@@ -415,6 +415,7 @@ export default class App extends Component {
         eventColor.toString() +
         ";" +
         this.points.toString();
+
       this.state.selected.map((email) => {
         to_request(auth.currentUser?.email, email, "event", message);
       });
