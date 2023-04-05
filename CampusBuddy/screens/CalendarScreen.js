@@ -537,9 +537,34 @@ export default class App extends Component {
     this.setState({ visible: true });
   };
 
+  exportDocumentFile = () => {
+    console.log("exporting to google drive example")
+  }
+
   //START Calendar Color setting Modal
+  openCalendarColorModal = () => {
+    console.log("calendar theme");
+    this.setState({visible : false})
+    this.setState({calendarColorVisible : true});
+    //console.log(this.calendarColorVisible)
+  }
+
   closeCalendarColorModal = () => {
+    console.log("close calendar theme modal");
     this.setState({calendarColorVisible : false});
+  }
+
+  lightMode = () => {
+    console.log("calendarscreen.js lightmode");
+    this.setState();
+  }
+
+  darkMode = () => {
+    console.log("calendarscreen.js darkmode");
+  }
+
+  customMode = () => {
+    console.log("calendarscreen.js custommode");
   }
   //END Calendar Color setting Modal
 
@@ -1168,10 +1193,10 @@ export default class App extends Component {
                   )
                 }
               />
-              {/* <Button
+              <Button
                 title="Export schedule"
                 onPress={() => this.exportDocumentFile()}>
-                </Button> */}
+                </Button>
               <Button
                 title="Import schedule"
                 onPress={() => this.openDocumentFile()}
@@ -1181,6 +1206,11 @@ export default class App extends Component {
                 title="Holiday settings"
                 onPress={this.setHolidaySettings}
               />
+              <Button
+                title="Calendar theme"
+                onPress={this.openCalendarColorModal}
+              >
+              </Button>
               <Button
                 title="Compare schedule"
                 onPress = {() => {
@@ -1410,9 +1440,10 @@ export default class App extends Component {
           removeData={this.removeData}
         />
 
-          {/* <CalendarColorModal
+          <CalendarColorModal
             calendarColorVisible={this.state.calendarColorVisible}
-          /> */}
+            closeCalendarColorModal={this.closeCalendarColorModal}
+          />
 
         {/* Bottom tab bar hides calendar screen. TODO Need to fix this.*/}
         <View style={{ flex: 1, marginBottom: 15 }}>

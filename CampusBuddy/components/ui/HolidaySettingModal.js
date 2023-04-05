@@ -2,6 +2,7 @@ import React from "react";
 import { View, Text, Modal, TouchableOpacity, Button } from "react-native";
 import Icon from "react-native-vector-icons/FontAwesome";
 import { SelectList } from "react-native-dropdown-select-list";
+
 export default class HolidaySettingModal extends React.Component {
   constructor(props) {
     super(props);

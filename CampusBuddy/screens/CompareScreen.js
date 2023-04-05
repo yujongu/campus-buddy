@@ -6,6 +6,27 @@ import { userList, to_request } from "../firebaseConfig";
 import { auth } from "../firebaseConfig";
 
 
+const renderItem = ({ item, color }) => <Item title={[item.email, item.first, item.id, item.last]} color={color} />;
+
+// Item
+const Item = ({ title, color }) => {
+  return (
+    <View style={stylses.item}>
+      <Text style={{color: color}}>
+        {title[1] + " " + title[3] + " (" + title[2] + ")"}
+        {'\n'}
+        {title[0]}
+      </Text>
+    <TouchableOpacity
+          activeOpacity={0.7}
+          onPress={() => handleRequest(title[0], title[2])}
+          style={styles.touchableOpacityStyle}>
+          <Icon name="user-plus" size={25} />
+      </TouchableOpacity>
+    </View>
+  );
+};
+
 export default function CompareScreen({props, navigation}) {
 
   const [state, setState] = useState('');
@@ -13,40 +34,18 @@ export default function CompareScreen({props, navigation}) {
   const [compareResult, setCompareResult] = useState('');
 
   const compareSchedules = (props) => {
-    //
-    
+   
   };
 
   const handleRequest = (email, user_ID) => {
-
   }
   
-  // Item
-  const Item = ({ title }) => {
-    return (
-      <View style={styles.item}>
-        <Text>
-          {title[1] + " " + title[3] + " (" + title[2] + ")"}
-          {'\n'}
-          {title[0]}
-        </Text>
-        <TouchableOpacity
-            activeOpacity={0.7}
-            onPress={() => handleRequest(title[0], title[2])}
-            style={styles.touchableOpacityStyle}>
-            <Icon name="user-plus" size={25} />
-        </TouchableOpacity>
-      </View>
-    );
-  };
 
   // Awaiting user list
   const componentDidMount = async () => {
     const res = await userList();
     this.setState({data: res, arrayholder: res});
   }
-
-  const renderItem = ({ item }) => <Item title={[item.email, item.first, item.id, item.last]} />;
 
   const searchFunction = (text) => {
     const updatedData = arrayholder.filter((item) => {
