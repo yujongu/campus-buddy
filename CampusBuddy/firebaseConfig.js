@@ -2,7 +2,7 @@
 import { initializeApp } from "firebase/app";
 import { getAnalytics } from "firebase/analytics";
 import { getAuth, createUserWithEmailAndPassword, sendPasswordResetEmail } from "firebase/auth";
-import firebase from "firebase/compat/app";
+import { getStorage } from "firebase/storage";
 import { EmailAuthProvider, credential } from "firebase/auth";
 import { query, where } from "firebase/firestore";
 import {
@@ -17,6 +17,8 @@ import {
   arrayUnion,
   addDoc,
 } from "firebase/firestore";
+import uuid from 'react-native-uuid';
+import { FieldValue } from "firebase/firestore";
 
 // TODO: Add SDKs for Firebase products that you want to use
 // https://firebase.google.com/docs/web/setup#available-libraries
@@ -38,8 +40,10 @@ const app = initializeApp(firebaseConfig);
 const analytics = getAnalytics(app);
 const auth = getAuth(app);
 const db = getFirestore();
-export { auth, db };
+const storage = getStorage(app);
+export { auth, db, storage };
 const dbRef = collection(db, "users");
+
 
 export async function checkUser(firstName, lastName, userId) {
   console.log(userId);
@@ -73,7 +77,12 @@ export async function checkEmailExists(email) {
   const usersRef = collection(db, "users");
   const q = query(usersRef, where("email", "==", email));
   const querySnapshot = await getDocs(q);
-  return !querySnapshot.empty;
+  if (querySnapshot.empty) {
+    console.log("User not found.");
+    alert('User not found');
+    return false;
+  }
+  return true;
 }
 
 export async function createUser(username, first, last, email, password) {
@@ -122,24 +131,30 @@ export async function createUser(username, first, last, email, password) {
 
 export async function addSchedule(user_token, data) {
   const docRef = doc(db, "schedule", user_token);
-  var res = [];
+  const querySnapShot = await getDoc(docRef);
+  if (!querySnapShot.exists()) {
+    setDoc(docRef, {
+      classes: [],
+    });
+  }
+
   try {
     data.map((element) => {
-      const str = {
-        data:
-          element.endTime +
-          "," +
-          element.location +
-          "," +
-          element.startTime +
-          "," +
-          element.title,
+      const x = {
+        title: element.title,
+        location: element.location,
+        startTime: element.startTime,
+        endTime: element.endTime
       };
-      res.push(str);
+      const data = {
+        id: uuid.v4(),
+        class: x
+      }
+      updateDoc(docRef, { 
+        classes: arrayUnion(data) 
+      });
     });
-    setDoc(docRef, {
-      things: res,
-    });
+
     console.log("Document written with ID: ", docRef.id);
   } catch (e) {
     console.error("Error adding doc: ", e);
@@ -169,7 +184,8 @@ export async function addEvent(
   category,
   point_value,
   color,
-  repetition
+  repetition,
+  id
 ) {
   const docRef = doc(db, "events", user_token);
   // const data={
@@ -184,7 +200,7 @@ export async function addEvent(
   //   color: color,
   //   repetition: repetition
   // }
-  const data = {
+  const x = {
     title: title,
     startTime: startTime,
     endTime: endTime,
@@ -201,7 +217,10 @@ export async function addEvent(
         event: [],
       });
     }
-
+    const data = {
+      id: id,
+      details: x
+    }
     updateDoc(docRef, { event: arrayUnion(data) });
     console.log("Event doc written with ID: ", docRef.id);
   } catch (e) {
@@ -252,6 +271,26 @@ export async function friendList(user_token) {
   }
 }
 
+export async function getUserId(email) {
+  var res = []
+  try {
+    const querySnapShot = await getDocs(collection(db, "users"));
+    querySnapShot.forEach(async (element) => {
+      if (element.data().email == email) {
+        console.log("id found", element.id)
+        res.push(element.id)
+       // const schedule = await userSchedule(element.id)
+       // console.log("schedule", schedule);
+
+      }
+    });
+    return res;
+  }
+  catch(e) {
+    console.error("Error getting user's id: ", e);
+  }
+}
+
 export async function to_request(own, to_user, type, message) {
   const docRef = doc(db, "requests", own);
   const docRef_to = doc(db, "requests", to_user);
@@ -280,5 +319,20 @@ export async function to_request(own, to_user, type, message) {
     } catch (e) {
       console.error("Error adding doc: ", e);
     }
+  }
+}
+
+export async function addPoints(user_token, category, points) {
+  const docRef = doc(db, "users", user_token);
+  const querySnapShot = await getDoc(doc(db, "users", user_token));
+  const oldPoints = querySnapShot.data().points.school;
+  console.log("snapshot", category, points)
+  try {
+    updateDoc(docRef, {
+      ['points.' + category]: oldPoints+points
+    });
+    console.log("Successfully updated points: ", docRef.id);
+  } catch (e) {
+    console.error("Error updating points: ", e);
   }
 }

@@ -33,6 +33,13 @@ export const isOnSameDate = (dateA, dateB) => {
   return false;
 };
 
+export const JSGetDate = (time) => {
+  const monthName = getMonthName(time.getMonth());
+  const d = time.getDate();
+  const y = time.getFullYear();
+  return `${monthName} ${d}, ${y}`;
+};
+
 export const JSClock = (time) => {
   const hour = time.getHours();
   const minute = time.getMinutes();
@@ -47,4 +54,40 @@ export const JSClock = (time) => {
   }
   temp += hour >= 12 ? " P.M." : " A.M.";
   return temp;
+};
+
+export const jsClockToDate = (str) => {
+  try {
+    let temp = str.split(":");
+    if (temp.length < 2) {
+      return null;
+    }
+    let hour = parseInt(temp[0]);
+    let minute = temp[1].substring(0, 2);
+    if (temp[1].substring(2).includes("PM")) {
+      hour += 12;
+    }
+    const res = new Date();
+    res.setHours(hour);
+    res.setMinutes(minute);
+    return res;
+  } catch (e) {
+    console.log(e);
+    console.log(str);
+  }
+};
+
+export const jsDateToDate = (str) => {
+  let temp = str.split("/");
+  if (temp.length == 3) {
+    // const res = new Date();
+    // res.setDate(1);
+    // res.setFullYear(temp[2]);
+    // res.setMonth(parseInt(temp[0]) - 1);
+    // res.setDate(temp[1]);
+    const res = new Date(temp[2], parseInt(temp[0]) - 1, temp[1]);
+
+    return res;
+  }
+  return null;
 };

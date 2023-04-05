@@ -32,70 +32,84 @@ export default class TopHeaderDays extends React.Component {
   };
 
   render() {
-    const { holidays, startDay } = this.props;
+    const { holidays, startDay, color } = this.props;
 
     return (
       <View style={{ flexDirection: "row" }}>
         <View style={styles.daysWithDateContainer}>
-          <Text style={styles.days}>{getWeekDayName(0)}</Text>
-          <Text style={styles.date}>
+          <Text style={[styles.days, { color: color }]}>
+            {getWeekDayName(0)}
+          </Text>
+          <Text style={[styles.date, { color: color }]}>
             {this.getNextDay(startDay, 0).getDate()}
           </Text>
-          <Text style={styles.holiday}>
+          <Text style={[styles.holiday, { color: color }]}>
             {this.getHoliday(this.getNextDay(startDay, 0), holidays)}
           </Text>
         </View>
         <View style={styles.daysWithDateContainer}>
-          <Text style={styles.days}>{getWeekDayName(1)}</Text>
-          <Text style={styles.date}>
+          <Text style={[styles.days, { color: color }]}>
+            {getWeekDayName(1)}
+          </Text>
+          <Text style={[styles.date, { color: color }]}>
             {this.getNextDay(startDay, 1).getDate()}
           </Text>
-          <Text style={styles.holiday}>
+          <Text style={[styles.holiday, { color: color }]}>
             {this.getHoliday(this.getNextDay(startDay, 1), holidays)}
           </Text>
         </View>
         <View style={styles.daysWithDateContainer}>
-          <Text style={styles.days}>{getWeekDayName(2)}</Text>
-          <Text style={styles.date}>
+          <Text style={[styles.days, { color: color }]}>
+            {getWeekDayName(2)}
+          </Text>
+          <Text style={[styles.date, { color: color }]}>
             {this.getNextDay(startDay, 2).getDate()}
           </Text>
-          <Text style={styles.holiday}>
+          <Text style={[styles.holiday, { color: color }]}>
             {this.getHoliday(this.getNextDay(startDay, 2), holidays)}
           </Text>
         </View>
         <View style={styles.daysWithDateContainer}>
-          <Text style={styles.days}>{getWeekDayName(3)}</Text>
-          <Text style={styles.date}>
+          <Text style={[styles.days, { color: color }]}>
+            {getWeekDayName(3)}
+          </Text>
+          <Text style={[styles.date, { color: color }]}>
             {this.getNextDay(startDay, 3).getDate()}
           </Text>
-          <Text style={styles.holiday}>
+          <Text style={[styles.holiday, { color: color }]}>
             {this.getHoliday(this.getNextDay(startDay, 3), holidays)}
           </Text>
         </View>
         <View style={styles.daysWithDateContainer}>
-          <Text style={styles.days}>{getWeekDayName(4)}</Text>
-          <Text style={styles.date}>
+          <Text style={[styles.days, { color: color }]}>
+            {getWeekDayName(4)}
+          </Text>
+          <Text style={[styles.date, { color: color }]}>
             {this.getNextDay(startDay, 4).getDate()}
           </Text>
-          <Text style={styles.holiday}>
+          <Text style={[styles.holiday, { color: color }]}>
             {this.getHoliday(this.getNextDay(startDay, 4), holidays)}
           </Text>
         </View>
         <View style={styles.daysWithDateContainer}>
-          <Text style={styles.days}>{getWeekDayName(5)}</Text>
-          <Text style={styles.date}>
+          <Text style={[styles.days, { color: color }]}>
+            {getWeekDayName(5)}
+          </Text>
+          <Text style={[styles.date, { color: color }]}>
             {this.getNextDay(startDay, 5).getDate()}
           </Text>
-          <Text style={styles.holiday}>
+          <Text style={[styles.holiday, { color: color }]}>
             {this.getHoliday(this.getNextDay(startDay, 5), holidays)}
           </Text>
         </View>
         <View style={styles.daysWithDateContainer}>
-          <Text style={styles.days}>{getWeekDayName(6)}</Text>
-          <Text style={styles.date}>
+          <Text style={[styles.days, { color: color }]}>
+            {getWeekDayName(6)}
+          </Text>
+          <Text style={[styles.date, { color: color }]}>
             {this.getNextDay(startDay, 6).getDate()}
           </Text>
-          <Text style={styles.holiday}>
+          <Text style={[styles.holiday, { color: color }]}>
             {this.getHoliday(this.getNextDay(startDay, 6), holidays)}
           </Text>
         </View>

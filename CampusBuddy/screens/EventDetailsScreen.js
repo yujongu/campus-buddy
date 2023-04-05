@@ -1,15 +1,20 @@
 import React from "react";
 import Icon from "react-native-vector-icons/FontAwesome";
-import { StyleSheet, View, Text, TouchableOpacity } from "react-native";
+import { StyleSheet, View, Text, TouchableOpacity, Button } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
 import { EventCategory } from "../constants/eventCategory";
 
 export default function EventDetailsScreen({ route }) {
-  const { category, day, startTime, endTime, title, location, host, color } =
-    route.params;
 
+  const { category, day, startTime, endTime, title, location, host, color, removeFromCalendar: removeFromCalendar } =
+    route.params;
   const navigation = useNavigation();
+  const removeEvent = () => {
+    removeFromCalendar();
+    navigation.goBack();
+  }
+
   return (
     <SafeAreaView
       style={{
@@ -31,6 +36,8 @@ export default function EventDetailsScreen({ route }) {
           </Text>
           <Text style={styles.eventLocationText}>@{location}</Text>
         </View>
+        <Button title="Mark as completed" onPress={removeEvent}/>
+
       </View>
     </SafeAreaView>
   );
