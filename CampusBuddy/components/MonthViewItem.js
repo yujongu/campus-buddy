@@ -23,7 +23,7 @@ const MonthViewItem = ({ date, hasEvent, isThisMonth }) => {
         backgroundColor: isThisMonth ? Colors.third : Colors.secondary,
         padding: 10,
         margin: 3,
-        borderRadius: "10",
+        borderRadius: 10,
         height: Dimensions.get("window").width / 6,
         justifyContent: "space-between",
       }}
