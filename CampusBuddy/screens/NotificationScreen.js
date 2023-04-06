@@ -1,6 +1,5 @@
 import { docRef ,setDoc, getDoc, arrayRemove, doc, onSnapshot, updateDoc, arrayUnion,  } from "@firebase/firestore";
 import { auth, db } from "../firebaseConfig";
-import { async } from "@firebase/util";
 import { StatusBar } from "expo-status-bar";
 import { Component, useEffect, useState } from "react";
 import { Button, Alert, StyleSheet, Text, TouchableOpacity, View, ActivityIndicator } from "react-native";
@@ -8,6 +7,10 @@ import { FlatList } from "react-native";
 import Icon from 'react-native-vector-icons/AntDesign'
 import AntDesign from "react-native-vector-icons/AntDesign"
 import { Modal } from "react-native";
+import uuid from "react-native-uuid";
+import {
+  addEvent,
+} from "../firebaseConfig";
 
 
 export default class NotificationScreen extends Component{
@@ -92,13 +95,14 @@ export default class NotificationScreen extends Component{
       if(doc.data() != undefined){
         doc.data()['event']
         .forEach(data => {
-          if(new Date(data.startTime) <= new Date() && new Date(data.endTime) >= new Date()){
+          data = data['details']
+          if(new Date(data.startTime.toDate()) <= new Date() && new Date(data.endTime.toDate()) >= new Date()){
             const event = 
             "Event title: " + data.title + "\n" +
             "Event location: " + data.location + "\n" +
             "Event point: " + data.point_value + "\n" +
             "Until event ends: " + 
-            Math.floor((new Date(data.endTime) - new Date())/(1000*60*60))
+            Math.floor((new Date(data.endTime.toDate()) - new Date())/(1000*60*60))
             + " hour(s)" + "/alert"
             temp.push(event)
           }
@@ -147,9 +151,20 @@ export default class NotificationScreen extends Component{
       color: temp[5],
       repetition: 0
     }
-    updateDoc(docRef, {
-      event: arrayUnion(data)
-    })
+
+    const eventId = uuid.v4();
+      addEvent(
+        auth.currentUser?.uid,
+        temp[1],
+        new Date(temp[2]),
+        new Date(temp[3]),
+        temp[4],
+        temp[0],
+        temp[6],
+        temp[5],
+        0,
+        eventId
+      );
     
     const reqRef = doc(db, "requests", auth.currentUser?.email)
     const reqRef_f = doc(db, "requests", from)
@@ -229,8 +244,8 @@ export default class NotificationScreen extends Component{
       )
     }else if(type == "alert"){
       return (
-        <View style = {styles.item}>
-          <Text>{words[1]}</Text>
+        <View style = {[styles.item, {justifyContent: 'flex-start'}]}>
+          <Text>{words[0]}</Text>
         </View>
       )
     }

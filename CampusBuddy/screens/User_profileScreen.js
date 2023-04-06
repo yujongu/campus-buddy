@@ -22,6 +22,7 @@ import EventItem from "../components/ui/EventItem";
 import { PointsProgressBar } from "../components/ui/PointsProgressBar";
 import { auth, db, userSchedule, getUserEvents, getUserId } from "../firebaseConfig";
 
+
 export default function User_profile({ navigation, route }) {
   const { email } = route.params;
   const [calendarVisible, setCalendar] = useState(false);
@@ -417,7 +418,7 @@ export default function User_profile({ navigation, route }) {
                               location={event.location}
                               color={event.color}
                               id={event.id}
-                              handleEventCompletion={this.handleEventCompletion}
+                              clickable={false}
                             />
                           ) : (
                             <View />

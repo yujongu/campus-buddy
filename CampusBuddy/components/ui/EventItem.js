@@ -54,22 +54,27 @@ export default class EventItem extends React.Component {
     description,
     host,
     color
-  ) {
-    this.props.navigation.navigate("EventDetails", {
-      category,
-      day,
-      startTime: this.JSClock(startTime),
-      endTime: this.JSClock(endTime),
-      title,
-      location,
+  , clickable) {
+    if (clickable) {
+      this.props.navigation.navigate("EventDetails", {
+        category,
+        day,
+        startTime: this.JSClock(startTime),
+        endTime: this.JSClock(endTime),
+        title,
+        location,
       description,
-      host,
-      color,
-      removeFromCalendar: this.removeFromCalendar,
-    });
+        host,
+        color,
+        removeFromCalendar: this.removeFromCalendar,
+      });
+
+    }
+
   }
 
   render() {
+
     const {
       category,
       day,
@@ -81,6 +86,7 @@ export default class EventItem extends React.Component {
       host,
       color,
       id,
+      clickable,
     } = this.props;
 
     let nHeight =
@@ -103,7 +109,8 @@ export default class EventItem extends React.Component {
             location,
             description != undefined ? description : "",
             host,
-            color
+            color,
+            clickable
           )
         }
       >

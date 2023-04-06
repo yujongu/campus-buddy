@@ -487,12 +487,14 @@ export default class FriendScreen extends Component {
             </View>
           </View>
         </Modal>
-        <FloatingAction
-          actions={this.state.actions}
-          onPressItem={name => {
-            this.floating_handler(name)
-          }}
-        />
+        <View style={{elevation: 999, zIndex: 999, position: 'absolute', right: 10, bottom: 30}}>
+          <FloatingAction
+            actions={this.state.actions}
+            onPressItem={name => {
+              this.floating_handler(name)
+            }}
+          />
+        </View>
         
         <Text>{"\n\n"}Favorites:</Text>
         <View>
@@ -553,6 +555,8 @@ const styles = StyleSheet.create({
     alignSelf: "center",
     flexDirection: "row",
     justifyContent: "space-between",
+    zIndex: -1,
+    elevation: -1
   },
   button: {
     borderRadius: 20,
