@@ -1338,7 +1338,7 @@ export default class App extends Component {
                         placeholder={"Never"}
                         setValue={this.setValue}
                         setItems={this.setItems}
-                        onPress={this.setOpen}
+                        // onPress={this.setOpen}
                       />
                     </View>
                   </View>
