@@ -446,8 +446,13 @@ export default class App extends Component {
     this.location = location;
   };
 
-  setDescription = (description) => {
-    this.description = description;
+  setDescription = (text) => {
+    if (text.length > 256) {
+      alert("Description is too long.\nWord limit is 256 characters");
+      text = text.slice(0, 256);
+    }
+    this.description = text;
+    this.setState({ description: text });
   };
 
   setPoints = (points) => {
@@ -1280,6 +1285,9 @@ export default class App extends Component {
                         placeholder="Description"
                         placeholderTextColor="#8b9cb5"
                         onChangeText={(text) => this.setDescription(text)}
+                        value={this.state.description}
+                        maxLength={257}
+                        multiline={true}
                       ></TextInput>
                     </View>
                   </View>
