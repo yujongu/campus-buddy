@@ -1215,202 +1215,224 @@ export default class App extends Component {
               style={{
                 backgroundColor: "white",
                 marginHorizontal: 20,
-                marginVertical: 50,
-                justifyContent: "center",
-                alignItems: "center",
-                borderWidth: 0,
+                height: "60%",
                 borderRadius: 10,
               }}
             >
-              <TouchableOpacity
-                onPress={() => this.setState({ createEventVisible: false })}
-              >
-                <View style={{ paddingLeft: 270, paddingTop: 5 }}>
-                  <Icon name="times" size={20} color="#2F4858" />
-                </View>
-              </TouchableOpacity>
-
-              {/* Creating a new View component with styles.row for each row in the modal for formatting */}
-              <View style={styles.row}>
-                <Text style={styles.header_text}>Create Event</Text>
-              </View>
-
-              <View style={styles.row}>
-                {/* New row for color picker and title input */}
-                <TouchableOpacity
-                  onPress={() => this.setState({ colorPicker: true })}
-                >
-                  <View style={{ paddingTop: 5, paddingRight: 15 }}>
-                    <Icon name="square" size={40} color={eventColor} />
-                  </View>
-                </TouchableOpacity>
-                <TextInput
-                  style={styles.titleInputStyle}
-                  placeholder="Add title"
-                  placeholderTextColor="#8b9cb5"
-                  onChangeText={(text) => this.setTitle(text)}
-                ></TextInput>
-              </View>
-
-              <View style={styles.row}>
-                <View style={{ flex: 1 }}>
-                  <TextInput
-                    style={styles.inputStyle}
-                    placeholder="Description"
-                    placeholderTextColor="#8b9cb5"
-                    onChangeText={(text) => this.setDescription(text)}
-                  ></TextInput>
-                </View>
-              </View>
-
-              <View style={styles.row}>
-                <View style={{ flex: 1, paddingTop: 10 }}>
-                  <Icon name="map-pin" size={20} color="#2F4858" />
-                </View>
-                <View style={{ flex: 8 }}>
-                  <TextInput
-                    style={styles.inputStyle}
-                    placeholder="Location"
-                    placeholderTextColor="#8b9cb5"
-                    onChangeText={(text) => this.setLocation(text)}
-                  ></TextInput>
-                </View>
-              </View>
-
-              {/* <View style={styles.row}> */}
-              <View style={[styles.row, {}]}>
-                <Text
+              <ScrollView>
+                <View
                   style={{
-                    textAlign: "center",
-                    color: "#2F4858",
+                    flexDirection: "column",
+                    alignItems: "center",
                   }}
                 >
-                  Points
-                </Text>
-                <TextInput
-                  placeholderTextColor="#8b9cb5"
-                  style={{
-                    color: "black",
-                    borderWidth: 1,
-                    borderColor: "#8b9cb5",
-                    marginLeft: 10,
-                    marginTop: 5,
-                    width: 50,
-                    height: 30,
-                    textAlign: "center",
-                  }}
-                  value={this.state.points}
-                  defaultValue={0}
-                  keyboardType="numeric"
-                  onChangeText={(text) => this.setPoints(text)}
-                ></TextInput>
-              </View>
-              <View style={styles.row}>
-                <View style={{ flex: 1, paddingTop: 10 }}>
-                  <Icon name="repeat" size={20} color="#2F4858" />
-                </View>
-                <View style={{ flex: 8 }}>
-                  {/*dropdown selection does not work :(*/}
-                  <DropDownPicker
-                    open={openList}
-                    value={repetition}
-                    items={repetitionItems}
-                    placeholder={"Never"}
-                    setValue={this.setValue}
-                    setItems={this.setItems}
-                    onPress={this.setOpen}
-                  />
-                </View>
-              </View>
-              <View style={styles.row}>
-                <Text
-                  style={{
-                    textAlign: "center",
-                    margin: 5,
-                    paddingTop: 7,
-                    color: "#2F4858",
-                  }}
-                >
-                  Start
-                </Text>
-                <DateTimePicker
-                  mode={"date"}
-                  value={this.state.eventStartDate}
-                  onChange={this.onEventStartDateSelected}
-                  style={{ marginLeft: 10, marginTop: 5 }}
-                />
-                <DateTimePicker
-                  mode={"time"}
-                  value={this.state.eventStartTime}
-                  onChange={this.onEventStartTimeSelected}
-                  style={{ marginLeft: 10, marginTop: 5 }}
-                />
-              </View>
-              <View style={styles.row}>
-                <Text
-                  style={{
-                    textAlign: "center",
-                    margin: 5,
-                    paddingTop: 7,
-                    color: "#2F4858",
-                  }}
-                >
-                  End
-                </Text>
-                <DateTimePicker
-                  mode={"date"}
-                  value={this.state.eventEndDate}
-                  onChange={this.onEventEndDateSelected}
-                  style={{ marginLeft: 10, marginTop: 5 }}
-                />
-                <DateTimePicker
-                  mode={"time"}
-                  value={this.state.eventEndTime}
-                  onChange={this.onEventEndTimeSelected}
-                  style={{ marginLeft: 10, marginTop: 5 }}
-                />
-              </View>
-              <View style={[{ width: 300, margin: 10 }]}>
-                <MultiSelect
-                  style={styles.dropdown}
-                  placeholderStyle={styles.placeholderStyle}
-                  selectedTextStyle={styles.selectedTextStyle}
-                  inputSearchStyle={styles.inputSearchStyle}
-                  iconStyle={styles.iconStyle}
-                  data={this.state.searched}
-                  valueField="user"
-                  placeholder="Choose friends"
-                  value={this.state.selected}
-                  search
-                  searchQuery={(text) => {
-                    this.filter_friends(text);
-                  }}
-                  searchPlaceholder="Search..."
-                  onChange={(item) => {
-                    this.setState({ selected: item });
-                  }}
-                  renderItem={this.renderDataItem}
-                  renderSelectedItem={(item, unSelect) => (
+                  <View style={styles.row}>
                     <TouchableOpacity
-                      onPress={() => unSelect && unSelect(item)}
+                      style={{
+                        flex: 1,
+                      }}
+                      onPress={() =>
+                        this.setState({ createEventVisible: false })
+                      }
                     >
-                      <View style={styles.selectedStyle}>
-                        <Text style={styles.textSelectedStyle}>
-                          {item.user}
-                        </Text>
-                        <AntDesign color="black" name="delete" size={17} />
+                      <View style={{ alignSelf: "flex-end" }}>
+                        <Icon name="times" size={20} color="#2F4858" />
                       </View>
                     </TouchableOpacity>
-                  )}
-                />
-              </View>
-              <Button
-                title="Create new event"
-                onPress={() => {
-                  this.submitEvent(eventColor),
-                    this.setState({ createEventVisible: false });
-                }}
-              />
+                  </View>
+
+                  {/* Creating a new View component with styles.row for each row in the modal for formatting */}
+                  <View style={styles.row}>
+                    <Text style={styles.header_text}>Create Event</Text>
+                  </View>
+
+                  <View style={styles.row}>
+                    {/* New row for color picker and title input */}
+                    <TouchableOpacity
+                      onPress={() => this.setState({ colorPicker: true })}
+                    >
+                      <View style={{ paddingTop: 5, paddingRight: 15 }}>
+                        <Icon name="square" size={40} color={eventColor} />
+                      </View>
+                    </TouchableOpacity>
+                    <TextInput
+                      style={styles.titleInputStyle}
+                      placeholder="Add title"
+                      placeholderTextColor="#8b9cb5"
+                      onChangeText={(text) => this.setTitle(text)}
+                    ></TextInput>
+                  </View>
+
+                  <View style={styles.row}>
+                    <View
+                      style={{
+                        flex: 1,
+                        borderWidth: 1,
+                        borderColor: "#8b9cb5",
+                      }}
+                    >
+                      <TextInput
+                        style={{
+                          fontSize: 20,
+                          padding: 5,
+                        }}
+                        placeholder="Description"
+                        placeholderTextColor="#8b9cb5"
+                        onChangeText={(text) => this.setDescription(text)}
+                      ></TextInput>
+                    </View>
+                  </View>
+
+                  <View style={styles.row}>
+                    <View style={{ flex: 1, paddingTop: 10 }}>
+                      <Icon name="map-pin" size={20} color="#2F4858" />
+                    </View>
+                    <View style={{ flex: 8 }}>
+                      <TextInput
+                        style={styles.inputStyle}
+                        placeholder="Location"
+                        placeholderTextColor="#8b9cb5"
+                        onChangeText={(text) => this.setLocation(text)}
+                      ></TextInput>
+                    </View>
+                  </View>
+
+                  {/* <View style={styles.row}> */}
+                  <View style={[styles.row, {}]}>
+                    <Text
+                      style={{
+                        textAlign: "center",
+                        color: "#2F4858",
+                      }}
+                    >
+                      Points
+                    </Text>
+                    <TextInput
+                      placeholderTextColor="#8b9cb5"
+                      style={{
+                        color: "black",
+                        borderWidth: 1,
+                        borderColor: "#8b9cb5",
+                        marginLeft: 10,
+                        marginTop: 5,
+                        width: 50,
+                        height: 30,
+                        textAlign: "center",
+                      }}
+                      value={this.state.points}
+                      defaultValue={0}
+                      keyboardType="numeric"
+                      onChangeText={(text) => this.setPoints(text)}
+                    ></TextInput>
+                  </View>
+                  <View style={styles.row}>
+                    <View style={{ flex: 1, paddingTop: 10 }}>
+                      <Icon name="repeat" size={20} color="#2F4858" />
+                    </View>
+                    <View style={{ flex: 8 }}>
+                      {/*dropdown selection does not work :(*/}
+                      <DropDownPicker
+                        open={openList}
+                        value={repetition}
+                        items={repetitionItems}
+                        placeholder={"Never"}
+                        setValue={this.setValue}
+                        setItems={this.setItems}
+                        onPress={this.setOpen}
+                      />
+                    </View>
+                  </View>
+                  <View style={styles.row}>
+                    <Text
+                      style={{
+                        textAlign: "center",
+                        margin: 5,
+                        paddingTop: 7,
+                        color: "#2F4858",
+                      }}
+                    >
+                      Start
+                    </Text>
+                    <DateTimePicker
+                      mode={"date"}
+                      value={this.state.eventStartDate}
+                      onChange={this.onEventStartDateSelected}
+                      style={{ marginLeft: 10, marginTop: 5 }}
+                    />
+                    <DateTimePicker
+                      mode={"time"}
+                      value={this.state.eventStartTime}
+                      onChange={this.onEventStartTimeSelected}
+                      style={{ marginLeft: 10, marginTop: 5 }}
+                    />
+                  </View>
+                  <View style={styles.row}>
+                    <Text
+                      style={{
+                        textAlign: "center",
+                        margin: 5,
+                        paddingTop: 7,
+                        color: "#2F4858",
+                      }}
+                    >
+                      End
+                    </Text>
+                    <DateTimePicker
+                      mode={"date"}
+                      value={this.state.eventEndDate}
+                      onChange={this.onEventEndDateSelected}
+                      style={{ marginLeft: 10, marginTop: 5 }}
+                    />
+                    <DateTimePicker
+                      mode={"time"}
+                      value={this.state.eventEndTime}
+                      onChange={this.onEventEndTimeSelected}
+                      style={{ marginLeft: 10, marginTop: 5 }}
+                    />
+                  </View>
+                  <View style={[{ width: 300, margin: 10 }]}>
+                    <MultiSelect
+                      style={styles.dropdown}
+                      placeholderStyle={styles.placeholderStyle}
+                      selectedTextStyle={styles.selectedTextStyle}
+                      inputSearchStyle={styles.inputSearchStyle}
+                      iconStyle={styles.iconStyle}
+                      data={this.state.searched}
+                      valueField="user"
+                      placeholder="Choose friends"
+                      value={this.state.selected}
+                      search
+                      searchQuery={(text) => {
+                        this.filter_friends(text);
+                      }}
+                      searchPlaceholder="Search..."
+                      onChange={(item) => {
+                        this.setState({ selected: item });
+                      }}
+                      renderItem={this.renderDataItem}
+                      renderSelectedItem={(item, unSelect) => (
+                        <TouchableOpacity
+                          onPress={() => unSelect && unSelect(item)}
+                        >
+                          <View style={styles.selectedStyle}>
+                            <Text style={styles.textSelectedStyle}>
+                              {item.user}
+                            </Text>
+                            <AntDesign color="black" name="delete" size={17} />
+                          </View>
+                        </TouchableOpacity>
+                      )}
+                    />
+                  </View>
+                  <Button
+                    title="Create new event"
+                    onPress={() => {
+                      this.submitEvent(eventColor),
+                        this.setState({ createEventVisible: false });
+                    }}
+                  />
+                </View>
+              </ScrollView>
             </View>
           </View>
         </Modal>
