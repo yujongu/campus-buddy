@@ -21,11 +21,13 @@ import {
   onSnapshot,
   arrayUnion,
   getDoc,
+  deleteField,
 } from "firebase/firestore";
 import { Component } from "react";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import AntDesign from 'react-native-vector-icons/AntDesign';
 import { MultiSelect } from 'react-native-element-dropdown';
+import { ScrollView } from "react-native-gesture-handler";
 
 
 var all = []
@@ -266,9 +268,17 @@ export default class FriendScreen extends Component {
 
   removeGroup = (item, group) => {
     const me = doc(db, "friend_list", auth.currentUser?.email);
-    updateDoc(me, {
-      [group]: arrayRemove(item),
-    });
+    getDoc(me).then((snap) => {
+      // if (snap.data()[group] == 1){
+        updateDoc(me, {
+          [group]: deleteField(),
+        });
+      // }else{
+      //   updateDoc(me, {
+      //     [group]: arrayRemove(item),
+      //   });
+      // }
+    })
     Alert.alert("Ungroup", "Succesfully ungrouped!")
   }
 
@@ -343,11 +353,14 @@ export default class FriendScreen extends Component {
   renderGroups = (group) => {
     return (
       <View>
-        <Text>{"\n\n" + group + ":"}</Text>
-        <FlatList 
-          data = {this.state.data[group]}
-          renderItem={({item}) => this.renderItem2(item, group)}
-        />
+          <View>
+            <Text style={{marginLeft: 10, fontSize: 20, marginTop: -30}}>{"\n\n" + group + ":"}</Text>
+            {/* <FlatList 
+              data = {this.state.data[group]}
+              renderItem={({item}) => this.renderItem2(item, group)}
+            /> */}
+            {this.state.data[group].map((item) => this.renderItem2(item, group))}
+          </View>
       </View>
     )
   }
@@ -424,69 +437,103 @@ export default class FriendScreen extends Component {
     ) : null;
 
     return (
-      <SafeAreaView style={styles.container}>
-        <Modal
-          animationType="slide"
-          transparent={true}
-          visible={this.state.group_visible}
-        >
-          <View style={{flex: 1, justifyContent: 'center', alignItems: 'center',}}>
-            <View style={styles.modalView}>
-              <View style={{marginBottom: 25}}>
-                <Text>Group Name: </Text>
-                <TextInput
-                  style={styles.input2}
-                  onChangeText={text => this.setState({ input : text})}
-                  placeholder="Type here ..."
-                  value={this.state.input}
-                />
-                <Text>Choose your friends to add:</Text>
-                <MultiSelect
-                  style={styles.dropdown}
-                  placeholderStyle={styles.placeholderStyle}
-                  selectedTextStyle={styles.selectedTextStyle}
-                  inputSearchStyle={styles.inputSearchStyle}
-                  iconStyle={styles.iconStyle}
-                  data={this.state.searched}
-                  valueField="user"
-                  placeholder="Choose friends"
-                  value={this.state.selected}
-                  search
-                  searchQuery={(text) => {
-                    this.filter_friends(text)
+      <View style={styles.container}>
+        <ScrollView style={styles.container}>
+          <Modal
+            animationType="slide"
+            transparent={true}
+            visible={this.state.group_visible}
+          >
+            <View style={{flex: 1, justifyContent: 'center', alignItems: 'center',}}>
+              <View style={styles.modalView}>
+                <View style={{marginBottom: 25}}>
+                  <Text>Group Name: </Text>
+                  <TextInput
+                    style={styles.input2}
+                    onChangeText={text => this.setState({ input : text})}
+                    placeholder="Type here ..."
+                    value={this.state.input}
+                  />
+                  <Text>Choose your friends to add:</Text>
+                  <MultiSelect
+                    style={styles.dropdown}
+                    placeholderStyle={styles.placeholderStyle}
+                    selectedTextStyle={styles.selectedTextStyle}
+                    inputSearchStyle={styles.inputSearchStyle}
+                    iconStyle={styles.iconStyle}
+                    data={this.state.searched}
+                    valueField="user"
+                    placeholder="Choose friends"
+                    value={this.state.selected}
+                    search
+                    searchQuery={(text) => {
+                      this.filter_friends(text)
+                      }
                     }
-                  }
-                  searchPlaceholder="Search..."
-                  onChange={item => {
-                      this.setState({selected: item})
-                  }}
-                  renderItem={this.renderDataItem}
-                  renderSelectedItem={(item, unSelect) => (
-                      <TouchableOpacity onPress={() => unSelect && unSelect(item)}>
-                          <View style={styles.selectedStyle}>
-                              <Text style={styles.textSelectedStyle}>{item.user}</Text>
-                              <AntDesign color="black" name="delete" size={17} />
-                          </View>
-                      </TouchableOpacity>
-                  )}
-                />
-                <StatusBar />
-              </View>
-              <View style={{flexDirection: "row", justifyContent: "space-around"}}>
-                <Pressable
-                  style={[styles.button, styles.buttonClose, {marginRight: 10}]}
-                  onPress={() => this.handle_create()}>
-                  <Text style={styles.textStyle}>Create</Text>
-                </Pressable>
-                <Pressable
-                  style={[styles.button, styles.buttonClose]}
-                  onPress={() => this.setState({group_visible: !this.state.group_visible})}>
-                  <Text style={styles.textStyle}>Cancel</Text>
-                </Pressable>
+                    searchPlaceholder="Search..."
+                    onChange={item => {
+                        this.setState({selected: item})
+                    }}
+                    renderItem={this.renderDataItem}
+                    renderSelectedItem={(item, unSelect) => (
+                        <TouchableOpacity onPress={() => unSelect && unSelect(item)}>
+                            <View style={styles.selectedStyle}>
+                                <Text style={styles.textSelectedStyle}>{item.user}</Text>
+                                <AntDesign color="black" name="delete" size={17} />
+                            </View>
+                        </TouchableOpacity>
+                    )}
+                  />
+                  <StatusBar />
+                </View>
+                <View style={{flexDirection: "row", justifyContent: "space-around"}}>
+                  <Pressable
+                    style={[styles.button, styles.buttonClose, {marginRight: 10}]}
+                    onPress={() => this.handle_create()}>
+                    <Text style={styles.textStyle}>Create</Text>
+                  </Pressable>
+                  <Pressable
+                    style={[styles.button, styles.buttonClose]}
+                    onPress={() => this.setState({group_visible: !this.state.group_visible})}>
+                    <Text style={styles.textStyle}>Cancel</Text>
+                  </Pressable>
+                </View>
               </View>
             </View>
+          </Modal>
+          
+          <Text style={{fontSize: 20, marginTop: -40, marginLeft: 10}}>{"\n\n"}Favorites:</Text>
+          <View>
+            {this.state.favor && this.state.favor.length ? (
+              // <FlatList
+              //   data={this.state.favor}
+              //   renderItem={({ item }) => this.renderItem(item)}
+              // />
+              this.state.favor.map((item) => this.renderItem(item))
+            ) : (
+              <Text style={{marginLeft: 10, marginTop: 5}}>No favorite friends yet</Text>
+            )}
           </View>
-        </Modal>
+          <Text style={{fontSize: 20, marginTop: -40, marginLeft: 10}}>{"\n\n"}Friends:</Text>
+          <View>
+            {this.state.list && this.state.list.length ? (
+              // <FlatList
+              //   data={this.state.list}
+              //   renderItem={({ item }) => this.renderItem(item)}
+              // />
+              this.state.list.map((item) => this.renderItem(item))
+            ) : (
+              <Text style={{marginLeft: 10, marginTop: 5}}>No friends yet</Text>
+            )}
+          </View>
+          <View>
+            {
+              this.state.all_groups.map((item) => this.renderGroups(item))
+            }
+          </View>
+
+          {nicknameInput}
+        </ScrollView>
         <View style={{elevation: 999, zIndex: 999, position: 'absolute', right: 10, bottom: 30}}>
           <FloatingAction
             actions={this.state.actions}
@@ -495,38 +542,7 @@ export default class FriendScreen extends Component {
             }}
           />
         </View>
-        
-        <Text>{"\n\n"}Favorites:</Text>
-        <View>
-          {this.state.favor && this.state.favor.length ? (
-            <FlatList
-              data={this.state.favor}
-              renderItem={({ item }) => this.renderItem(item)}
-            />
-          ) : (
-            <Text>No favorite friends yet</Text>
-          )}
-        </View>
-        <Text>{"\n\n"}Friends:</Text>
-        <View>
-          {this.state.list && this.state.list.length ? (
-            <FlatList
-              data={this.state.list}
-              renderItem={({ item }) => this.renderItem(item)}
-            />
-          ) : (
-            <Text>No friends yet</Text>
-          )}
-        </View>
-        <View>
-          <FlatList 
-            data = {this.state.all_groups}
-            renderItem = {({item}) => this.renderGroups(item)}
-          />
-        </View>
-
-        {nicknameInput}
-      </SafeAreaView>
+      </View>
     );
   }
 }
@@ -556,7 +572,8 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     zIndex: -1,
-    elevation: -1
+    elevation: -1,
+    borderRadius: 30
   },
   button: {
     borderRadius: 20,
