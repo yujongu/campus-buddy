@@ -27,42 +27,31 @@ export default class SearchScreen extends Component {
       searchValue: "",
       arrayholder: "",
       recommend: [],
-      friends: []
+      friends: [],
     };
   }
   
   count_mutual(){
-    const count = {};
-    this.state.recommend.forEach(element => {
-      count[element] = (count[element] || 0) + 1;
-    })
-    return count;
+    // const count = {};
+    // console.log(this.state.recommend)
+    // this.state.recommend.map(element => {
+    //   count[element] = (count[element] || 0) + 1;
+    // })
+    // this.setState({recommend: count})
   }
 
   render_recommend ({item}) {
-    const result = this.count_mutual();
-    console.log(item)
     return (
       <View style={styles.item}>
         <Text>
           {item}{"\n"}
         </Text>
-        {
-          this.state.friends.indexOf(item.email) > -1 ?
-          <TouchableOpacity
-              activeOpacity={0.7}
-              onPress={() => Alert.alert("Warning", "You guys are already friends")}
-              style={styles.touchableOpacityStyle}>
-              <Icon name="user-check" size={25}/>
-          </TouchableOpacity>
-          :
-          <TouchableOpacity
-              activeOpacity={0.7}
-              onPress={() => handleRequest(item.email, item.id)}
-              style={styles.touchableOpacityStyle}>
-              <Icon name="user-plus" size={25}/>
-          </TouchableOpacity>
-        }
+        <TouchableOpacity
+            activeOpacity={0.7}
+            onPress={() => handleRequest(item.email, item.id)}
+            style={styles.touchableOpacityStyle}>
+            <Icon name="user-plus" size={25}/>
+        </TouchableOpacity>
       </View>
     )
   }
@@ -109,23 +98,39 @@ export default class SearchScreen extends Component {
       })     
       this.setState({friends: [...fav, ...fri]})
     })
-    await this.state.friends.forEach((item) => {
+    this.state.friends.forEach((item) => {
       this.state.arrayholder.forEach((item2) => {
         if(item == item2.email){
           const friends = doc(db, "friend_list", item);
           getDoc(friends).then((snap) => {
             const data = snap.data()
             let fri =  data["friends"].map(item3 => {
-              return item3.user
+              if(item3.user != auth.currentUser.email){
+                return item3.user
+              }else{
+                return (null);
+              }
             })
             let fav =  data["favorite"].map(item4 => {
-              return item4.user
+              if(item4.user != auth.currentUser.email){
+                return item4.user
+              }else{
+                return (null);
+              }
             })
-            this.setState({recommend: [...this.state.recommend, ...[...fav,...fri]]})
+            const tmp = [...fri, ...fav].filter((item) => {
+              return item != null
+            })
+            const count = [];
+            tmp.forEach(element => {
+              count.push({[element]: (count[element] || 0) + 1});
+            })
+            this.setState({recommend: [...this.state.recommend, ...count]})
           }).catch((e) => console.log(e))
         }
       })
     })
+    
   }
 
   searchFunction = (text) => {
@@ -156,10 +161,21 @@ export default class SearchScreen extends Component {
           this.state.searchValue === "" ?
           <View>
             <Text style={{fontSize: 20, marginLeft: 10, marginTop: 10}}>Recommended users</Text>
-            <FlatList
-              data={this.state.recommend}
-              renderItem={(item) => this.render_recommend({...item, color})}
-            />
+            {this.state.recommend && this.state.recommend.length ? Object.keys(this.state.recommend).map((item) => Object.keys(this.state.recommend[item]).map(item2 => {
+              return (
+                <View style={styles.item}>
+                  <Text>
+                    {item2}{"\n"}{"Mutual friends: " + this.state.recommend[item][item2]}
+                  </Text>
+                  <TouchableOpacity
+                      activeOpacity={0.7}
+                      onPress={() => handleRequest(item.email, item.id)}
+                      style={styles.touchableOpacityStyle}>
+                      <Icon name="user-plus" size={25}/>
+                  </TouchableOpacity>
+             </View>
+              )
+            })) : <Text style={{marginLeft: 10}}>No user to recommend</Text>}
             
           </View>
           :
