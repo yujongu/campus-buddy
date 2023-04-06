@@ -197,6 +197,7 @@ export default class App extends Component {
             events["event"][i]["details"]["endTime"].seconds * 1000
           ),
           location: events["event"][i]["details"]["location"],
+          description: events["event"][i]["details"]["description"],
           color: events["event"][i]["details"]["color"],
           id: events["event"][i]["id"],
         };
@@ -1196,8 +1197,7 @@ export default class App extends Component {
         {/* Create event modal */}
         <Modal
           animationType="fade"
-          // visible={this.state.createEventVisible}
-          visible={true}
+          visible={this.state.createEventVisible}
           transparent={true}
           onRequestClose={() => {
             this.setState({ visible: !this.state.createEventVisible });
@@ -1645,6 +1645,7 @@ export default class App extends Component {
                                     endTime={new Date(event.endTime)}
                                     title={event.title}
                                     location={event.location}
+                                    description={event.description}
                                     color={event.color}
                                     id={event.id}
                                     handleEventCompletion={

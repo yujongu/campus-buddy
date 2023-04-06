@@ -6,14 +6,23 @@ import { useNavigation } from "@react-navigation/native";
 import { EventCategory } from "../constants/eventCategory";
 
 export default function EventDetailsScreen({ route }) {
-
-  const { category, day, startTime, endTime, title, location, host, color, removeFromCalendar: removeFromCalendar } =
-    route.params;
+  const {
+    category,
+    day,
+    startTime,
+    endTime,
+    title,
+    location,
+    description,
+    host,
+    color,
+    removeFromCalendar: removeFromCalendar,
+  } = route.params;
   const navigation = useNavigation();
   const removeEvent = () => {
     removeFromCalendar();
     navigation.goBack();
-  }
+  };
 
   return (
     <SafeAreaView
@@ -24,11 +33,16 @@ export default function EventDetailsScreen({ route }) {
       }}
     >
       <View style={{}}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <View style={{ padding: 10 }}>
-            <Icon name="times" size={24} color="black" />
-          </View>
-        </TouchableOpacity>
+        <View style={styles.headerContainer}>
+          <TouchableOpacity onPress={() => navigation.goBack()}>
+            <View style={{ padding: 10 }}>
+              <Icon name="times" size={24} color="black" />
+            </View>
+          </TouchableOpacity>
+
+          <Button title="Mark as completed" onPress={removeEvent} />
+        </View>
+
         <View style={styles.titleContainer}>
           <Text style={styles.eventTitleText}>{title}</Text>
           <Text style={styles.eventTimeText}>
@@ -36,14 +50,20 @@ export default function EventDetailsScreen({ route }) {
           </Text>
           <Text style={styles.eventLocationText}>@{location}</Text>
         </View>
-        <Button title="Mark as completed" onPress={removeEvent}/>
-
+        <View style={styles.contentContainer}>
+          <Text style={styles.eventDescriptionText}>{description}</Text>
+        </View>
       </View>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  headerContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginHorizontal: 10,
+  },
   titleContainer: {
     flexDirection: "column",
     justifyContent: "center",
@@ -52,4 +72,10 @@ const styles = StyleSheet.create({
   eventTitleText: { fontSize: 32, textAlign: "center", margin: 4 },
   eventTimeText: { fontSize: 22, textAlign: "center", margin: 4 },
   eventLocationText: { fontSize: 16, textAlign: "center", margin: 4 },
+
+  contentContainer: {
+    marginTop: 18,
+    marginHorizontal: 10,
+  },
+  eventDescriptionText: { fontSize: 20 },
 });
