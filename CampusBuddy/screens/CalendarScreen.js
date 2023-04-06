@@ -109,6 +109,7 @@ export default class App extends Component {
       holidaySettingVisible: false,
       title: "",
       location: "",
+      description: "",
       colorPicker: false,
       eventColor: "#8b9cb5",
       openList: false,
@@ -346,6 +347,7 @@ export default class App extends Component {
       alert("Enter title and location for the event");
       this.setLocation("");
       this.setTitle("");
+      this.setDescription("");
     } else {
       var eventSTime = new Date(
         this.state.eventStartDate.getFullYear(),
@@ -375,6 +377,7 @@ export default class App extends Component {
         eventSTime,
         eventETime,
         this.location,
+        this.description,
         EventCategory.EVENT,
         this.points,
         eventColor,
@@ -388,6 +391,7 @@ export default class App extends Component {
         startTime: eventSTime,
         endTime: eventETime,
         location: this.location,
+        description: this.description,
         color: eventColor,
         id: eventId,
       });
@@ -397,6 +401,7 @@ export default class App extends Component {
         startTime: eventSTime,
         endTime: eventETime,
         location: this.location,
+        description: this.description,
         color: eventColor,
         id: eventId,
       });
@@ -412,6 +417,8 @@ export default class App extends Component {
         ";" +
         this.location +
         ";" +
+        this.description +
+        ";" +
         eventColor.toString() +
         ";" +
         this.points.toString();
@@ -425,6 +432,7 @@ export default class App extends Component {
       this.setState({ eventEndDate: new Date() });
       this.setState({ eventEndTime: new Date() });
       this.setLocation("");
+      this.setDescription("");
       this.setTitle("");
     }
   };
@@ -434,6 +442,10 @@ export default class App extends Component {
 
   setLocation = (location) => {
     this.location = location;
+  };
+
+  setDescription = (description) => {
+    this.description = description;
   };
 
   setPoints = (points) => {
@@ -1139,6 +1151,7 @@ export default class App extends Component {
               flexDirection: "column",
               justifyContent: "center",
               alignItems: "center",
+              // backgroundColor: "rgba(0,0,0,0.5)",
             }}
           >
             <View style={styles.modalView}>
@@ -1182,8 +1195,9 @@ export default class App extends Component {
         </Modal>
         {/* Create event modal */}
         <Modal
-          animationType="slide"
-          visible={this.state.createEventVisible}
+          animationType="fade"
+          // visible={this.state.createEventVisible}
+          visible={true}
           transparent={true}
           onRequestClose={() => {
             this.setState({ visible: !this.state.createEventVisible });
@@ -1194,9 +1208,20 @@ export default class App extends Component {
               flex: 1,
               justifyContent: "center",
               alignItems: "center",
+              backgroundColor: "rgba(0,0,0,0.5)",
             }}
           >
-            <View style={styles.modal}>
+            <View
+              style={{
+                backgroundColor: "white",
+                marginHorizontal: 20,
+                marginVertical: 50,
+                justifyContent: "center",
+                alignItems: "center",
+                borderWidth: 0,
+                borderRadius: 10,
+              }}
+            >
               <TouchableOpacity
                 onPress={() => this.setState({ createEventVisible: false })}
               >
@@ -1204,10 +1229,12 @@ export default class App extends Component {
                   <Icon name="times" size={20} color="#2F4858" />
                 </View>
               </TouchableOpacity>
+
               {/* Creating a new View component with styles.row for each row in the modal for formatting */}
               <View style={styles.row}>
                 <Text style={styles.header_text}>Create Event</Text>
               </View>
+
               <View style={styles.row}>
                 {/* New row for color picker and title input */}
                 <TouchableOpacity
@@ -1224,6 +1251,18 @@ export default class App extends Component {
                   onChangeText={(text) => this.setTitle(text)}
                 ></TextInput>
               </View>
+
+              <View style={styles.row}>
+                <View style={{ flex: 1 }}>
+                  <TextInput
+                    style={styles.inputStyle}
+                    placeholder="Description"
+                    placeholderTextColor="#8b9cb5"
+                    onChangeText={(text) => this.setDescription(text)}
+                  ></TextInput>
+                </View>
+              </View>
+
               <View style={styles.row}>
                 <View style={{ flex: 1, paddingTop: 10 }}>
                   <Icon name="map-pin" size={20} color="#2F4858" />
@@ -1236,6 +1275,35 @@ export default class App extends Component {
                     onChangeText={(text) => this.setLocation(text)}
                   ></TextInput>
                 </View>
+              </View>
+
+              {/* <View style={styles.row}> */}
+              <View style={[styles.row, {}]}>
+                <Text
+                  style={{
+                    textAlign: "center",
+                    color: "#2F4858",
+                  }}
+                >
+                  Points
+                </Text>
+                <TextInput
+                  placeholderTextColor="#8b9cb5"
+                  style={{
+                    color: "black",
+                    borderWidth: 1,
+                    borderColor: "#8b9cb5",
+                    marginLeft: 10,
+                    marginTop: 5,
+                    width: 50,
+                    height: 30,
+                    textAlign: "center",
+                  }}
+                  value={this.state.points}
+                  defaultValue={0}
+                  keyboardType="numeric"
+                  onChangeText={(text) => this.setPoints(text)}
+                ></TextInput>
               </View>
               <View style={styles.row}>
                 <View style={{ flex: 1, paddingTop: 10 }}>
@@ -1253,39 +1321,6 @@ export default class App extends Component {
                     onPress={this.setOpen}
                   />
                 </View>
-              </View>
-              {/* <View style={styles.row}> */}
-              <View style={styles.row}>
-                <Text
-                  style={{
-                    textAlign: "center",
-                    margin: 5,
-                    paddingTop: 10,
-                    paddingLeft: 80,
-                    color: "#2F4858",
-                  }}
-                >
-                  Points
-                </Text>
-                <ScrollView keyboardShouldPersistTaps="handled">
-                  <TextInput
-                    placeholderTextColor="#8b9cb5"
-                    style={{
-                      color: "black",
-                      borderWidth: 1,
-                      borderColor: "#8b9cb5",
-                      marginLeft: 10,
-                      marginTop: 5,
-                      width: 50,
-                      height: 30,
-                      textAlign: "center",
-                    }}
-                    value={this.state.points}
-                    defaultValue={0}
-                    keyboardType="numeric"
-                    onChangeText={(text) => this.setPoints(text)}
-                  ></TextInput>
-                </ScrollView>
               </View>
               <View style={styles.row}>
                 <Text
@@ -1335,7 +1370,7 @@ export default class App extends Component {
                   style={{ marginLeft: 10, marginTop: 5 }}
                 />
               </View>
-              <View style={{ width: "70%", margin: 10 }}>
+              <View style={[{ width: 300, margin: 10 }]}>
                 <MultiSelect
                   style={styles.dropdown}
                   placeholderStyle={styles.placeholderStyle}

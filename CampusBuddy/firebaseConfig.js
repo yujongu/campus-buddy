@@ -1,7 +1,11 @@
 // Import the functions you need from the SDKs you need
 import { initializeApp } from "firebase/app";
 import { getAnalytics } from "firebase/analytics";
-import { getAuth, createUserWithEmailAndPassword, sendPasswordResetEmail } from "firebase/auth";
+import {
+  getAuth,
+  createUserWithEmailAndPassword,
+  sendPasswordResetEmail,
+} from "firebase/auth";
 import { getStorage } from "firebase/storage";
 import { EmailAuthProvider, credential } from "firebase/auth";
 import { query, where } from "firebase/firestore";
@@ -17,7 +21,7 @@ import {
   arrayUnion,
   addDoc,
 } from "firebase/firestore";
-import uuid from 'react-native-uuid';
+import uuid from "react-native-uuid";
 import { FieldValue } from "firebase/firestore";
 
 // TODO: Add SDKs for Firebase products that you want to use
@@ -44,12 +48,11 @@ const storage = getStorage(app);
 export { auth, db, storage };
 const dbRef = collection(db, "users");
 
-
 export async function checkUser(firstName, lastName, userId) {
   console.log(userId);
   return new Promise((resolve, reject) => {
-    const usersRef = collection(db, 'users');
-    const q = query(usersRef, where('id', '==', userId));
+    const usersRef = collection(db, "users");
+    const q = query(usersRef, where("id", "==", userId));
     getDocs(q)
       .then((querySnapshot) => {
         let foundUser = null;
@@ -63,7 +66,7 @@ export async function checkUser(firstName, lastName, userId) {
           alert(`The email address of the user is ${foundUser.email}`);
         } else {
           resolve(null);
-          alert('The entered informations are wrong');
+          alert("The entered informations are wrong");
         }
       })
       .catch((error) => {
@@ -79,7 +82,7 @@ export async function checkEmailExists(email) {
   const querySnapshot = await getDocs(q);
   if (querySnapshot.empty) {
     console.log("User not found.");
-    alert('User not found');
+    alert("User not found");
     return false;
   }
   return true;
@@ -118,7 +121,7 @@ export async function createUser(username, first, last, email, password) {
         //initialize user friend list
         setDoc(doc(db, "friend_list", userCredential.user.email), {
           friends: [],
-          favorite: []
+          favorite: [],
         });
       } catch (e) {
         console.error("Error adding doc: ", e);
@@ -144,14 +147,14 @@ export async function addSchedule(user_token, data) {
         title: element.title,
         location: element.location,
         startTime: element.startTime,
-        endTime: element.endTime
+        endTime: element.endTime,
       };
       const data = {
         id: uuid.v4(),
-        class: x
-      }
-      updateDoc(docRef, { 
-        classes: arrayUnion(data) 
+        class: x,
+      };
+      updateDoc(docRef, {
+        classes: arrayUnion(data),
       });
     });
 
@@ -181,6 +184,7 @@ export async function addEvent(
   startTime,
   endTime,
   location,
+  description,
   category,
   point_value,
   color,
@@ -205,6 +209,7 @@ export async function addEvent(
     startTime: startTime,
     endTime: endTime,
     location: location,
+    description: description,
     category: category,
     point_value: point_value,
     color: color,
@@ -219,8 +224,8 @@ export async function addEvent(
     }
     const data = {
       id: id,
-      details: x
-    }
+      details: x,
+    };
     updateDoc(docRef, { event: arrayUnion(data) });
     console.log("Event doc written with ID: ", docRef.id);
   } catch (e) {
@@ -272,21 +277,19 @@ export async function friendList(user_token) {
 }
 
 export async function getUserId(email) {
-  var res = []
+  var res = [];
   try {
     const querySnapShot = await getDocs(collection(db, "users"));
     querySnapShot.forEach(async (element) => {
       if (element.data().email == email) {
-        console.log("id found", element.id)
-        res.push(element.id)
-       // const schedule = await userSchedule(element.id)
-       // console.log("schedule", schedule);
-
+        console.log("id found", element.id);
+        res.push(element.id);
+        // const schedule = await userSchedule(element.id)
+        // console.log("schedule", schedule);
       }
     });
     return res;
-  }
-  catch(e) {
+  } catch (e) {
     console.error("Error getting user's id: ", e);
   }
 }
@@ -307,7 +310,7 @@ export async function to_request(own, to_user, type, message) {
     } catch (e) {
       console.error("Error adding doc: ", e);
     }
-  }else if(type == "event") {
+  } else if (type == "event") {
     try {
       updateDoc(docRef, {
         to_request: arrayUnion(to_user + "/" + message + "/" + type),
@@ -326,10 +329,10 @@ export async function addPoints(user_token, category, points) {
   const docRef = doc(db, "users", user_token);
   const querySnapShot = await getDoc(doc(db, "users", user_token));
   const oldPoints = querySnapShot.data().points.school;
-  console.log("snapshot", category, points)
+  console.log("snapshot", category, points);
   try {
     updateDoc(docRef, {
-      ['points.' + category]: oldPoints+points
+      ["points." + category]: oldPoints + points,
     });
     console.log("Successfully updated points: ", docRef.id);
   } catch (e) {
