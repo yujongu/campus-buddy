@@ -1,6 +1,7 @@
 import { Pressable } from "@react-native-material/core";
 import React from "react";
 import { View, Text, Dimensions } from "react-native";
+import { EventCategory } from "../../constants/eventCategory";
 const leftHeaderWidth = 50;
 const topHeaderHeight = 20;
 const dailyWidth = (Dimensions.get("window").width - leftHeaderWidth) / 3;
@@ -9,22 +10,16 @@ export default class EventItem extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      showEvent: true
-    }
+      showEvent: true,
+    };
   }
   removeFromCalendar = () => {
-    this.setState({showEvent: false});
+    this.setState({ showEvent: false });
     //console.log(this.props.id)
 
     this.props.handleEventCompletion(this.props.category, this.props.id);
-  }
-  // category: "School Courses",
-  //   startTime: "2019-07-04T17:30:00.000Z",
-  //   endTime: "2019-07-04T18:45:00.000Z",
-  //   title: "EAPS 106",
-  //   location: "MTHW 304",
-  //   Host: "Professor Rauh",
-  
+  };
+
   calculateEventHeight(startTime, endTime) {
     let hourDiff = endTime.getHours() - startTime.getHours();
     let minuteDiff = endTime.getMinutes() - startTime.getMinutes();
@@ -49,7 +44,17 @@ export default class EventItem extends React.Component {
     return temp;
   };
 
-  showDetails(category, day, startTime, endTime, title, location, host, color, clickable) {
+  showDetails(
+    category,
+    day,
+    startTime,
+    endTime,
+    title,
+    location,
+    description,
+    host,
+    color
+  , clickable) {
     if (clickable) {
       this.props.navigation.navigate("EventDetails", {
         category,
@@ -58,9 +63,10 @@ export default class EventItem extends React.Component {
         endTime: this.JSClock(endTime),
         title,
         location,
+      description,
         host,
         color,
-        removeFromCalendar: this.removeFromCalendar
+        removeFromCalendar: this.removeFromCalendar,
       });
 
     }
@@ -68,8 +74,20 @@ export default class EventItem extends React.Component {
   }
 
   render() {
-    const { category, day, startTime, endTime, title, location, host, color, id, clickable } =
-      this.props;
+
+    const {
+      category,
+      day,
+      startTime,
+      endTime,
+      title,
+      location,
+      description,
+      host,
+      color,
+      id,
+      clickable,
+    } = this.props;
 
     let nHeight =
       category == "Empty"
@@ -89,38 +107,41 @@ export default class EventItem extends React.Component {
             endTime,
             title,
             location,
+            description != undefined ? description : "",
             host,
             color,
             clickable
           )
         }
       >
-        {this.state.showEvent ?  
-        <View
-          key={title}
-          style={{
-            position: "absolute",
-            left: day * dailyWidth,
-            top:
-              dailyHeight / 2 -
-              startHeightOffset +
-              startTime.getHours() * dailyHeight,
-            width: dailyWidth * 0.9,
-            height: nHeight,
-            justifyContent: "center",
-            alignItems: "center",
-            padding: 10,
-            marginLeft: dailyWidth * 0.05,
-            marginRight: dailyWidth * 0.05,
-            borderRadius: 10,
-            overflow: "hidden",
-            backgroundColor: color == null ? "#D1FF96" : color,
-          }}
-        
-        >
-          <Text style={{ fontSize: 16 }}>{title}</Text>
-          <Text style={{ fontSize: 12 }}>{location}</Text> 
-        </View> : <View/>}
+        {this.state.showEvent ? (
+          <View
+            key={title}
+            style={{
+              position: "absolute",
+              left: day * dailyWidth,
+              top:
+                dailyHeight / 2 -
+                startHeightOffset +
+                startTime.getHours() * dailyHeight,
+              width: dailyWidth * 0.9,
+              height: nHeight,
+              justifyContent: "center",
+              alignItems: "center",
+              padding: 10,
+              marginLeft: dailyWidth * 0.05,
+              marginRight: dailyWidth * 0.05,
+              borderRadius: 10,
+              overflow: "hidden",
+              backgroundColor: color == null ? "#D1FF96" : color,
+            }}
+          >
+            <Text style={{ fontSize: 16 }}>{title}</Text>
+            <Text style={{ fontSize: 12 }}>{location}</Text>
+          </View>
+        ) : (
+          <View />
+        )}
       </Pressable>
     );
   }

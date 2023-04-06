@@ -101,6 +101,7 @@ export default class NotificationScreen extends Component{
             "Event title: " + data.title + "\n" +
             "Event location: " + data.location + "\n" +
             "Event point: " + data.point_value + "\n" +
+            "Event description" + data.description + "\n" +
             "Until event ends: " + 
             Math.floor((new Date(data.endTime.toDate()) - new Date())/(1000*60*60))
             + " hour(s)" + "/alert"
@@ -141,27 +142,19 @@ export default class NotificationScreen extends Component{
         event: [],
       });
     }
-    const data = {
-      title: temp[1],
-      startTime: new Date(temp[2]),
-      endTime: new Date(temp[3]),
-      location: temp[4],
-      category: temp[0],
-      point_value: temp[6],
-      color: temp[5],
-      repetition: 0
-    }
+ 
 
     const eventId = uuid.v4();
       addEvent(
         auth.currentUser?.uid,
-        temp[1],
+        data.title,
         new Date(temp[2]),
         new Date(temp[3]),
         temp[4],
-        temp[0],
-        temp[6],
         temp[5],
+        temp[0],
+        temp[7],
+        temp[6],
         0,
         eventId
       );

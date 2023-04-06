@@ -113,6 +113,7 @@ export default class App extends Component {
       calendarColorVisible :  false,
       title: "",
       location: "",
+      description: "",
       colorPicker: false,
       eventColor: "#8b9cb5",
       openList: false,
@@ -200,6 +201,7 @@ export default class App extends Component {
             events["event"][i]["details"]["endTime"].seconds * 1000
           ),
           location: events["event"][i]["details"]["location"],
+          description: events["event"][i]["details"]["description"],
           color: events["event"][i]["details"]["color"],
           id: events["event"][i]["id"],
         };
@@ -350,6 +352,7 @@ export default class App extends Component {
       alert("Enter title and location for the event");
       this.setLocation("");
       this.setTitle("");
+      this.setDescription("");
     } else {
       var eventSTime = new Date(
         this.state.eventStartDate.getFullYear(),
@@ -379,6 +382,7 @@ export default class App extends Component {
         eventSTime,
         eventETime,
         this.location,
+        this.description,
         EventCategory.EVENT,
         this.points,
         eventColor,
@@ -392,6 +396,7 @@ export default class App extends Component {
         startTime: eventSTime,
         endTime: eventETime,
         location: this.location,
+        description: this.description,
         color: eventColor,
         id: eventId,
       });
@@ -401,6 +406,7 @@ export default class App extends Component {
         startTime: eventSTime,
         endTime: eventETime,
         location: this.location,
+        description: this.description,
         color: eventColor,
         id: eventId,
       });
@@ -416,6 +422,8 @@ export default class App extends Component {
         ";" +
         this.location +
         ";" +
+        this.description +
+        ";" +
         eventColor.toString() +
         ";" +
         this.points.toString();
@@ -430,6 +438,7 @@ export default class App extends Component {
       this.setState({ eventEndDate: new Date() });
       this.setState({ eventEndTime: new Date() });
       this.setLocation("");
+      this.setDescription("");
       this.setTitle("");
     }
   };
@@ -439,6 +448,10 @@ export default class App extends Component {
 
   setLocation = (location) => {
     this.location = location;
+  };
+
+  setDescription = (description) => {
+    this.description = description;
   };
 
   setPoints = (points) => {
@@ -829,9 +842,7 @@ export default class App extends Component {
       };
       sportEventList.push(sportsEvent);
     }
-    // for (let i = 0; i < sportEventList.length; i++) {
-    //   console.log(sportEventList[i].startTime.getMonth());
-    // }
+
     this.setState({ athleticEventList: sportEventList });
   };
 
@@ -1182,6 +1193,7 @@ export default class App extends Component {
               flexDirection: "column",
               justifyContent: "center",
               alignItems: "center",
+              // backgroundColor: "rgba(0,0,0,0.5)",
             }}
           >
             <View style={styles.modalView}>
@@ -1230,7 +1242,7 @@ export default class App extends Component {
         </Modal>
         {/* Create event modal */}
         <Modal
-          animationType="slide"
+          animationType="fade"
           visible={this.state.createEventVisible}
           transparent={true}
           onRequestClose={() => {
@@ -1242,188 +1254,231 @@ export default class App extends Component {
               flex: 1,
               justifyContent: "center",
               alignItems: "center",
+              backgroundColor: "rgba(0,0,0,0.5)",
             }}
           >
-            <View style={styles.modal}>
-              <TouchableOpacity
-                onPress={() => this.setState({ createEventVisible: false })}
-              >
-                <View style={{ paddingLeft: 270, paddingTop: 5 }}>
-                  <Icon name="times" size={20} color="#2F4858" />
-                </View>
-              </TouchableOpacity>
-              {/* Creating a new View component with styles.row for each row in the modal for formatting */}
-              <View style={styles.row}>
-                <Text style={styles.header_text}>Create Event</Text>
-              </View>
-              <View style={styles.row}>
-                {/* New row for color picker and title input */}
-                <TouchableOpacity
-                  onPress={() => this.setState({ colorPicker: true })}
-                >
-                  <View style={{ paddingTop: 5, paddingRight: 15 }}>
-                    <Icon name="square" size={40} color={eventColor} />
-                  </View>
-                </TouchableOpacity>
-                <TextInput
-                  style={styles.titleInputStyle}
-                  placeholder="Add title"
-                  placeholderTextColor="#8b9cb5"
-                  onChangeText={(text) => this.setTitle(text)}
-                ></TextInput>
-              </View>
-              <View style={styles.row}>
-                <View style={{ flex: 1, paddingTop: 10 }}>
-                  <Icon name="map-pin" size={20} color="#2F4858" />
-                </View>
-                <View style={{ flex: 8 }}>
-                  <TextInput
-                    style={styles.inputStyle}
-                    placeholder="Location"
-                    placeholderTextColor="#8b9cb5"
-                    onChangeText={(text) => this.setLocation(text)}
-                  ></TextInput>
-                </View>
-              </View>
-              <View style={styles.row}>
-                <View style={{ flex: 1, paddingTop: 10 }}>
-                  <Icon name="repeat" size={20} color="#2F4858" />
-                </View>
-                <View style={{ flex: 8 }}>
-                  {/*dropdown selection does not work :(*/}
-                  <DropDownPicker
-                    open={openList}
-                    value={repetition}
-                    items={repetitionItems}
-                    placeholder={"Never"}
-                    setValue={this.setValue}
-                    setItems={this.setItems}
-                    onPress={this.setOpen}
-                  />
-                </View>
-              </View>
-              {/* <View style={styles.row}> */}
-              <View style={styles.row}>
-                <Text
+            <View
+              style={{
+                backgroundColor: "white",
+                marginHorizontal: 20,
+                height: "60%",
+                borderRadius: 10,
+              }}
+            >
+              <ScrollView>
+                <View
                   style={{
-                    textAlign: "center",
-                    margin: 5,
-                    paddingTop: 10,
-                    paddingLeft: 80,
-                    color: "#2F4858",
+                    flexDirection: "column",
+                    alignItems: "center",
                   }}
                 >
-                  Points
-                </Text>
-                <ScrollView keyboardShouldPersistTaps="handled">
-                  <TextInput
-                    placeholderTextColor="#8b9cb5"
-                    style={{
-                      color: "black",
-                      borderWidth: 1,
-                      borderColor: "#8b9cb5",
-                      marginLeft: 10,
-                      marginTop: 5,
-                      width: 50,
-                      height: 30,
-                      textAlign: "center",
-                    }}
-                    value={this.state.points}
-                    defaultValue={0}
-                    keyboardType="numeric"
-                    onChangeText={(text) => this.setPoints(text)}
-                  ></TextInput>
-                </ScrollView>
-              </View>
-              <View style={styles.row}>
-                <Text
-                  style={{
-                    textAlign: "center",
-                    margin: 5,
-                    paddingTop: 7,
-                    color: "#2F4858",
-                  }}
-                >
-                  Start
-                </Text>
-                <DateTimePicker
-                  mode={"date"}
-                  value={this.state.eventStartDate}
-                  onChange={this.onEventStartDateSelected}
-                  style={{ marginLeft: 10, marginTop: 5 }}
-                />
-                <DateTimePicker
-                  mode={"time"}
-                  value={this.state.eventStartTime}
-                  onChange={this.onEventStartTimeSelected}
-                  style={{ marginLeft: 10, marginTop: 5 }}
-                />
-              </View>
-              <View style={styles.row}>
-                <Text
-                  style={{
-                    textAlign: "center",
-                    margin: 5,
-                    paddingTop: 7,
-                    color: "#2F4858",
-                  }}
-                >
-                  End
-                </Text>
-                <DateTimePicker
-                  mode={"date"}
-                  value={this.state.eventEndDate}
-                  onChange={this.onEventEndDateSelected}
-                  style={{ marginLeft: 10, marginTop: 5 }}
-                />
-                <DateTimePicker
-                  mode={"time"}
-                  value={this.state.eventEndTime}
-                  onChange={this.onEventEndTimeSelected}
-                  style={{ marginLeft: 10, marginTop: 5 }}
-                />
-              </View>
-              <View style={{ width: "70%", margin: 10 }}>
-                <MultiSelect
-                  style={styles.dropdown}
-                  placeholderStyle={styles.placeholderStyle}
-                  selectedTextStyle={styles.selectedTextStyle}
-                  inputSearchStyle={styles.inputSearchStyle}
-                  iconStyle={styles.iconStyle}
-                  data={this.state.searched}
-                  valueField="user"
-                  placeholder="Choose friends"
-                  value={this.state.selected}
-                  search
-                  searchQuery={(text) => {
-                    this.filter_friends(text);
-                  }}
-                  searchPlaceholder="Search..."
-                  onChange={(item) => {
-                    this.setState({ selected: item });
-                  }}
-                  renderItem={this.renderDataItem}
-                  renderSelectedItem={(item, unSelect) => (
+                  <View style={styles.row}>
                     <TouchableOpacity
-                      onPress={() => unSelect && unSelect(item)}
+                      style={{
+                        flex: 1,
+                      }}
+                      onPress={() =>
+                        this.setState({ createEventVisible: false })
+                      }
                     >
-                      <View style={styles.selectedStyle}>
-                        <Text style={styles.textSelectedStyle}>
-                          {item.user}
-                        </Text>
-                        <AntDesign color="black" name="delete" size={17} />
+                      <View style={{ alignSelf: "flex-end" }}>
+                        <Icon name="times" size={20} color="#2F4858" />
                       </View>
                     </TouchableOpacity>
-                  )}
-                />
-              </View>
-              <Button
-                title="Create new event"
-                onPress={() => {
-                  this.submitEvent(eventColor),
-                    this.setState({ createEventVisible: false });
-                }}
-              />
+                  </View>
+
+                  {/* Creating a new View component with styles.row for each row in the modal for formatting */}
+                  <View style={styles.row}>
+                    <Text style={styles.header_text}>Create Event</Text>
+                  </View>
+
+                  <View style={styles.row}>
+                    {/* New row for color picker and title input */}
+                    <TouchableOpacity
+                      onPress={() => this.setState({ colorPicker: true })}
+                    >
+                      <View style={{ paddingTop: 5, paddingRight: 15 }}>
+                        <Icon name="square" size={40} color={eventColor} />
+                      </View>
+                    </TouchableOpacity>
+                    <TextInput
+                      style={styles.titleInputStyle}
+                      placeholder="Add title"
+                      placeholderTextColor="#8b9cb5"
+                      onChangeText={(text) => this.setTitle(text)}
+                    ></TextInput>
+                  </View>
+
+                  <View style={styles.row}>
+                    <View
+                      style={{
+                        flex: 1,
+                        borderWidth: 1,
+                        borderColor: "#8b9cb5",
+                      }}
+                    >
+                      <TextInput
+                        style={{
+                          fontSize: 20,
+                          padding: 5,
+                        }}
+                        placeholder="Description"
+                        placeholderTextColor="#8b9cb5"
+                        onChangeText={(text) => this.setDescription(text)}
+                      ></TextInput>
+                    </View>
+                  </View>
+
+                  <View style={styles.row}>
+                    <View style={{ flex: 1, paddingTop: 10 }}>
+                      <Icon name="map-pin" size={20} color="#2F4858" />
+                    </View>
+                    <View style={{ flex: 8 }}>
+                      <TextInput
+                        style={styles.inputStyle}
+                        placeholder="Location"
+                        placeholderTextColor="#8b9cb5"
+                        onChangeText={(text) => this.setLocation(text)}
+                      ></TextInput>
+                    </View>
+                  </View>
+
+                  {/* <View style={styles.row}> */}
+                  <View style={[styles.row, {}]}>
+                    <Text
+                      style={{
+                        textAlign: "center",
+                        color: "#2F4858",
+                      }}
+                    >
+                      Points
+                    </Text>
+                    <TextInput
+                      placeholderTextColor="#8b9cb5"
+                      style={{
+                        color: "black",
+                        borderWidth: 1,
+                        borderColor: "#8b9cb5",
+                        marginLeft: 10,
+                        marginTop: 5,
+                        width: 50,
+                        height: 30,
+                        textAlign: "center",
+                      }}
+                      value={this.state.points}
+                      defaultValue={0}
+                      keyboardType="numeric"
+                      onChangeText={(text) => this.setPoints(text)}
+                    ></TextInput>
+                  </View>
+                  <View style={styles.row}>
+                    <View style={{ flex: 1, paddingTop: 10 }}>
+                      <Icon name="repeat" size={20} color="#2F4858" />
+                    </View>
+                    <View style={{ flex: 8 }}>
+                      {/*dropdown selection does not work :(*/}
+                      <DropDownPicker
+                        open={openList}
+                        value={repetition}
+                        items={repetitionItems}
+                        placeholder={"Never"}
+                        setValue={this.setValue}
+                        setItems={this.setItems}
+                        // onPress={this.setOpen}
+                      />
+                    </View>
+                  </View>
+                  <View style={styles.row}>
+                    <Text
+                      style={{
+                        textAlign: "center",
+                        margin: 5,
+                        paddingTop: 7,
+                        color: "#2F4858",
+                      }}
+                    >
+                      Start
+                    </Text>
+                    <DateTimePicker
+                      mode={"date"}
+                      value={this.state.eventStartDate}
+                      onChange={this.onEventStartDateSelected}
+                      style={{ marginLeft: 10, marginTop: 5 }}
+                    />
+                    <DateTimePicker
+                      mode={"time"}
+                      value={this.state.eventStartTime}
+                      onChange={this.onEventStartTimeSelected}
+                      style={{ marginLeft: 10, marginTop: 5 }}
+                    />
+                  </View>
+                  <View style={styles.row}>
+                    <Text
+                      style={{
+                        textAlign: "center",
+                        margin: 5,
+                        paddingTop: 7,
+                        color: "#2F4858",
+                      }}
+                    >
+                      End
+                    </Text>
+                    <DateTimePicker
+                      mode={"date"}
+                      value={this.state.eventEndDate}
+                      onChange={this.onEventEndDateSelected}
+                      style={{ marginLeft: 10, marginTop: 5 }}
+                    />
+                    <DateTimePicker
+                      mode={"time"}
+                      value={this.state.eventEndTime}
+                      onChange={this.onEventEndTimeSelected}
+                      style={{ marginLeft: 10, marginTop: 5 }}
+                    />
+                  </View>
+                  <View style={[{ width: 300, margin: 10 }]}>
+                    <MultiSelect
+                      style={styles.dropdown}
+                      placeholderStyle={styles.placeholderStyle}
+                      selectedTextStyle={styles.selectedTextStyle}
+                      inputSearchStyle={styles.inputSearchStyle}
+                      iconStyle={styles.iconStyle}
+                      data={this.state.searched}
+                      valueField="user"
+                      placeholder="Choose friends"
+                      value={this.state.selected}
+                      search
+                      searchQuery={(text) => {
+                        this.filter_friends(text);
+                      }}
+                      searchPlaceholder="Search..."
+                      onChange={(item) => {
+                        this.setState({ selected: item });
+                      }}
+                      renderItem={this.renderDataItem}
+                      renderSelectedItem={(item, unSelect) => (
+                        <TouchableOpacity
+                          onPress={() => unSelect && unSelect(item)}
+                        >
+                          <View style={styles.selectedStyle}>
+                            <Text style={styles.textSelectedStyle}>
+                              {item.user}
+                            </Text>
+                            <AntDesign color="black" name="delete" size={17} />
+                          </View>
+                        </TouchableOpacity>
+                      )}
+                    />
+                  </View>
+                  <Button
+                    title="Create new event"
+                    onPress={() => {
+                      this.submitEvent(eventColor),
+                        this.setState({ createEventVisible: false });
+                    }}
+                  />
+                </View>
+              </ScrollView>
             </View>
           </View>
         </Modal>
@@ -1663,6 +1718,7 @@ export default class App extends Component {
                                     endTime={new Date(event.endTime)}
                                     title={event.title}
                                     location={event.location}
+                                    description={event.description}
                                     color={event.color}
                                     id={event.id}
                                     clickable={true}
@@ -1812,7 +1868,7 @@ export default class App extends Component {
                         if (
                           isOnSameDate(event.startTime, this.state.currentDate)
                         ) {
-                          // console.log(event);
+                          
 
                           return (
                             <EventViewInRow
