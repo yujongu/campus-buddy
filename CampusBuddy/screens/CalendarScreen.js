@@ -805,9 +805,7 @@ export default class App extends Component {
       };
       sportEventList.push(sportsEvent);
     }
-    // for (let i = 0; i < sportEventList.length; i++) {
-    //   console.log(sportEventList[i].startTime.getMonth());
-    // }
+
     this.setState({ athleticEventList: sportEventList });
   };
 
@@ -1826,7 +1824,7 @@ export default class App extends Component {
                         if (
                           isOnSameDate(event.startTime, this.state.currentDate)
                         ) {
-                          // console.log(event);
+                          
 
                           return (
                             <EventViewInRow
