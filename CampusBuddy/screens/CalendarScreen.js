@@ -1202,6 +1202,7 @@ export default class App extends Component {
         <Modal
           animationType="fade"
           visible={this.state.createEventVisible}
+          // visible={true}
           transparent={true}
           onRequestClose={() => {
             this.setState({ visible: !this.state.createEventVisible });
@@ -1358,7 +1359,7 @@ export default class App extends Component {
                         color: "#2F4858",
                       }}
                     >
-                      Start
+                      From
                     </Text>
                     <DateTimePicker
                       mode={"date"}
@@ -1382,7 +1383,7 @@ export default class App extends Component {
                         color: "#2F4858",
                       }}
                     >
-                      End
+                      To
                     </Text>
                     <DateTimePicker
                       mode={"date"}
@@ -1397,6 +1398,7 @@ export default class App extends Component {
                       style={{ marginLeft: 10, marginTop: 5 }}
                     />
                   </View>
+
                   <View style={[{ width: 300, margin: 10 }]}>
                     <MultiSelect
                       style={styles.dropdown}
@@ -1824,8 +1826,6 @@ export default class App extends Component {
                         if (
                           isOnSameDate(event.startTime, this.state.currentDate)
                         ) {
-                          
-
                           return (
                             <EventViewInRow
                               navigation={this.props.navigation}
