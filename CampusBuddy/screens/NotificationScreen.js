@@ -210,8 +210,8 @@ export default class NotificationScreen extends Component{
       const from = words[0]
       const contents = words[1].split(";")
       var event = contents[0], title = contents[1], startTime = contents[2], 
-      endTime = contents[3], location = contents[4], color = contents[5], 
-      points = contents[6]
+      endTime = contents[3], location = contents[4], description = contents[5], 
+      color = contents[6], points = contents[7]
       
       const str = from + " invited you to an event!" 
       const info = 
@@ -220,6 +220,7 @@ export default class NotificationScreen extends Component{
       "Start: " + startTime + "\n\n" + 
       "End: " + endTime  + "\n\n" + 
       "Location: " + location + "\n\n" +
+      "Description: " + description + "\n\n" +
       "Points: " + points + "\n"
       
       return (
