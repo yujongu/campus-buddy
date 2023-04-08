@@ -335,7 +335,37 @@ export async function addPoints(user_token, category, points) {
       ["points." + category]: oldPoints + points,
     });
     console.log("Successfully updated points: ", docRef.id);
+    if (Math.floor((oldPoints / 100)) != (Math.floor((oldPoints + points) / 100)) && querySnapShot.data().points_privacy == true){ //They passed a multiple of 100 and their points are public
+      recordLevelUp(user_token, category, oldPoints+points);
+    }
   } catch (e) {
     console.error("Error updating points: ", e);
+  }
+}
+
+export async function recordLevelUp(user_token, category, points){
+  const docRef = doc(db, "levelups", user_token);
+  const level = Math.floor(points / 100);
+  const time = new Date();
+  const x = {
+    category: category,
+    level: level,
+    time: time
+  };
+  try {
+    const querySnapShot = await getDoc(doc(db, "levelups", user_token));
+    if (!querySnapShot.exists()) {
+      setDoc(docRef, {
+        levelup: [],
+      });
+    }
+    const data = {
+      id: id,
+      details: x,
+    };
+    updateDoc(docRef, { levelup: arrayUnion(data) });
+    console.log("Levelup doc written with ID: ", docRef.id);
+  } catch (e) {
+    console.error("Error recording levelup: ", e);
   }
 }
