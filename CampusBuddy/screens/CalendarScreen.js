@@ -15,6 +15,7 @@ import {
   Animated,
   TextInput,
   Pressable,
+  Platform,
 } from "react-native";
 import BouncyCheckbox from "react-native-bouncy-checkbox";
 import DateTimePicker from "@react-native-community/datetimepicker";
@@ -122,8 +123,13 @@ export default class App extends Component {
       ],
       openDate: false,
       repetition: 0,
+      eventStartDateTimeShow: false,
+      eventDateTimeMode: "date",
+      eventStartDateTime: new Date(),
       eventStartDate: new Date(),
       eventStartTime: new Date(),
+      eventEndDateTimeShow: false,
+      eventEndDateTime: new Date(),
       eventEndDate: new Date(),
       eventEndTime: new Date(),
       selected: [],
@@ -1003,16 +1009,44 @@ export default class App extends Component {
     // this.setState({ monthViewData: monthData });
   };
 
-  onEventStartDateSelected = (event, value) => {
-    this.setState({ eventStartDate: value });
+  showModeForEventStart = (currentMode) => {
+    if (Platform.OS === "android") {
+      console.log("HANDLKDJF");
+      this.setState({ eventStartDateTimeShow: true });
+      // for iOS, add a button that closes the picker
+    }
+    this.setState({ eventDateTimeMode: currentMode });
+  };
+  showModeForEventEnd = (currentMode) => {
+    if (Platform.OS === "android") {
+      console.log("asdfasdfasdfasdf");
+      this.setState({ eventEndDateTimeShow: true });
+      // for iOS, add a button that closes the picker
+    }
+    this.setState({ eventDateTimeMode: currentMode });
   };
 
-  onEventStartTimeSelected = (event, value) => {
-    this.setState({ eventStartTime: value });
+  showStartDatePicker = () => {
+    this.showModeForEventStart("date");
+  };
+  showStartTimePicker = () => {
+    this.showModeForEventStart("time");
+  };
+  showEndDatePicker = () => {
+    this.showModeForEventEnd("date");
+  };
+  showEndTimePicker = () => {
+    this.showModeForEventEnd("time");
   };
 
-  onEventEndDateSelected = (event, value) => {
-    this.setState({ eventEndDate: value });
+  onEventStartDateTimeSelected = (event, value) => {
+    this.setState({ eventStartDateTimeShow: false });
+    this.setState({ eventStartDateTime: value });
+  };
+
+  onEventEndDateTimeSelected = (event, value) => {
+    this.setState({ eventEndDateTimeShow: false });
+    this.setState({ eventEndDateTime: value });
   };
 
   onEventEndTimeSelected = (event, value) => {
@@ -1201,8 +1235,8 @@ export default class App extends Component {
         {/* Create event modal */}
         <Modal
           animationType="fade"
-          visible={this.state.createEventVisible}
-          // visible={true}
+          // visible={this.state.createEventVisible}
+          visible={true}
           transparent={true}
           onRequestClose={() => {
             this.setState({ visible: !this.state.createEventVisible });
@@ -1361,7 +1395,61 @@ export default class App extends Component {
                     >
                       From
                     </Text>
-                    <DateTimePicker
+                    <View>
+                      {Platform.OS === "android" ? (
+                        <View style={{ flexDirection: "row" }}>
+                          <Pressable onPress={this.showStartDatePicker}>
+                            <Text
+                              style={{
+                                backgroundColor: "teal",
+                                padding: 10,
+                                marginHorizontal: 4,
+                              }}
+                            >
+                              {JSGetDate(this.state.eventStartDateTime)}
+                            </Text>
+                          </Pressable>
+                          <Pressable onPress={this.showStartTimePicker}>
+                            <Text
+                              style={{
+                                backgroundColor: "grey",
+                                padding: 10,
+                                marginHorizontal: 4,
+                              }}
+                            >
+                              {JSClock(this.state.eventStartDateTime, false)}
+                            </Text>
+                          </Pressable>
+                          {this.state.eventStartDateTimeShow && (
+                            <DateTimePicker
+                              testID="dateTimePicker"
+                              value={this.state.eventStartDateTime}
+                              mode={this.state.eventDateTimeMode}
+                              is24Hour={false}
+                              onChange={this.onEventStartDateTimeSelected}
+                            />
+                          )}
+                        </View>
+                      ) : (
+                        <View style={{ flexDirection: "row" }}>
+                          <DateTimePicker
+                            testID="dateTimePicker"
+                            value={this.state.eventStartDateTime}
+                            mode={"date"}
+                            is24Hour={true}
+                            onChange={this.onEventStartDateTimeSelected}
+                          />
+                          <DateTimePicker
+                            testID="dateTimePicker"
+                            value={this.state.eventStartDateTime}
+                            mode={"time"}
+                            is24Hour={false}
+                            onChange={this.onEventStartDateTimeSelected}
+                          />
+                        </View>
+                      )}
+                    </View>
+                    {/* <DateTimePicker
                       mode={"date"}
                       value={this.state.eventStartDate}
                       onChange={this.onEventStartDateSelected}
@@ -1372,7 +1460,7 @@ export default class App extends Component {
                       value={this.state.eventStartTime}
                       onChange={this.onEventStartTimeSelected}
                       style={{ marginLeft: 10, marginTop: 5 }}
-                    />
+                    /> */}
                   </View>
                   <View style={styles.row}>
                     <Text
@@ -1385,7 +1473,60 @@ export default class App extends Component {
                     >
                       To
                     </Text>
-                    <DateTimePicker
+                    <View>
+                      {Platform.OS === "android" ? (
+                        <View style={{ flexDirection: "row" }}>
+                          <Pressable onPress={this.showEndDatePicker}>
+                            <Text
+                              style={{
+                                backgroundColor: "teal",
+                                padding: 10,
+                                marginHorizontal: 4,
+                              }}
+                            >
+                              {JSGetDate(this.state.eventEndDateTime)}
+                            </Text>
+                          </Pressable>
+                          <Pressable onPress={this.showEndTimePicker}>
+                            <Text
+                              style={{
+                                backgroundColor: "grey",
+                                padding: 10,
+                                marginHorizontal: 4,
+                              }}
+                            >
+                              {JSClock(this.state.eventEndDateTime, false)}
+                            </Text>
+                          </Pressable>
+                          {this.state.eventEndDateTimeShow && (
+                            <DateTimePicker
+                              testID="dateTimePicker"
+                              value={this.state.eventEndDateTime}
+                              mode={this.state.eventDateTimeMode}
+                              is24Hour={false}
+                              onChange={this.onEventEndDateTimeSelected}
+                            />
+                          )}
+                        </View>
+                      ) : (
+                        <View style={{ flexDirection: "row" }}>
+                          <DateTimePicker
+                            testID="dateTimePicker"
+                            value={this.state.eventEndDateTime}
+                            mode={"date"}
+                            onChange={this.onEventEndDateTimeSelected}
+                          />
+                          <DateTimePicker
+                            testID="dateTimePicker"
+                            value={this.state.eventEndDateTime}
+                            mode={"time"}
+                            is24Hour={false}
+                            onChange={this.onEventEndDateTimeSelected}
+                          />
+                        </View>
+                      )}
+                    </View>
+                    {/* <DateTimePicker
                       mode={"date"}
                       value={this.state.eventEndDate}
                       onChange={this.onEventEndDateSelected}
@@ -1396,7 +1537,7 @@ export default class App extends Component {
                       value={this.state.eventEndTime}
                       onChange={this.onEventEndTimeSelected}
                       style={{ marginLeft: 10, marginTop: 5 }}
-                    />
+                    /> */}
                   </View>
 
                   <View style={[{ width: 300, margin: 10 }]}>
@@ -2059,7 +2200,7 @@ const styles = StyleSheet.create({
   dropdown: {
     height: 50,
     backgroundColor: "white",
-    borderRadius: "12px",
+    borderRadius: 12,
     padding: 12,
     shadowColor: "#000",
     shadowOffset: {
