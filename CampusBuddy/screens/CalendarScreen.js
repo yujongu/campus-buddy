@@ -126,12 +126,8 @@ export default class App extends Component {
       eventStartDateTimeShow: false,
       eventDateTimeMode: "date",
       eventStartDateTime: new Date(),
-      eventStartDate: new Date(),
-      eventStartTime: new Date(),
       eventEndDateTimeShow: false,
       eventEndDateTime: new Date(),
-      eventEndDate: new Date(),
-      eventEndTime: new Date(),
       selected: [],
       searched: [],
       friend_list: [],
@@ -357,19 +353,19 @@ export default class App extends Component {
       this.setDescription("");
     } else {
       var eventSTime = new Date(
-        this.state.eventStartDate.getFullYear(),
-        this.state.eventStartDate.getMonth(),
-        this.state.eventStartDate.getDate(),
-        this.state.eventStartTime.getHours(),
-        this.state.eventStartTime.getMinutes()
+        this.state.eventStartDateTime.getFullYear(),
+        this.state.eventStartDateTime.getMonth(),
+        this.state.eventStartDateTime.getDate(),
+        this.state.eventStartDateTime.getHours(),
+        this.state.eventStartDateTime.getMinutes()
       );
 
       var eventETime = new Date(
-        this.state.eventEndDate.getFullYear(),
-        this.state.eventEndDate.getMonth(),
-        this.state.eventEndDate.getDate(),
-        this.state.eventEndTime.getHours(),
-        this.state.eventEndTime.getMinutes()
+        this.state.eventEndDateTime.getFullYear(),
+        this.state.eventEndDateTime.getMonth(),
+        this.state.eventEndDateTime.getDate(),
+        this.state.eventEndDateTime.getHours(),
+        this.state.eventEndDateTime.getMinutes()
       );
 
       if (eventSTime > eventETime) {
@@ -435,10 +431,8 @@ export default class App extends Component {
       });
 
       this.setState({ selected: [] });
-      this.setState({ eventStartDate: new Date() });
-      this.setState({ eventStartTime: new Date() });
-      this.setState({ eventEndDate: new Date() });
-      this.setState({ eventEndTime: new Date() });
+      this.setState({ eventStartDateTime: new Date() });
+      this.setState({ eventEndDateTime: new Date() });
       this.setLocation("");
       this.setDescription("");
       this.setTitle("");
@@ -1049,10 +1043,6 @@ export default class App extends Component {
     this.setState({ eventEndDateTime: value });
   };
 
-  onEventEndTimeSelected = (event, value) => {
-    this.setState({ eventEndTime: value });
-  };
-
   sayHi = (e) => {
     console.log("HIIIIIIIIIIIIIIIIIIII");
   };
@@ -1235,8 +1225,8 @@ export default class App extends Component {
         {/* Create event modal */}
         <Modal
           animationType="fade"
-          // visible={this.state.createEventVisible}
-          visible={true}
+          visible={this.state.createEventVisible}
+          // visible={true}
           transparent={true}
           onRequestClose={() => {
             this.setState({ visible: !this.state.createEventVisible });
@@ -1401,8 +1391,10 @@ export default class App extends Component {
                           <Pressable onPress={this.showStartDatePicker}>
                             <Text
                               style={{
-                                backgroundColor: "teal",
-                                padding: 10,
+                                backgroundColor: "#AAAAAA",
+                                paddingHorizontal: 10,
+                                paddingVertical: 6,
+                                borderRadius: 5,
                                 marginHorizontal: 4,
                               }}
                             >
@@ -1412,8 +1404,10 @@ export default class App extends Component {
                           <Pressable onPress={this.showStartTimePicker}>
                             <Text
                               style={{
-                                backgroundColor: "grey",
-                                padding: 10,
+                                backgroundColor: "#AAAAAA",
+                                paddingHorizontal: 10,
+                                paddingVertical: 6,
+                                borderRadius: 5,
                                 marginHorizontal: 4,
                               }}
                             >
@@ -1449,18 +1443,6 @@ export default class App extends Component {
                         </View>
                       )}
                     </View>
-                    {/* <DateTimePicker
-                      mode={"date"}
-                      value={this.state.eventStartDate}
-                      onChange={this.onEventStartDateSelected}
-                      style={{ marginLeft: 10, marginTop: 5 }}
-                    />
-                    <DateTimePicker
-                      mode={"time"}
-                      value={this.state.eventStartTime}
-                      onChange={this.onEventStartTimeSelected}
-                      style={{ marginLeft: 10, marginTop: 5 }}
-                    /> */}
                   </View>
                   <View style={styles.row}>
                     <Text
@@ -1479,8 +1461,10 @@ export default class App extends Component {
                           <Pressable onPress={this.showEndDatePicker}>
                             <Text
                               style={{
-                                backgroundColor: "teal",
-                                padding: 10,
+                                backgroundColor: "#AAAAAA",
+                                paddingHorizontal: 10,
+                                paddingVertical: 6,
+                                borderRadius: 5,
                                 marginHorizontal: 4,
                               }}
                             >
@@ -1490,8 +1474,10 @@ export default class App extends Component {
                           <Pressable onPress={this.showEndTimePicker}>
                             <Text
                               style={{
-                                backgroundColor: "grey",
-                                padding: 10,
+                                backgroundColor: "#AAAAAA",
+                                paddingHorizontal: 10,
+                                paddingVertical: 6,
+                                borderRadius: 5,
                                 marginHorizontal: 4,
                               }}
                             >
@@ -1526,18 +1512,6 @@ export default class App extends Component {
                         </View>
                       )}
                     </View>
-                    {/* <DateTimePicker
-                      mode={"date"}
-                      value={this.state.eventEndDate}
-                      onChange={this.onEventEndDateSelected}
-                      style={{ marginLeft: 10, marginTop: 5 }}
-                    />
-                    <DateTimePicker
-                      mode={"time"}
-                      value={this.state.eventEndTime}
-                      onChange={this.onEventEndTimeSelected}
-                      style={{ marginLeft: 10, marginTop: 5 }}
-                    /> */}
                   </View>
 
                   <View style={[{ width: 300, margin: 10 }]}>
