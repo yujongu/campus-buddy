@@ -328,7 +328,19 @@ export async function to_request(own, to_user, type, message) {
 export async function addPoints(user_token, category, points) {
   const docRef = doc(db, "users", user_token);
   const querySnapShot = await getDoc(doc(db, "users", user_token));
-  const oldPoints = querySnapShot.data().points.school;
+  //const oldPoints = querySnapShot.data().points.school;
+  let oldPoints;
+  switch(category){
+    case 'school':
+      oldPoints = querySnapShot.data().points.school;
+      break;
+    case 'fitness':
+      oldPoints = querySnapShot.data().points.fitness;
+      break;
+    default:
+      console.log(`Category \"${category}\" was not recognized. It may need added to the switch case.`);
+  }
+
   console.log("snapshot", category, points);
   try {
     updateDoc(docRef, {
@@ -363,6 +375,7 @@ export async function recordLevelUp(user_token, category, points){
       id: id,
       details: x,
     };
+    //TODO: Check if this user already has an older levelup in this category, and overwrite it instead if so.
     updateDoc(docRef, { levelup: arrayUnion(data) });
     console.log("Levelup doc written with ID: ", docRef.id);
   } catch (e) {
