@@ -195,6 +195,10 @@ export default function ProfileScreen({ navigation, route }) {
         title="Friend page"
         onPress={() => navigation.navigate("Friend")}
       />
+      <Button
+        title="My Goals"
+        onPress={() => navigation.navigate("Goals")}
+      />
       <TextInput
         style={[styles.input]}
         placeholder="Enter Password"
