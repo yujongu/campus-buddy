@@ -17,6 +17,7 @@ import {
   Pressable,
   Platform,
 } from "react-native";
+import CheckBox from '@react-native-community/checkbox';
 import BouncyCheckbox from "react-native-bouncy-checkbox";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import DropDownPicker from "react-native-dropdown-picker";
@@ -137,6 +138,7 @@ export default class App extends Component {
       currentDate: new Date(), // This is the selected date
       monthViewData: [],
       calendarView: CalendarViewType.WEEK, //On click, go above a level. Once date is clicked, go into week view.
+      eventMandatory: false,
     };
   }
 
@@ -185,6 +187,7 @@ export default class App extends Component {
     }
 
     this.setState({ list: result });
+
     // Getting events from database
     const events = await getUserEvents(auth.currentUser?.uid);
     if (events != null && events["event"] != undefined) {
@@ -202,6 +205,7 @@ export default class App extends Component {
           description: events["event"][i]["details"]["description"],
           color: events["event"][i]["details"]["color"],
           id: events["event"][i]["id"],
+          eventMandatory: events["event"][i]["details"]["eventMandatory"],
         };
         eventResult.push(temp);
       }
@@ -385,7 +389,8 @@ export default class App extends Component {
         this.points,
         eventColor,
         0,
-        eventId
+        eventId,
+        this.state.eventMandatory
       );
 
       this.state.calendarEventList.push({
@@ -397,6 +402,7 @@ export default class App extends Component {
         description: this.description,
         color: eventColor,
         id: eventId,
+        eventMandatory: this.state.eventMandatory
       });
       this.state.totalCalendarList.push({
         category: EventCategory.EVENT,
@@ -407,6 +413,7 @@ export default class App extends Component {
         description: this.description,
         color: eventColor,
         id: eventId,
+        eventMandatory: this.state.eventMandatory
       });
 
       const message =
@@ -543,6 +550,10 @@ export default class App extends Component {
 
   clickHandler = () => {
     this.setState({ visible: true });
+  };
+
+  handleCheckboxChange = (event) => {
+    this.setState({ eventMandatory: event.target.checked });
   };
 
   //START Holiday Setting Modal Component Functions
@@ -805,7 +816,6 @@ export default class App extends Component {
       };
       sportEventList.push(sportsEvent);
     }
-
     this.setState({ athleticEventList: sportEventList });
   };
 
@@ -1514,6 +1524,14 @@ export default class App extends Component {
                     </View>
                   </View>
 
+                  <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                    <BouncyCheckbox
+                      isChecked={this.state.eventMandatory}
+                      onPress={(isChecked) => this.setState({ eventMandatory: isChecked })}
+                    />
+                    <Text>Mandatory</Text>
+                  </View>
+
                   <View style={[{ width: 300, margin: 10 }]}>
                     <MultiSelect
                       style={styles.dropdown}
@@ -1798,6 +1816,7 @@ export default class App extends Component {
                                     handleEventCompletion={
                                       this.handleEventCompletion
                                     }
+                                    eventMandatory={event.eventMandatory}
                                   />
                                 ) : (
                                   <View />

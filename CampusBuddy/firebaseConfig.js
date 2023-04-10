@@ -189,7 +189,8 @@ export async function addEvent(
   point_value,
   color,
   repetition,
-  id
+  id,
+  eventMandatory
 ) {
   const docRef = doc(db, "events", user_token);
   // const data={
@@ -214,6 +215,7 @@ export async function addEvent(
     point_value: point_value,
     color: color,
     repetition: repetition,
+    eventMandatory: eventMandatory
   };
   try {
     const querySnapShot = await getDoc(doc(db, "events", user_token));
