@@ -67,6 +67,8 @@ import uuid from "react-native-uuid";
 
 import ThemeContext from "../components/ui/ThemeContext";
 import themeCon from "../components/ui/theme";
+import RadioButton from "../components/ui/RadioButton";
+import { AudienceLevelType } from "../constants/AudienceLevelType";
 
 const leftHeaderWidth = 50;
 const topHeaderHeight = 60;
@@ -111,6 +113,26 @@ export default class App extends Component {
       title: "",
       location: "",
       description: "",
+      audienceType: [
+        {
+          id: 1,
+          value: AudienceLevelType.PUBLIC,
+          name: AudienceLevelType.PUBLIC,
+          selected: false,
+        },
+        {
+          id: 2,
+          value: AudienceLevelType.FRIENDS,
+          name: AudienceLevelType.FRIENDS,
+          selected: false,
+        },
+        {
+          id: 3,
+          value: AudienceLevelType.PRIVATE,
+          name: AudienceLevelType.PRIVATE,
+          selected: false,
+        },
+      ],
       colorPicker: false,
       eventColor: "#8b9cb5",
       openList: false,
@@ -1099,17 +1121,6 @@ export default class App extends Component {
     }
   };
   toggleCalendarView = () => {
-    // switch (this.state.calendarView) {
-    //   case CalendarViewType.WEEK:
-    //     this.setState({ calendarView: CalendarViewType.MONTH });
-    //     break;
-    //   case CalendarViewType.MONTH:
-    //     this.setState({ calendarView: CalendarViewType.WEEK });
-    //     break;
-    //   default:
-    //     console.error("Something Wrong with toggle calendar view");
-    //     break;
-    // }
     switch (this.state.calendarView) {
       case CalendarViewType.DAY:
         this.setState({ calendarView: CalendarViewType.WEEK });
@@ -1120,11 +1131,20 @@ export default class App extends Component {
       case CalendarViewType.MONTH:
         this.setState({ calendarView: CalendarViewType.DAY });
         break;
-
       default:
         console.error("Something Wrong with toggle calendar view");
         break;
     }
+  };
+
+  onRadioBtnClick = (item) => {
+    console.log(item);
+    let updatedState = this.state.audienceType.map((isLikedItem) =>
+      isLikedItem.id === item.id
+        ? { ...isLikedItem, selected: true }
+        : { ...isLikedItem, selected: false }
+    );
+    this.setState({ audienceType: updatedState });
   };
 
   render() {
@@ -1225,8 +1245,8 @@ export default class App extends Component {
         {/* Create event modal */}
         <Modal
           animationType="fade"
-          visible={this.state.createEventVisible}
-          // visible={true}
+          // visible={this.state.createEventVisible}
+          visible={true}
           transparent={true}
           onRequestClose={() => {
             this.setState({ visible: !this.state.createEventVisible });
@@ -1513,6 +1533,29 @@ export default class App extends Component {
                       )}
                     </View>
                   </View>
+                  <View
+                    style={{
+                      flexDirection: "column",
+                      width: "100%",
+                      paddingVertical: 10,
+                      paddingHorizontal: 25,
+                    }}
+                  >
+                    <Text style={{ fontSize: 20, marginBottom: 8 }}>
+                      Who can join?
+                    </Text>
+                    <View style={{ flexDirection: "row" }}>
+                      {this.state.audienceType.map((item) => (
+                        <RadioButton
+                          onPress={() => this.onRadioBtnClick(item)}
+                          selected={item.selected}
+                          key={item.id}
+                        >
+                          {item.name}
+                        </RadioButton>
+                      ))}
+                    </View>
+                  </View>
 
                   <View style={[{ width: 300, margin: 10 }]}>
                     <MultiSelect
@@ -1523,7 +1566,7 @@ export default class App extends Component {
                       iconStyle={styles.iconStyle}
                       data={this.state.searched}
                       valueField="user"
-                      placeholder="Choose friends"
+                      placeholder="Invite friends"
                       value={this.state.selected}
                       search
                       searchQuery={(text) => {
