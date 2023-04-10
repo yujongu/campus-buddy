@@ -17,7 +17,7 @@ import {
   Pressable,
   Platform,
 } from "react-native";
-import CheckBox from '@react-native-community/checkbox';
+import CheckBox from "@react-native-community/checkbox";
 import BouncyCheckbox from "react-native-bouncy-checkbox";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import DropDownPicker from "react-native-dropdown-picker";
@@ -117,20 +117,20 @@ export default class App extends Component {
       audienceType: [
         {
           id: 1,
-          value: AudienceLevelType.PUBLIC,
-          name: AudienceLevelType.PUBLIC,
-          selected: false,
+          value: AudienceLevelType.PUBLIC.value,
+          name: AudienceLevelType.PUBLIC.name,
+          selected: true,
         },
         {
           id: 2,
-          value: AudienceLevelType.FRIENDS,
-          name: AudienceLevelType.FRIENDS,
+          value: AudienceLevelType.FRIENDS.value,
+          name: AudienceLevelType.FRIENDS.name,
           selected: false,
         },
         {
           id: 3,
-          value: AudienceLevelType.PRIVATE,
-          name: AudienceLevelType.PRIVATE,
+          value: AudienceLevelType.PRIVATE.value,
+          name: AudienceLevelType.PRIVATE.name,
           selected: false,
         },
       ],
@@ -228,6 +228,7 @@ export default class App extends Component {
           color: events["event"][i]["details"]["color"],
           id: events["event"][i]["id"],
           eventMandatory: events["event"][i]["details"]["eventMandatory"],
+          audienceLevel: events["event"][i]["details"]["audienceLevel"],
         };
         eventResult.push(temp);
       }
@@ -259,6 +260,7 @@ export default class App extends Component {
   }
 
   //Format event list so it works with the calendar view.
+  //TODO need to fix event contents
   checkList = (result) => {
     result.forEach((event, index) => {
       //For events that go over on day
@@ -399,6 +401,13 @@ export default class App extends Component {
         return;
       }
 
+      let selectedAudienceLevel = "";
+      for (let i in this.state.audienceType) {
+        if (this.state.audienceType[i].selected) {
+          selectedAudienceLevel = this.state.audienceType[i].value;
+        }
+      }
+
       const eventId = uuid.v4();
       addEvent(
         auth.currentUser?.uid,
@@ -412,7 +421,8 @@ export default class App extends Component {
         eventColor,
         0,
         eventId,
-        this.state.eventMandatory
+        this.state.eventMandatory,
+        selectedAudienceLevel
       );
 
       this.state.calendarEventList.push({
@@ -424,7 +434,8 @@ export default class App extends Component {
         description: this.description,
         color: eventColor,
         id: eventId,
-        eventMandatory: this.state.eventMandatory
+        eventMandatory: this.state.eventMandatory,
+        audienceLevel: selectedAudienceLevel,
       });
       this.state.totalCalendarList.push({
         category: EventCategory.EVENT,
@@ -435,7 +446,8 @@ export default class App extends Component {
         description: this.description,
         color: eventColor,
         id: eventId,
-        eventMandatory: this.state.eventMandatory
+        eventMandatory: this.state.eventMandatory,
+        audienceLevel: selectedAudienceLevel,
       });
 
       const message =
@@ -462,6 +474,15 @@ export default class App extends Component {
       this.setState({ selected: [] });
       this.setState({ eventStartDateTime: new Date() });
       this.setState({ eventEndDateTime: new Date() });
+
+      //reset Audience Type value to default public
+      let updatedState = this.state.audienceType.map((isLikedItem) =>
+        isLikedItem.value === AudienceLevelType.PUBLIC.value
+          ? { ...isLikedItem, selected: true }
+          : { ...isLikedItem, selected: false }
+      );
+      this.setState({ audienceType: updatedState });
+
       this.setLocation("");
       this.setDescription("");
       this.setTitle("");
@@ -1148,7 +1169,6 @@ export default class App extends Component {
   };
 
   onRadioBtnClick = (item) => {
-    console.log(item);
     let updatedState = this.state.audienceType.map((isLikedItem) =>
       isLikedItem.id === item.id
         ? { ...isLikedItem, selected: true }
@@ -1255,8 +1275,8 @@ export default class App extends Component {
         {/* Create event modal */}
         <Modal
           animationType="fade"
-          // visible={this.state.createEventVisible}
-          visible={true}
+          visible={this.state.createEventVisible}
+          // visible={true}
           transparent={true}
           onRequestClose={() => {
             this.setState({ visible: !this.state.createEventVisible });
@@ -1543,12 +1563,23 @@ export default class App extends Component {
                       )}
                     </View>
                   </View>
+                  <View style={{ flexDirection: "row", alignItems: "center" }}>
+                    <BouncyCheckbox
+                      isChecked={this.state.eventMandatory}
+                      onPress={(isChecked) =>
+                        this.setState({ eventMandatory: isChecked })
+                      }
+                    />
+                    <Text>Mandatory</Text>
+                  </View>
+
                   <View
                     style={{
                       flexDirection: "column",
                       width: "100%",
                       paddingVertical: 10,
                       paddingHorizontal: 25,
+                      marginVertical: 10,
                     }}
                   >
                     <Text style={{ fontSize: 20, marginBottom: 8 }}>
@@ -1565,14 +1596,6 @@ export default class App extends Component {
                         </RadioButton>
                       ))}
                     </View>
-                  </View>
-
-                  <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                    <BouncyCheckbox
-                      isChecked={this.state.eventMandatory}
-                      onPress={(isChecked) => this.setState({ eventMandatory: isChecked })}
-                    />
-                    <Text>Mandatory</Text>
                   </View>
 
                   <View style={[{ width: 300, margin: 10 }]}>
@@ -1860,6 +1883,7 @@ export default class App extends Component {
                                       this.handleEventCompletion
                                     }
                                     eventMandatory={event.eventMandatory}
+                                    audienceLevel={event.audienceLevel}
                                   />
                                 ) : (
                                   <View />

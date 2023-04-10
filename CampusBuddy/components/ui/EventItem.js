@@ -53,8 +53,9 @@ export default class EventItem extends React.Component {
     location,
     description,
     host,
-    color
-  , clickable) {
+    color,
+    clickable
+  ) {
     if (clickable) {
       this.props.navigation.navigate("EventDetails", {
         category,
@@ -63,19 +64,15 @@ export default class EventItem extends React.Component {
         endTime: this.JSClock(endTime),
         title,
         location,
-      description,
+        description,
         host,
         color,
         removeFromCalendar: this.removeFromCalendar,
       });
-
     }
-
   }
 
   render() {
-
-    
     const {
       category,
       day,
@@ -88,9 +85,9 @@ export default class EventItem extends React.Component {
       color,
       id,
       clickable,
-      eventMandatory
+      eventMandatory,
+      audienceLevel,
     } = this.props;
-
 
     let nHeight =
       category == "Empty"
@@ -138,7 +135,7 @@ export default class EventItem extends React.Component {
               overflow: "hidden",
               backgroundColor: color == null ? "#D1FF96" : color,
               borderLeftWidth: eventMandatory == true ? 3 : 0,
-              borderColor: "red"
+              borderColor: "red",
             }}
           >
             <Text style={{ fontSize: 16 }}>{title}</Text>
