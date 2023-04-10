@@ -75,6 +75,7 @@ export default class EventItem extends React.Component {
 
   render() {
 
+    
     const {
       category,
       day,
@@ -87,7 +88,9 @@ export default class EventItem extends React.Component {
       color,
       id,
       clickable,
+      eventMandatory
     } = this.props;
+
 
     let nHeight =
       category == "Empty"
@@ -134,6 +137,8 @@ export default class EventItem extends React.Component {
               borderRadius: 10,
               overflow: "hidden",
               backgroundColor: color == null ? "#D1FF96" : color,
+              borderLeftWidth: eventMandatory == true ? 3 : 0,
+              borderColor: "red"
             }}
           >
             <Text style={{ fontSize: 16 }}>{title}</Text>
