@@ -14,7 +14,7 @@ import {
   FlatList,
   ActivityIndicator,
 } from "react-native";
-import { auth, db, userSchedule } from "../firebaseConfig";
+import { auth, db, fetchProfilePicture, userSchedule } from "../firebaseConfig";
 import { EmailAuthProvider } from "firebase/auth";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { signOut } from "firebase/auth";
@@ -44,20 +44,31 @@ export default function ProfileScreen({ navigation, route }) {
   const [profilePicture, setProfilePicture] = useState(null);
 
   useEffect(() => {
-    const fetchProfilePicture = async () => {
-      const imageRef = ref(storage, `profilePictures/${auth.currentUser.uid}`);
-      try {
-        const downloadURL = await getDownloadURL(imageRef);
-        setProfilePicture(downloadURL);
-      } catch (error) {
-        if (error.code === "storage/object-not-found") {
-          console.log("No profile picture found, using a default image.");
-        } else {
-          console.error("Error fetching profile picture:", error);
-        }
+    // const fetchProfilePicture = async () => {
+    //   const imageRef = ref(storage, `profilePictures/${auth.currentUser.uid}`);
+    //   try {
+    //     const downloadURL = await getDownloadURL(imageRef);
+    //     setProfilePicture(downloadURL);
+    //   } catch (error) {
+    //     if (error.code === "storage/object-not-found") {
+    //       console.log("No profile picture found, using a default image.");
+    //     } else {
+    //       console.error("Error fetching profile picture:", error);
+    //     }
+    //   }
+    // };
+    // fetchProfilePicture();
+    const getProfilePicture = async (uid) => {
+      const data = await fetchProfilePicture(uid);
+      if (data != null) {
+        console.log(data);
+        setProfilePicture(data);
       }
+
+      return data;
     };
-    fetchProfilePicture();
+
+    getProfilePicture(auth.currentUser.uid);
   }, []);
 
   const pickImage = async () => {
@@ -195,10 +206,7 @@ export default function ProfileScreen({ navigation, route }) {
         title="Friend page"
         onPress={() => navigation.navigate("Friend")}
       />
-      <Button
-        title="My Goals"
-        onPress={() => navigation.navigate("Goals")}
-      />
+      <Button title="My Goals" onPress={() => navigation.navigate("Goals")} />
       <TextInput
         style={[styles.input]}
         placeholder="Enter Password"

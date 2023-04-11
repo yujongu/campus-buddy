@@ -6,7 +6,7 @@ import {
   createUserWithEmailAndPassword,
   sendPasswordResetEmail,
 } from "firebase/auth";
-import { getStorage } from "firebase/storage";
+import { getDownloadURL, getStorage, ref } from "firebase/storage";
 import { EmailAuthProvider, credential } from "firebase/auth";
 import { query, where } from "firebase/firestore";
 import {
@@ -130,6 +130,22 @@ export async function createUser(username, first, last, email, password) {
     .catch((error) => {
       alert("creating user:" + error);
     });
+}
+
+export async function fetchProfilePicture(user_id) {
+  const imageRef = ref(storage, `profilePictures/${user_id}`);
+  try {
+    const downloadURL = await getDownloadURL(imageRef);
+    return downloadURL;
+  } catch (error) {
+    if (error.code === "storage/object-not-found") {
+      console.log("No profile picture found, using a default image.");
+      return null;
+    } else {
+      console.error("Error fetching profile picture:", error);
+      return null;
+    }
+  }
 }
 
 export async function addSchedule(user_token, data) {
