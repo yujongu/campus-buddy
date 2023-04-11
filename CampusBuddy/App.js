@@ -15,6 +15,7 @@ import SignInScreen from "./screens/SignInScreen";
 import SignUpScreen from "./screens/SignUpScreen";
 import User_profile from "./screens/User_profileScreen";
 import SettingsScreen from "./screens/SettingsScreen";
+import GoalsScreen from "./screens/GoalsScreen";
 import EventDetailsScreen from "./screens/EventDetailsScreen";
 import { auth } from "./firebaseConfig";
 import FriendScreen from "./screens/FriendScreen";
@@ -98,6 +99,11 @@ export default function App() {
             <Stack.Screen
               name = "Compare Screen"
               component = {CompareScreen}
+              options = {{headerShown: false}}>
+            </Stack.Screen>
+            <Stack.Screen
+              name = "Goals"
+              component = {GoalsScreen}
               options = {{headerShown: false}}>
             </Stack.Screen>
           </Stack.Navigator>
