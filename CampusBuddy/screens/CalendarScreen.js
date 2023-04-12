@@ -1204,18 +1204,6 @@ export default class App extends Component {
           { backgroundColor: themeCon[theme].calendarUIBackground },
         ]}
       >
-        <TouchableOpacity
-          activeOpacity={0.7}
-          onPress={this.clickHandler}
-          style={styles.touchableOpacityStyle}
-        >
-          <Icon
-            name="plus-circle"
-            size={50}
-            color={themeCon[theme].plusModalColor}
-          />
-        </TouchableOpacity>
-
         <Modal
           animationType="slide"
           transparent={true}
@@ -2112,6 +2100,17 @@ export default class App extends Component {
                   }}
                 />
               </ScrollView>
+              <TouchableOpacity
+                activeOpacity={0.7}
+                onPress={this.clickHandler}
+                style={{ padding: 4, marginLeft: 8 }}
+              >
+                <Icon
+                  name="plus-circle"
+                  size={40}
+                  color={themeCon[theme].plusModalColor}
+                />
+              </TouchableOpacity>
             </View>
           </View>
         </View>
