@@ -59,6 +59,10 @@ export const JSClock = (time, showSeconds = true) => {
   return temp;
 };
 
+export const JSGetDateClock = (time, showSeconds = true) => {
+  return JSGetDate(time) + " " + JSClock(time, showSeconds);
+};
+
 export const jsClockToDate = (str) => {
   try {
     let temp = str.split(":");

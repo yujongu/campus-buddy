@@ -61,7 +61,6 @@ export default function ProfileScreen({ navigation, route }) {
     const getProfilePicture = async (uid) => {
       const data = await fetchProfilePicture(uid);
       if (data != null) {
-        console.log(data);
         setProfilePicture(data);
       }
 
@@ -175,7 +174,6 @@ export default function ProfileScreen({ navigation, route }) {
 
   return (
     <View style={[styles.container]}>
-      {console.log(theme)}
       {profilePicture && (
         <Image
           source={{ uri: profilePicture }}
