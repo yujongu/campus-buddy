@@ -42,15 +42,15 @@ export default class SearchScreen extends Component {
 
   render_recommend ({item}) {
     return (
-      <View style={styles.item}>
-        <Text>
+      <View style={[styles.item, {color: color}]}>
+        <Text style={{color: color}}>
           {item}{"\n"}
         </Text>
         <TouchableOpacity
             activeOpacity={0.7}
             onPress={() => handleRequest(item.email, item.id)}
             style={styles.touchableOpacityStyle}>
-            <Icon name="user-plus" size={25}/>
+            <Icon name="user-plus" size={25} color={color}/>
         </TouchableOpacity>
       </View>
     )
@@ -58,7 +58,7 @@ export default class SearchScreen extends Component {
 
   renderItem = ({ item, color }) => {
     return (
-      <View style={styles.item}>
+      <View style={[styles.item, {color: color}]}>
         <Text style={{ color: color }}>
           {item.first + " " + item.last + " (" + item.id + ")"}
           {'\n'}
@@ -145,6 +145,7 @@ export default class SearchScreen extends Component {
   render() {
     const currentTheme = theme[this.context.theme];
     const { background, color } = currentTheme;
+    console.log(color)
     return (
       <View style={[styles.container, { backgroundColor: background }]}>
         <SearchBar
@@ -160,22 +161,22 @@ export default class SearchScreen extends Component {
         {
           this.state.searchValue === "" ?
           <View>
-            <Text style={{fontSize: 20, marginLeft: 10, marginTop: 10}}>Recommended users</Text>
+            <Text style={{fontSize: 20, marginLeft: 10, marginTop: 10, color: color}}>Recommended users</Text>
             {this.state.recommend && this.state.recommend.length ? Object.keys(this.state.recommend).map((item) => Object.keys(this.state.recommend[item]).map(item2 => {
               return (
-                <View style={styles.item}>
-                  <Text>
+                <View style={[styles.item, {color: color, borderColor: color}]}>
+                  <Text style={{color: color}}>
                     {item2}{"\n"}{"Mutual friends: " + this.state.recommend[item][item2]}
                   </Text>
                   <TouchableOpacity
                       activeOpacity={0.7}
                       onPress={() => handleRequest(item.email, item.id)}
                       style={styles.touchableOpacityStyle}>
-                      <Icon name="user-plus" size={25}/>
+                      <Icon name="user-plus" size={25} color={color}/>
                   </TouchableOpacity>
              </View>
               )
-            })) : <Text style={{marginLeft: 10}}>No user to recommend</Text>}
+            })) : <Text style={{marginLeft: 10, color: color}}>No user to recommend</Text>}
             
           </View>
           :
@@ -195,7 +196,6 @@ const styles = StyleSheet.create({
     padding: 2,
   },
   item: {
-    borderBottomColor: 'black',
     borderBottomWidth: 3,
     padding: 20,
     marginVertical: 8,
