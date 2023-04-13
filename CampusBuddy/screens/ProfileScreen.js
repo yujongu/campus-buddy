@@ -48,7 +48,7 @@ export default function ProfileScreen({ navigation, route }) {
   const [mode, setMode] = useState(false);
   const theme = useContext(ThemeContext);
   const [profilePicture, setProfilePicture] = useState(null);
-  const [show, setShow] = useState(false)
+  const [show, setShow] = useState(false);
   const [show_block, setShowblock] = useState(false);
 
   useEffect(() => {
@@ -188,6 +188,7 @@ export default function ProfileScreen({ navigation, route }) {
         visible={show}
         onRequestClose={() => {
           setShow(!show);
+          setShowblock(false)
           setPassword("");
         }}>
         <View style={{flex: 1, justifyContent: 'center', alignItems: 'center'}}>
@@ -212,6 +213,7 @@ export default function ProfileScreen({ navigation, route }) {
             <View style={{marginTop: 10}}>
               <Button title="Close" onPress={() => {
                 setShow(!show)
+                setShowblock(false);
                 setPassword("");
               }} />
             </View>
@@ -267,7 +269,7 @@ export default function ProfileScreen({ navigation, route }) {
         </TouchableOpacity>
         <TouchableOpacity style={[styles.menu, {borderBottomColor: mode ? "white" : '#D3D3D3'}]} onPress={() => {
           setShow(!show)
-          setShowblock(!show_block)
+          setShowblock(true)
         }}>
           <Ant name = {"deleteuser"} size={30} style={styles.icon_left} color={mode ? "white": "black"}/>
           <Text style={[mode ? styles.text_w : styles.text_b, {fontFamily: 'Roboto'} ]}>
