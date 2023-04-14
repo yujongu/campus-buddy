@@ -8,7 +8,7 @@ import {
 } from "firebase/auth";
 import { getDownloadURL, getStorage, ref } from "firebase/storage";
 import { EmailAuthProvider, credential } from "firebase/auth";
-import { query, where } from "firebase/firestore";
+import { arrayRemove, query, where } from "firebase/firestore";
 import {
   getFirestore,
   collection,
@@ -293,6 +293,56 @@ export async function friendList(user_token) {
       friends: res,
     });
     return null;
+  }
+}
+
+/** If group name exists, returns group doc id. Else returns null  */
+export async function addGroup(groupName, groupAuthor) {
+  try {
+    const res = await getDocs(
+      query(collection(db, "groups"), where("groupName", "==", groupName))
+    );
+    if (res.empty) {
+      const docRef = await addDoc(collection(db, "groups"), {
+        groupName,
+        memberList: [groupAuthor],
+      });
+      // console.log("Group created with docref id: ", docRef.id);
+      return docRef.id;
+    } else {
+      return null;
+    }
+  } catch (e) {
+    console.log(e);
+  }
+}
+
+export async function addMembersToGroup(gid, memberList) {
+  try {
+    const docRef = await doc(db, "groups", gid);
+    await updateDoc(docRef, { memberList: arrayUnion(...memberList) });
+    return true;
+  } catch (e) {
+    console.log(e);
+    return false;
+  }
+}
+
+export async function removeMemberFromGroup(groupName, memberInfo) {
+  const q = query(
+    collection(db, "groups"),
+    where("groupName", "==", groupName)
+  );
+
+  const querySnapshot = await getDocs(q);
+
+  if (querySnapshot.size == 1) {
+    const groupDocRef = doc(db, "groups", querySnapshot.docs[0].id);
+    console.log(memberInfo.user);
+    await updateDoc(groupDocRef, { memberList: arrayRemove(memberInfo.user) });
+    return true;
+  } else {
+    return false;
   }
 }
 
