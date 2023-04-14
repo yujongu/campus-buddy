@@ -193,6 +193,34 @@ export async function userSchedule(user_token) {
     alert("userSchedule: " + error);
   }
 }
+export async function addGoal(
+  user_token,
+  id,
+  points,
+  category,
+  deadline,
+) {
+  const docRef = doc(db, "goals", user_token);
+ 
+  try {
+    const querySnapShot = await getDoc(doc(db, "goals", user_token));
+    if (!querySnapShot.exists()) {
+      setDoc(docRef, {
+        goal_list: [],
+      });
+    }
+    const data = {
+      id: id,
+      points: points,
+      category: category,
+      deadline: deadline,
+    };
+    updateDoc(docRef, { goal_list: arrayUnion(data) });
+    console.log("Goal written with ID: ", docRef.id);
+  } catch (e) {
+    console.error("Error adding goal: ", e);
+  }
+}
 
 export async function addEvent(
   user_token,

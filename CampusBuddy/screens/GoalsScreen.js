@@ -8,7 +8,9 @@ import {
   TouchableOpacity
 } from "react-native";
 import Icon from "react-native-vector-icons/FontAwesome";
-import { auth, db, userSchedule } from "../firebaseConfig";
+import { auth, db, addGoal } from "../firebaseConfig";
+import DateTimePicker from "@react-native-community/datetimepicker";
+import uuid from "react-native-uuid";
 import {
   updateDoc,
   doc,
@@ -24,9 +26,39 @@ export default function ProfileScreen({ navigation, route }) {
   const [visible, setVisible] = useState(false);
   const [pointGoal, setPointGoal] = useState(0);
   const [category, setCategory] = useState("");
-  const [deadlineDate, setDeadlineDate] = useState(null);
-  const [deadlineTime, setDeadlineTime] = useState(null);
+  const [deadlineDate, setDeadlineDate] = useState(new Date());
+  const [deadlineTime, setDeadlineTime] = useState(new Date());
+  const [selectTime, setSelectTime] = useState(false);
+  onEventStartDateTimeSelected = (event, value) => {
+    setSelectTime(false);
+    setDeadlineTime(value);
+  };
+  showStartTimePicker = () => {
+    setSelectTime(true);
+  };
+  createNewGoal = () => {
+    if (category == "" || pointGoal <= 0) {
+        alert("Enter valid category and points for the goal");
+    }
+    else {
+        var deadline = new Date(
+          deadlineDate.getFullYear(),
+          deadlineDate.getMonth(),
+          deadlineDate.getDate(),
+          deadlineTime.getHours(),
+          deadlineTime.getMinutes()
+        );
+        const goalId = uuid.v4();
+        addGoal(
+            auth.currentUser?.uid,
+            goalId,
+            pointGoal,
+            category,
+            deadline
+        );
+    }
 
+  }
 
   return (
     <View style={[styles.container]}>
@@ -115,7 +147,7 @@ export default function ProfileScreen({ navigation, route }) {
                         textAlign: "center",
                       }}
                       placeholderTextColor="#8b9cb5"
-                      onChangeText={(text) => this.setTitle(text)}
+                      onChangeText={(text) => setCategory(text)}
                     ></TextInput>
                     </View>
                   <View style={styles.row}>
@@ -153,8 +185,78 @@ export default function ProfileScreen({ navigation, route }) {
                         margin:15,
                       }}
                     >
-                      Deadline:
                     </Text>
+                    <View style={styles.row}>
+                    <Text
+                      style={{
+                        textAlign: "center",
+                        margin: 5,
+                        paddingTop: 7,
+                        color: "#2F4858",
+                      }}
+                    >
+                      Deadline:
+                      
+                    </Text>
+                    <View>
+                      {Platform.OS === "android" ? (
+                        <View style={{ flexDirection: "row" }}>
+                          <Pressable onPress={this.showStartDatePicker}>
+                            <Text
+                              style={{
+                                backgroundColor: "#AAAAAA",
+                                paddingHorizontal: 10,
+                                paddingVertical: 6,
+                                borderRadius: 5,
+                                marginHorizontal: 4,
+                              }}
+                            >
+                              {JSGetDate(deadlineDate)}
+                            </Text>
+                          </Pressable>
+                          <Pressable onPress={showStartTimePicker}>
+                            <Text
+                              style={{
+                                backgroundColor: "#AAAAAA",
+                                paddingHorizontal: 10,
+                                paddingVertical: 6,
+                                borderRadius: 5,
+                                marginHorizontal: 4,
+                              }}
+                            >
+                              {JSClock(deadlineTime, false)}
+                            </Text>
+                          </Pressable>
+                          {selectTime && (
+                            <DateTimePicker
+                              testID="dateTimePicker"
+                              value={deadlineTime}
+                              mode={"time"}
+                              is24Hour={false}
+                              onChange={onEventStartDateTimeSelected}
+                            />
+                          )}
+                        </View>
+                      ) : (
+                        <View style={{ flexDirection: "row" }}>
+                          <DateTimePicker
+                            testID="dateTimePicker"
+                            value={deadlineTime}
+                            mode={"date"}
+                            is24Hour={true}
+                            onChange={onEventStartDateTimeSelected}
+                          />
+                          <DateTimePicker
+                            testID="dateTimePicker"
+                            value={deadlineTime}
+                            mode={"time"}
+                            is24Hour={false}
+                            onChange={onEventStartDateTimeSelected}
+                          />
+                        </View>
+                      )}
+                    </View>
+                  </View>
                     </View>
 
                   <Button
