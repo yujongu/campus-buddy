@@ -193,6 +193,21 @@ export async function userSchedule(user_token) {
     alert("userSchedule: " + error);
   }
 }
+
+export async function getGoals(user_token) {
+  try {
+    const querySnapShot = await getDoc(doc(db, "goals", user_token));
+    if (querySnapShot.exists()) {
+      const result = querySnapShot.data();
+      return result;
+    } else {
+      return null;
+    }
+  } catch (error) {
+    alert("Error retrieving user goals " + error);
+  }
+}
+
 export async function addGoal(
   user_token,
   id,

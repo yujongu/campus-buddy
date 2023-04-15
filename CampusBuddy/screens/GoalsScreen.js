@@ -8,7 +8,7 @@ import {
   TouchableOpacity
 } from "react-native";
 import Icon from "react-native-vector-icons/FontAwesome";
-import { auth, db, addGoal } from "../firebaseConfig";
+import { auth, db, addGoal, getGoals } from "../firebaseConfig";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import uuid from "react-native-uuid";
 import {
@@ -29,9 +29,42 @@ export default function ProfileScreen({ navigation, route }) {
   const [deadlineDate, setDeadlineDate] = useState(new Date());
   const [deadlineTime, setDeadlineTime] = useState(new Date());
   const [selectTime, setSelectTime] = useState(false);
+  const [goalList, setGoalList] = useState([]);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      result = []
+      const res = await getGoals(auth.currentUser?.uid);
+      if (res != null) {
+        for (let i = 0; i < res["goal_list"].length; i++) {
+          const temp = {
+            category: res["goal_list"][i]["category"],
+            deadline: new Date(
+              res["goal_list"][i]["deadline"].seconds * 1000
+            ), //multiply 1000 since Javascript uses milliseconds. Timestamp to date.
+            points: res["goal_list"][i]["points"],
+            id: res["goal_list"][i]["id"],
+          };
+          result.push(temp);
+        }
+        setGoalList(result);
+        console.log(result)
+      } else {
+        console.log("No such document!");
+      }
+    
+    }
+   
+    fetchData()
+  }, []);
+
   onEventStartDateTimeSelected = (event, value) => {
     setSelectTime(false);
     setDeadlineTime(value);
+  };
+  onEventStartDateSelected = (event, value) => {
+    setSelectTime(false);
+    setDeadlineDate(value);
   };
   showStartTimePicker = () => {
     setSelectTime(true);
@@ -56,6 +89,8 @@ export default function ProfileScreen({ navigation, route }) {
             category,
             deadline
         );
+        setVisible(false);
+
     }
 
   }
@@ -201,7 +236,7 @@ export default function ProfileScreen({ navigation, route }) {
                     <View>
                       {Platform.OS === "android" ? (
                         <View style={{ flexDirection: "row" }}>
-                          <Pressable onPress={this.showStartDatePicker}>
+                          <Pressable onPress={showStartTimePicker}>
                             <Text
                               style={{
                                 backgroundColor: "#AAAAAA",
@@ -241,10 +276,10 @@ export default function ProfileScreen({ navigation, route }) {
                         <View style={{ flexDirection: "row" }}>
                           <DateTimePicker
                             testID="dateTimePicker"
-                            value={deadlineTime}
+                            value={deadlineDate}
                             mode={"date"}
                             is24Hour={true}
-                            onChange={onEventStartDateTimeSelected}
+                            onChange={onEventStartDateSelected}
                           />
                           <DateTimePicker
                             testID="dateTimePicker"
