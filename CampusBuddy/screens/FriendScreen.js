@@ -155,8 +155,10 @@ export default class FriendScreen extends Component {
       where("memberList", "array-contains", auth.currentUser?.email)
     );
     const groupsWithMeee = onSnapshot(q, (querySnapshot) => {
+      console.log("this is all groups:", this.state.all_groups);
       let myGroups = { ...this.state.data };
-      let all_groups = this.state.all_groups;
+      // let all_groups = this.state.all_groups;
+      let all_groups = [];
 
       querySnapshot.forEach((doc) => {
         // doc.data() is never undefined for query doc snapshots
@@ -173,6 +175,7 @@ export default class FriendScreen extends Component {
       });
       this.setState({ data: myGroups });
       this.setState({ all_groups });
+      console.log("this is all groups RESULT:", this.state.all_groups);
     });
     return () => {
       groupsWithMeee();
