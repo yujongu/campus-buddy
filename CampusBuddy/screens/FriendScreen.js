@@ -102,23 +102,26 @@ export default class FriendScreen extends Component {
       (doc) => {
         const data = doc.data()["friends"];
         const data2 = doc.data()["favorite"];
+
         this.setState({
           favor: data2,
           list: data,
           searched: [...data2, ...data],
         });
+
+        const tempData = this.state.data;
+
+        if (tempData["friends"] != undefined) {
+          delete tempData.friends;
+          delete tempData.favorite;
+        }
+        tempData.friends = doc.data().friends;
+        tempData.favorite = doc.data().favorite;
+
         this.setState({
           all: [...this.state.list, ...this.state.favor],
-          data: doc.data(),
-        });
-
-        //all_groups have group names
-        this.setState({
-          all_groups: Object.keys(doc.data()).filter((group) => {
-            if (group != "favorite" && group != "friends") {
-              return group;
-            }
-          }),
+          // data: doc.data(),
+          data: tempData,
         });
       }
     );
@@ -157,7 +160,6 @@ export default class FriendScreen extends Component {
 
       querySnapshot.forEach((doc) => {
         // doc.data() is never undefined for query doc snapshots
-        // console.log(doc.id, " => ", doc.data());
         let gName = doc.data().groupName;
         if (!all_groups.includes(gName)) {
           all_groups.push(gName);
@@ -173,8 +175,8 @@ export default class FriendScreen extends Component {
       this.setState({ all_groups });
     });
     return () => {
-      subscriber();
       groupsWithMeee();
+      subscriber();
     };
   }
 
@@ -453,6 +455,7 @@ export default class FriendScreen extends Component {
               data = {this.state.data[group]}
               renderItem={({item}) => this.renderItem2(item, group)}
             /> */}
+
           {this.state.data[group].map((item) => this.renderItem2(item, group))}
         </View>
       </View>
@@ -675,9 +678,6 @@ export default class FriendScreen extends Component {
           </View>
           <View>
             {this.state.all_groups.map((item) => this.renderGroups(item))}
-          </View>
-          <View>
-            <Text>Groups will be here</Text>
           </View>
 
           {nicknameInput}
