@@ -8,7 +8,7 @@ import {
 } from "firebase/auth";
 import { getDownloadURL, getStorage, ref } from "firebase/storage";
 import { EmailAuthProvider, credential } from "firebase/auth";
-import { arrayRemove, query, where } from "firebase/firestore";
+import { arrayRemove, deleteDoc, query, where } from "firebase/firestore";
 import {
   getFirestore,
   collection,
@@ -208,15 +208,9 @@ export async function getGoals(user_token) {
   }
 }
 
-export async function addGoal(
-  user_token,
-  id,
-  points,
-  category,
-  deadline,
-) {
+export async function addGoal(user_token, id, points, category, deadline) {
   const docRef = doc(db, "goals", user_token);
- 
+
   try {
     const querySnapShot = await getDoc(doc(db, "goals", user_token));
     if (!querySnapShot.exists()) {
@@ -382,8 +376,13 @@ export async function removeMemberFromGroup(groupName, memberInfo) {
 
   if (querySnapshot.size == 1) {
     const groupDocRef = doc(db, "groups", querySnapshot.docs[0].id);
-    console.log(memberInfo.user);
+
     await updateDoc(groupDocRef, { memberList: arrayRemove(memberInfo.user) });
+    const data = await getDoc(groupDocRef);
+    if (data.data().memberList.length == 0) {
+      //if I'm the last member of the group, remove the group all together.
+      await deleteDoc(doc(db, "groups", querySnapshot.docs[0].id));
+    }
     return true;
   } else {
     return false;
