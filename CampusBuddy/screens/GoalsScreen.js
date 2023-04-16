@@ -5,10 +5,13 @@ import {
   TextInput,
   Modal,
   View,
-  TouchableOpacity
+  TouchableOpacity,
+  FlatList
 } from "react-native";
 import Icon from "react-native-vector-icons/FontAwesome";
-import { auth, db, userSchedule } from "../firebaseConfig";
+import { auth, db, addGoal, getGoals } from "../firebaseConfig";
+import DateTimePicker from "@react-native-community/datetimepicker";
+import uuid from "react-native-uuid";
 import {
   updateDoc,
   doc,
@@ -19,19 +22,86 @@ import {
 import React, { useState, useEffect, useContext } from "react";
 import ThemeContext from "../components/ui/ThemeContext";
 import theme from "../components/ui/theme";
+import Goal from "../components/ui/Goal";
 
 export default function ProfileScreen({ navigation, route }) {
   const [visible, setVisible] = useState(false);
   const [pointGoal, setPointGoal] = useState(0);
   const [category, setCategory] = useState("");
-  const [deadlineDate, setDeadlineDate] = useState(null);
-  const [deadlineTime, setDeadlineTime] = useState(null);
+  const [deadlineDate, setDeadlineDate] = useState(new Date());
+  const [deadlineTime, setDeadlineTime] = useState(new Date());
+  const [selectTime, setSelectTime] = useState(false);
+  const [goalList, setGoalList] = useState([]);
 
+  useEffect(() => {
+    const fetchData = async () => {
+      result = []
+      const res = await getGoals(auth.currentUser?.uid);
+      if (res != null) {
+        for (let i = 0; i < res["goal_list"].length; i++) {
+          const temp = {
+            category: res["goal_list"][i]["category"],
+            deadline: new Date(
+              res["goal_list"][i]["deadline"].seconds * 1000
+            ), //multiply 1000 since Javascript uses milliseconds. Timestamp to date.
+            points: res["goal_list"][i]["points"],
+            progress: res["goal_list"][i]["progress"],
+            id: res["goal_list"][i]["id"],
+          };
+          result.push(temp);
+        }
+        setGoalList(result);
+        console.log(goalList)
+      } else {
+        console.log("No such document!");
+      }
+    
+    }
+   
+    fetchData()
+  }, []);
+
+  onEventStartDateTimeSelected = (event, value) => {
+    setSelectTime(false);
+    setDeadlineTime(value);
+  };
+  onEventStartDateSelected = (event, value) => {
+    setSelectTime(false);
+    setDeadlineDate(value);
+  };
+  showStartTimePicker = () => {
+    setSelectTime(true);
+  };
+  createNewGoal = () => {
+    if (category == "" || pointGoal <= 0) {
+        alert("Enter valid category and points for the goal");
+    }
+    else {
+        var deadline = new Date(
+          deadlineDate.getFullYear(),
+          deadlineDate.getMonth(),
+          deadlineDate.getDate(),
+          deadlineTime.getHours(),
+          deadlineTime.getMinutes()
+        );
+        const goalId = uuid.v4();
+        addGoal(
+            auth.currentUser?.uid,
+            goalId,
+            pointGoal,
+            category,
+            deadline
+        );
+        setVisible(false);
+
+    }
+
+  }
 
   return (
     <View style={[styles.container]}>
         <View style= {styles.row}>
-        <Text style={{paddingRight:10, fontSize:20}}>My Goals</Text>
+        <Text style={{paddingRight:10, fontSize:20, paddingBottom:20}}>My Goals</Text>
         <TouchableOpacity
             style = {{left:10, bottom:2}}
             onPress={() =>
@@ -40,6 +110,20 @@ export default function ProfileScreen({ navigation, route }) {
         >
             <Icon name="plus" size={25} color="#2F4858" />
         </TouchableOpacity>
+        </View>
+        <View style= {styles.row}>
+        <FlatList
+          data={goalList}
+          renderItem={({ item }) => (
+            <Goal
+              category={item.category}
+              points={item.points}
+              progress={5}
+              deadline={item.deadline}
+            />
+          )}
+          keyExtractor={(item) => item.id}
+        />
         </View>
         <View style= {{top:30}}>
         <TouchableOpacity
@@ -115,7 +199,7 @@ export default function ProfileScreen({ navigation, route }) {
                         textAlign: "center",
                       }}
                       placeholderTextColor="#8b9cb5"
-                      onChangeText={(text) => this.setTitle(text)}
+                      onChangeText={(text) => setCategory(text)}
                     ></TextInput>
                     </View>
                   <View style={styles.row}>
@@ -153,8 +237,78 @@ export default function ProfileScreen({ navigation, route }) {
                         margin:15,
                       }}
                     >
-                      Deadline:
                     </Text>
+                    <View style={styles.row}>
+                    <Text
+                      style={{
+                        textAlign: "center",
+                        margin: 5,
+                        paddingTop: 7,
+                        color: "#2F4858",
+                      }}
+                    >
+                      Deadline:
+                      
+                    </Text>
+                    <View>
+                      {Platform.OS === "android" ? (
+                        <View style={{ flexDirection: "row" }}>
+                          <Pressable onPress={showStartTimePicker}>
+                            <Text
+                              style={{
+                                backgroundColor: "#AAAAAA",
+                                paddingHorizontal: 10,
+                                paddingVertical: 6,
+                                borderRadius: 5,
+                                marginHorizontal: 4,
+                              }}
+                            >
+                              {JSGetDate(deadlineDate)}
+                            </Text>
+                          </Pressable>
+                          <Pressable onPress={showStartTimePicker}>
+                            <Text
+                              style={{
+                                backgroundColor: "#AAAAAA",
+                                paddingHorizontal: 10,
+                                paddingVertical: 6,
+                                borderRadius: 5,
+                                marginHorizontal: 4,
+                              }}
+                            >
+                              {JSClock(deadlineTime, false)}
+                            </Text>
+                          </Pressable>
+                          {selectTime && (
+                            <DateTimePicker
+                              testID="dateTimePicker"
+                              value={deadlineTime}
+                              mode={"time"}
+                              is24Hour={false}
+                              onChange={onEventStartDateTimeSelected}
+                            />
+                          )}
+                        </View>
+                      ) : (
+                        <View style={{ flexDirection: "row" }}>
+                          <DateTimePicker
+                            testID="dateTimePicker"
+                            value={deadlineDate}
+                            mode={"date"}
+                            is24Hour={true}
+                            onChange={onEventStartDateSelected}
+                          />
+                          <DateTimePicker
+                            testID="dateTimePicker"
+                            value={deadlineTime}
+                            mode={"time"}
+                            is24Hour={false}
+                            onChange={onEventStartDateTimeSelected}
+                          />
+                        </View>
+                      )}
+                    </View>
+                  </View>
                     </View>
 
                   <Button
