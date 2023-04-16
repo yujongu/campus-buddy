@@ -229,6 +229,7 @@ export async function addGoal(
       points: points,
       category: category,
       deadline: deadline,
+      progress: 0,
     };
     updateDoc(docRef, { goal_list: arrayUnion(data) });
     console.log("Goal written with ID: ", docRef.id);

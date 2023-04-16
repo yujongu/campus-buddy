@@ -5,7 +5,8 @@ import {
   TextInput,
   Modal,
   View,
-  TouchableOpacity
+  TouchableOpacity,
+  FlatList
 } from "react-native";
 import Icon from "react-native-vector-icons/FontAwesome";
 import { auth, db, addGoal, getGoals } from "../firebaseConfig";
@@ -21,6 +22,7 @@ import {
 import React, { useState, useEffect, useContext } from "react";
 import ThemeContext from "../components/ui/ThemeContext";
 import theme from "../components/ui/theme";
+import Goal from "../components/ui/Goal";
 
 export default function ProfileScreen({ navigation, route }) {
   const [visible, setVisible] = useState(false);
@@ -43,12 +45,13 @@ export default function ProfileScreen({ navigation, route }) {
               res["goal_list"][i]["deadline"].seconds * 1000
             ), //multiply 1000 since Javascript uses milliseconds. Timestamp to date.
             points: res["goal_list"][i]["points"],
+            progress: res["goal_list"][i]["progress"],
             id: res["goal_list"][i]["id"],
           };
           result.push(temp);
         }
         setGoalList(result);
-        console.log(result)
+        console.log(goalList)
       } else {
         console.log("No such document!");
       }
@@ -98,7 +101,7 @@ export default function ProfileScreen({ navigation, route }) {
   return (
     <View style={[styles.container]}>
         <View style= {styles.row}>
-        <Text style={{paddingRight:10, fontSize:20}}>My Goals</Text>
+        <Text style={{paddingRight:10, fontSize:20, paddingBottom:20}}>My Goals</Text>
         <TouchableOpacity
             style = {{left:10, bottom:2}}
             onPress={() =>
@@ -107,6 +110,20 @@ export default function ProfileScreen({ navigation, route }) {
         >
             <Icon name="plus" size={25} color="#2F4858" />
         </TouchableOpacity>
+        </View>
+        <View style= {styles.row}>
+        <FlatList
+          data={goalList}
+          renderItem={({ item }) => (
+            <Goal
+              category={item.category}
+              points={item.points}
+              progress={5}
+              deadline={item.deadline}
+            />
+          )}
+          keyExtractor={(item) => item.id}
+        />
         </View>
         <View style= {{top:30}}>
         <TouchableOpacity
