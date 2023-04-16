@@ -396,44 +396,51 @@ export default class FriendScreen extends Component {
             )}
           </TouchableOpacity>
         </View>
-        <View style={{ flexDirection: "column" }}>
-          <TouchableOpacity
-            onPress={() =>
-              Alert.alert(
-                "Unfriend",
-                "Do you really want to ungroup?",
-                [
-                  { text: "Yes", onPress: () => this.removeGroup(item, group) },
-                  { text: "Cancel", style: "cancel" },
-                ],
-                { cancelable: false }
-              )
-            }
-          >
-            <Text>Ungroup</Text>
-          </TouchableOpacity>
+        {item.user == auth.currentUser.email ? (
+          <View style={{ flexDirection: "column" }}>
+            <TouchableOpacity
+              onPress={() =>
+                Alert.alert(
+                  "Leave",
+                  "Do you really want to leave the group?",
+                  [
+                    {
+                      text: "Yes",
+                      onPress: () => this.removeGroup(item, group),
+                    },
+                    { text: "Cancel", style: "cancel" },
+                  ],
+                  { cancelable: false }
+                )
+              }
+            >
+              <Text>Leave Group</Text>
+            </TouchableOpacity>
 
-          <TouchableOpacity
-            onPress={() => {
-              Alert.prompt(
-                "Add Nickname",
-                "Enter a nickname for this friend",
-                (nickname) => {
-                  if (nickname) {
-                    this.setNickname(item.user, nickname);
-                  } else {
-                    Alert.alert(
-                      "Invalid input",
-                      "Please enter a valid nickname"
-                    );
+            <TouchableOpacity
+              onPress={() => {
+                Alert.prompt(
+                  "Add Nickname",
+                  "Enter a nickname for this friend",
+                  (nickname) => {
+                    if (nickname) {
+                      this.setNickname(item.user, nickname);
+                    } else {
+                      Alert.alert(
+                        "Invalid input",
+                        "Please enter a valid nickname"
+                      );
+                    }
                   }
-                }
-              );
-            }}
-          >
-            <Text>Add Nickname</Text>
-          </TouchableOpacity>
-        </View>
+                );
+              }}
+            >
+              <Text>Add Nickname</Text>
+            </TouchableOpacity>
+          </View>
+        ) : (
+          <View></View>
+        )}
       </View>
     );
   };
@@ -490,8 +497,11 @@ export default class FriendScreen extends Component {
     //check for the duplicate group name in friend list
 
     var check = false;
+
     if (this.state.input === "") {
       Alert.alert("Warning", "Please enter the name of group");
+    } else if (this.state.input.length > 30) {
+      Alert.alert("Warning", "Group name has to be within 30 characters");
     } else {
       const groupId = await addGroup(this.state.input, auth.currentUser.email);
       if (groupId == null) {
