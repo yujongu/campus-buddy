@@ -15,6 +15,7 @@ import {
 import {
   addGroup,
   addMembersToGroup,
+  addNicknameInGroup,
   auth,
   db,
   removeMemberFromGroup,
@@ -87,13 +88,14 @@ export default class FriendScreen extends Component {
     this.setState({ showNicknameInput: false, currentFriend: null });
   };
 
-  setNickname = (email, nickname) => {
-    this.setState((prevState) => ({
-      nicknames: {
-        ...prevState.nicknames,
-        [email]: nickname,
-      },
-    }));
+  setNickname = async (group, email, oldNickname, newNickname) => {
+    await addNicknameInGroup(group, email, oldNickname, newNickname);
+    // this.setState((prevState) => ({
+    //   nicknames: {
+    //     ...prevState.nicknames,
+    //     [email]: nickname,
+    //   },
+    // }));
   };
 
   componentDidMount() {
@@ -166,9 +168,19 @@ export default class FriendScreen extends Component {
           all_groups.push(gName);
         }
         let members = doc.data().memberList;
+        let nicknames = doc.data().nicknames;
         myGroups[gName] = [];
         members.forEach((member) => {
-          let m = { favorite: false, user: member };
+          let nicknameTemp = "";
+          if (nicknames) {
+            nicknames.forEach((nickname) => {
+              if (nickname.user == member) {
+                nicknameTemp = nickname.nickname;
+              }
+            });
+          }
+
+          let m = { favorite: false, user: member, nickname: nicknameTemp };
           myGroups[gName].push(m);
         });
       });
@@ -319,7 +331,7 @@ export default class FriendScreen extends Component {
             <Text>Unfriend</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity
+          {/* <TouchableOpacity
             onPress={() => {
               Alert.prompt(
                 "Add Nickname",
@@ -338,7 +350,7 @@ export default class FriendScreen extends Component {
             }}
           >
             <Text>Add Nickname</Text>
-          </TouchableOpacity>
+          </TouchableOpacity> */}
         </View>
       </View>
     );
@@ -389,9 +401,15 @@ export default class FriendScreen extends Component {
             }
           >
             <Text style={{ color: "black", fontSize: 15 }}>{item.user}</Text>
-            {this.state.nicknames[item.user] && (
+            {/* {this.state.nicknames[item.user] && (
               <Text style={{ color: "grey", fontSize: 12 }}>
                 {this.state.nicknames[item.user]}
+              </Text>
+            )} */}
+            {/* Replace nicknames state to database nickname */}
+            {item.nickname != "" && (
+              <Text style={{ color: "grey", fontSize: 12 }}>
+                {item.nickname}
               </Text>
             )}
           </TouchableOpacity>
@@ -424,7 +442,12 @@ export default class FriendScreen extends Component {
                   "Enter a nickname for this friend",
                   (nickname) => {
                     if (nickname) {
-                      this.setNickname(item.user, nickname);
+                      this.setNickname(
+                        group,
+                        item.user,
+                        item.nickname,
+                        nickname
+                      );
                     } else {
                       Alert.alert(
                         "Invalid input",

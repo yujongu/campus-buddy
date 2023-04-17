@@ -8,7 +8,13 @@ import {
 } from "firebase/auth";
 import { getDownloadURL, getStorage, ref } from "firebase/storage";
 import { EmailAuthProvider, credential } from "firebase/auth";
-import { arrayRemove, deleteDoc, query, where } from "firebase/firestore";
+import {
+  arrayRemove,
+  deleteDoc,
+  query,
+  runTransaction,
+  where,
+} from "firebase/firestore";
 import {
   getFirestore,
   collection,
@@ -386,6 +392,42 @@ export async function removeMemberFromGroup(groupName, memberInfo) {
     return true;
   } else {
     return false;
+  }
+}
+
+export async function addNicknameInGroup(
+  groupName,
+  email,
+  prevNickname,
+  newNickname
+) {
+  const q = query(
+    collection(db, "groups"),
+    where("groupName", "==", groupName)
+  );
+
+  const querySnapshot = await getDocs(q);
+
+  if (querySnapshot.size == 1) {
+    const groupDocRef = doc(db, "groups", querySnapshot.docs[0].id);
+
+    try {
+      await runTransaction(db, async (transaction) => {
+        const docRef = await transaction.get(groupDocRef);
+        if (!docRef.exists()) {
+          throw "Document does not exist!";
+        }
+
+        transaction.update(groupDocRef, {
+          nicknames: arrayRemove({ nickname: prevNickname, user: email }),
+        });
+        transaction.update(groupDocRef, {
+          nicknames: arrayUnion({ nickname: newNickname, user: email }),
+        });
+      });
+    } catch (e) {
+      console.error(e);
+    }
   }
 }
 
