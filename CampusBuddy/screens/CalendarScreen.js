@@ -136,16 +136,8 @@ export default class App extends Component {
       ],
       colorPicker: false,
       eventColor: "#8b9cb5",
-      openList: false,
       value: null,
-      repetitionItems: [
-        { label: "Never", value: 0 },
-        { label: "Daily", value: 1 },
-        { label: "Weekly", value: 2 },
-        { label: "Monthly", value: 3 },
-      ],
-      openDate: false,
-      repetition: 0,
+
       eventStartDateTimeShow: false,
       eventDateTimeMode: "date",
       eventStartDateTime: new Date(),
@@ -556,39 +548,6 @@ export default class App extends Component {
     this.setState({ visible: false });
     this.getCountries();
     this.setState({ holidaySettingVisible: true });
-  };
-
-  setOpen = () => {
-    this.setState({
-      openList: !this.state.openList,
-    });
-  };
-  setDateOpen = () => {
-    this.setState({
-      openDate: !this.state.openList,
-    });
-  };
-
-  setValue = (value) => {
-    this.setState({
-      repetition: value,
-    });
-    this.setState({
-      openList: false,
-    });
-  };
-
-  setItems = (items) => {
-    this.setState({
-      repetitionItems: items,
-    });
-  };
-
-  setRepetition = (rep) => {
-    this.setState({ repetition: rep });
-    this.setState({
-      openList: false,
-    });
   };
 
   clickHandler = () => {
@@ -1400,16 +1359,7 @@ export default class App extends Component {
                       <Icon name="repeat" size={20} color="#2F4858" />
                     </View>
                     <View style={{ flex: 8 }}>
-                      {/*dropdown selection does not work :(*/}
-                      <DropDownPicker
-                        open={openList}
-                        value={repetition}
-                        items={repetitionItems}
-                        placeholder={"Never"}
-                        setValue={this.setValue}
-                        setItems={this.setItems}
-                        // onPress={this.setOpen}
-                      />
+                      <Text>Here</Text>
                     </View>
                   </View>
                   <View style={styles.row}>
