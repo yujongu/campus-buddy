@@ -355,30 +355,49 @@ export async function addPoints(user_token, category, points) {
   }
 }
 
+//Makes a new levelup entry and records it under the user document.
 export async function recordLevelUp(user_token, category, points){
   const docRef = doc(db, "levelups", user_token);
   const level = Math.floor(points / 100);
   const time = new Date();
-  const x = {
-    category: category,
-    level: level,
-    time: time
-  };
   try {
     const querySnapShot = await getDoc(doc(db, "levelups", user_token));
-    if (!querySnapShot.exists()) {
+    const data = {
+      id: id,
+      category: category,
+      level: level,
+      time: time
+    };
+    if (querySnapShot.exists()) {
+      const oldLevelUps = querySnapShot.data();
+      for(let lvl in oldLevelUps) m
+    }
+    //TODO: Check if this user already has an older levelup in this category, and overwrite it instead if so.
+    else{
       setDoc(docRef, {
         levelup: [],
       });
     }
-    const data = {
-      id: id,
-      details: x,
-    };
-    //TODO: Check if this user already has an older levelup in this category, and overwrite it instead if so.
+
     updateDoc(docRef, { levelup: arrayUnion(data) });
     console.log("Levelup doc written with ID: ", docRef.id);
   } catch (e) {
     console.error("Error recording levelup: ", e);
+  }
+}
+
+//gets the level ups from a single user. Includes all categories of levelups.
+export async function getLevelUps(user_token){
+  var result = [];
+  try{
+    const querySnapshot = await getDoc(doc(db, "levelups", user_token));
+    if(querySnapshot.exists()){
+      result = querySnapshot.data();
+      return result;
+    } else {
+      return null;
+    }
+  } catch (error){
+    alert(`Error getting levelups for user ${user_token}: ` + error);
   }
 }
