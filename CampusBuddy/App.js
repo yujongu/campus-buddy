@@ -15,6 +15,7 @@ import SignInScreen from "./screens/SignInScreen";
 import SignUpScreen from "./screens/SignUpScreen";
 import User_profile from "./screens/User_profileScreen";
 import SettingsScreen from "./screens/SettingsScreen";
+import GoalsScreen from "./screens/GoalsScreen";
 import EventDetailsScreen from "./screens/EventDetailsScreen";
 import { auth } from "./firebaseConfig";
 import FriendScreen from "./screens/FriendScreen";
@@ -24,8 +25,6 @@ import theme from "./components/ui/theme";
 import ForgotEmail from "./screens/ForgotEmail";
 import ForgotPassword from "./screens/ForgotPassword";
 import { SafeAreaProvider } from "react-native-safe-area-context";
-
-
 
 const Stack = createNativeStackNavigator();
 
@@ -96,15 +95,19 @@ export default function App() {
               options={{ headerShown: false }}
             />
             <Stack.Screen
-              name = "Compare Screen"
-              component = {CompareScreen}
-              options = {{headerShown: false}}>
-            </Stack.Screen>
+              name="Compare Screen"
+              component={CompareScreen}
+              options={{ headerShown: false }}
+            ></Stack.Screen>
+            <Stack.Screen
+              name="Goals"
+              component={GoalsScreen}
+              options={{ headerShown: false }}
+            ></Stack.Screen>
           </Stack.Navigator>
         </NavigationContainer>
       </ThemeContext.Provider>
     </SafeAreaProvider>
-
   );
 }
 

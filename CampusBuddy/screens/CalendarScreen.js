@@ -15,7 +15,9 @@ import {
   Animated,
   TextInput,
   Pressable,
+  Platform,
 } from "react-native";
+import CheckBox from "@react-native-community/checkbox";
 import BouncyCheckbox from "react-native-bouncy-checkbox";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import DropDownPicker from "react-native-dropdown-picker";
@@ -66,6 +68,8 @@ import uuid from "react-native-uuid";
 
 import ThemeContext from "../components/ui/ThemeContext";
 import themeCon from "../components/ui/theme";
+import RadioButton from "../components/ui/RadioButton";
+import { AudienceLevelType } from "../constants/AudienceLevelType";
 
 const leftHeaderWidth = 50;
 const topHeaderHeight = 60;
@@ -110,6 +114,26 @@ export default class App extends Component {
       title: "",
       location: "",
       description: "",
+      audienceType: [
+        {
+          id: 1,
+          value: AudienceLevelType.PUBLIC.value,
+          name: AudienceLevelType.PUBLIC.name,
+          selected: true,
+        },
+        {
+          id: 2,
+          value: AudienceLevelType.FRIENDS.value,
+          name: AudienceLevelType.FRIENDS.name,
+          selected: false,
+        },
+        {
+          id: 3,
+          value: AudienceLevelType.PRIVATE.value,
+          name: AudienceLevelType.PRIVATE.name,
+          selected: false,
+        },
+      ],
       colorPicker: false,
       eventColor: "#8b9cb5",
       openList: false,
@@ -122,10 +146,11 @@ export default class App extends Component {
       ],
       openDate: false,
       repetition: 0,
-      eventStartDate: new Date(),
-      eventStartTime: new Date(),
-      eventEndDate: new Date(),
-      eventEndTime: new Date(),
+      eventStartDateTimeShow: false,
+      eventDateTimeMode: "date",
+      eventStartDateTime: new Date(),
+      eventEndDateTimeShow: false,
+      eventEndDateTime: new Date(),
       selected: [],
       searched: [],
       friend_list: [],
@@ -135,6 +160,7 @@ export default class App extends Component {
       currentDate: new Date(), // This is the selected date
       monthViewData: [],
       calendarView: CalendarViewType.WEEK, //On click, go above a level. Once date is clicked, go into week view.
+      eventMandatory: false,
     };
   }
 
@@ -183,6 +209,7 @@ export default class App extends Component {
     }
 
     this.setState({ list: result });
+
     // Getting events from database
     const events = await getUserEvents(auth.currentUser?.uid);
     if (events != null && events["event"] != undefined) {
@@ -200,6 +227,8 @@ export default class App extends Component {
           description: events["event"][i]["details"]["description"],
           color: events["event"][i]["details"]["color"],
           id: events["event"][i]["id"],
+          eventMandatory: events["event"][i]["details"]["eventMandatory"],
+          audienceLevel: events["event"][i]["details"]["audienceLevel"],
         };
         eventResult.push(temp);
       }
@@ -231,6 +260,7 @@ export default class App extends Component {
   }
 
   //Format event list so it works with the calendar view.
+  //TODO need to fix event contents
   checkList = (result) => {
     result.forEach((event, index) => {
       //For events that go over on day
@@ -351,24 +381,31 @@ export default class App extends Component {
       this.setDescription("");
     } else {
       var eventSTime = new Date(
-        this.state.eventStartDate.getFullYear(),
-        this.state.eventStartDate.getMonth(),
-        this.state.eventStartDate.getDate(),
-        this.state.eventStartTime.getHours(),
-        this.state.eventStartTime.getMinutes()
+        this.state.eventStartDateTime.getFullYear(),
+        this.state.eventStartDateTime.getMonth(),
+        this.state.eventStartDateTime.getDate(),
+        this.state.eventStartDateTime.getHours(),
+        this.state.eventStartDateTime.getMinutes()
       );
 
       var eventETime = new Date(
-        this.state.eventEndDate.getFullYear(),
-        this.state.eventEndDate.getMonth(),
-        this.state.eventEndDate.getDate(),
-        this.state.eventEndTime.getHours(),
-        this.state.eventEndTime.getMinutes()
+        this.state.eventEndDateTime.getFullYear(),
+        this.state.eventEndDateTime.getMonth(),
+        this.state.eventEndDateTime.getDate(),
+        this.state.eventEndDateTime.getHours(),
+        this.state.eventEndDateTime.getMinutes()
       );
 
       if (eventSTime > eventETime) {
         alert("Invalid Time Frame");
         return;
+      }
+
+      let selectedAudienceLevel = "";
+      for (let i in this.state.audienceType) {
+        if (this.state.audienceType[i].selected) {
+          selectedAudienceLevel = this.state.audienceType[i].value;
+        }
       }
 
       const eventId = uuid.v4();
@@ -383,7 +420,9 @@ export default class App extends Component {
         this.points,
         eventColor,
         0,
-        eventId
+        eventId,
+        this.state.eventMandatory,
+        selectedAudienceLevel
       );
 
       this.state.calendarEventList.push({
@@ -395,6 +434,8 @@ export default class App extends Component {
         description: this.description,
         color: eventColor,
         id: eventId,
+        eventMandatory: this.state.eventMandatory,
+        audienceLevel: selectedAudienceLevel,
       });
       this.state.totalCalendarList.push({
         category: EventCategory.EVENT,
@@ -405,6 +446,8 @@ export default class App extends Component {
         description: this.description,
         color: eventColor,
         id: eventId,
+        eventMandatory: this.state.eventMandatory,
+        audienceLevel: selectedAudienceLevel,
       });
 
       const message =
@@ -429,10 +472,17 @@ export default class App extends Component {
       });
 
       this.setState({ selected: [] });
-      this.setState({ eventStartDate: new Date() });
-      this.setState({ eventStartTime: new Date() });
-      this.setState({ eventEndDate: new Date() });
-      this.setState({ eventEndTime: new Date() });
+      this.setState({ eventStartDateTime: new Date() });
+      this.setState({ eventEndDateTime: new Date() });
+
+      //reset Audience Type value to default public
+      let updatedState = this.state.audienceType.map((isLikedItem) =>
+        isLikedItem.value === AudienceLevelType.PUBLIC.value
+          ? { ...isLikedItem, selected: true }
+          : { ...isLikedItem, selected: false }
+      );
+      this.setState({ audienceType: updatedState });
+
       this.setLocation("");
       this.setDescription("");
       this.setTitle("");
@@ -446,8 +496,13 @@ export default class App extends Component {
     this.location = location;
   };
 
-  setDescription = (description) => {
-    this.description = description;
+  setDescription = (text) => {
+    if (text.length > 256) {
+      alert("Description is too long.\nWord limit is 256 characters");
+      text = text.slice(0, 256);
+    }
+    this.description = text;
+    this.setState({ description: text });
   };
 
   setPoints = (points) => {
@@ -538,6 +593,10 @@ export default class App extends Component {
 
   clickHandler = () => {
     this.setState({ visible: true });
+  };
+
+  handleCheckboxChange = (event) => {
+    this.setState({ eventMandatory: event.target.checked });
   };
 
   //START Holiday Setting Modal Component Functions
@@ -800,7 +859,6 @@ export default class App extends Component {
       };
       sportEventList.push(sportsEvent);
     }
-
     this.setState({ athleticEventList: sportEventList });
   };
 
@@ -998,20 +1056,44 @@ export default class App extends Component {
     // this.setState({ monthViewData: monthData });
   };
 
-  onEventStartDateSelected = (event, value) => {
-    this.setState({ eventStartDate: value });
+  showModeForEventStart = (currentMode) => {
+    if (Platform.OS === "android") {
+      console.log("HANDLKDJF");
+      this.setState({ eventStartDateTimeShow: true });
+      // for iOS, add a button that closes the picker
+    }
+    this.setState({ eventDateTimeMode: currentMode });
+  };
+  showModeForEventEnd = (currentMode) => {
+    if (Platform.OS === "android") {
+      console.log("asdfasdfasdfasdf");
+      this.setState({ eventEndDateTimeShow: true });
+      // for iOS, add a button that closes the picker
+    }
+    this.setState({ eventDateTimeMode: currentMode });
   };
 
-  onEventStartTimeSelected = (event, value) => {
-    this.setState({ eventStartTime: value });
+  showStartDatePicker = () => {
+    this.showModeForEventStart("date");
+  };
+  showStartTimePicker = () => {
+    this.showModeForEventStart("time");
+  };
+  showEndDatePicker = () => {
+    this.showModeForEventEnd("date");
+  };
+  showEndTimePicker = () => {
+    this.showModeForEventEnd("time");
   };
 
-  onEventEndDateSelected = (event, value) => {
-    this.setState({ eventEndDate: value });
+  onEventStartDateTimeSelected = (event, value) => {
+    this.setState({ eventStartDateTimeShow: false });
+    this.setState({ eventStartDateTime: value });
   };
 
-  onEventEndTimeSelected = (event, value) => {
-    this.setState({ eventEndTime: value });
+  onEventEndDateTimeSelected = (event, value) => {
+    this.setState({ eventEndDateTimeShow: false });
+    this.setState({ eventEndDateTime: value });
   };
 
   sayHi = (e) => {
@@ -1070,17 +1152,6 @@ export default class App extends Component {
     }
   };
   toggleCalendarView = () => {
-    // switch (this.state.calendarView) {
-    //   case CalendarViewType.WEEK:
-    //     this.setState({ calendarView: CalendarViewType.MONTH });
-    //     break;
-    //   case CalendarViewType.MONTH:
-    //     this.setState({ calendarView: CalendarViewType.WEEK });
-    //     break;
-    //   default:
-    //     console.error("Something Wrong with toggle calendar view");
-    //     break;
-    // }
     switch (this.state.calendarView) {
       case CalendarViewType.DAY:
         this.setState({ calendarView: CalendarViewType.WEEK });
@@ -1091,11 +1162,19 @@ export default class App extends Component {
       case CalendarViewType.MONTH:
         this.setState({ calendarView: CalendarViewType.DAY });
         break;
-
       default:
         console.error("Something Wrong with toggle calendar view");
         break;
     }
+  };
+
+  onRadioBtnClick = (item) => {
+    let updatedState = this.state.audienceType.map((isLikedItem) =>
+      isLikedItem.id === item.id
+        ? { ...isLikedItem, selected: true }
+        : { ...isLikedItem, selected: false }
+    );
+    this.setState({ audienceType: updatedState });
   };
 
   render() {
@@ -1125,18 +1204,6 @@ export default class App extends Component {
           { backgroundColor: themeCon[theme].calendarUIBackground },
         ]}
       >
-        <TouchableOpacity
-          activeOpacity={0.7}
-          onPress={this.clickHandler}
-          style={styles.touchableOpacityStyle}
-        >
-          <Icon
-            name="plus-circle"
-            size={50}
-            color={themeCon[theme].plusModalColor}
-          />
-        </TouchableOpacity>
-
         <Modal
           animationType="slide"
           transparent={true}
@@ -1197,6 +1264,7 @@ export default class App extends Component {
         <Modal
           animationType="fade"
           visible={this.state.createEventVisible}
+          // visible={true}
           transparent={true}
           onRequestClose={() => {
             this.setState({ visible: !this.state.createEventVisible });
@@ -1278,6 +1346,9 @@ export default class App extends Component {
                         placeholder="Description"
                         placeholderTextColor="#8b9cb5"
                         onChangeText={(text) => this.setDescription(text)}
+                        value={this.state.description}
+                        maxLength={257}
+                        multiline={true}
                       ></TextInput>
                     </View>
                   </View>
@@ -1350,20 +1421,66 @@ export default class App extends Component {
                         color: "#2F4858",
                       }}
                     >
-                      Start
+                      From
                     </Text>
-                    <DateTimePicker
-                      mode={"date"}
-                      value={this.state.eventStartDate}
-                      onChange={this.onEventStartDateSelected}
-                      style={{ marginLeft: 10, marginTop: 5 }}
-                    />
-                    <DateTimePicker
-                      mode={"time"}
-                      value={this.state.eventStartTime}
-                      onChange={this.onEventStartTimeSelected}
-                      style={{ marginLeft: 10, marginTop: 5 }}
-                    />
+                    <View>
+                      {Platform.OS === "android" ? (
+                        <View style={{ flexDirection: "row" }}>
+                          <Pressable onPress={this.showStartDatePicker}>
+                            <Text
+                              style={{
+                                backgroundColor: "#AAAAAA",
+                                paddingHorizontal: 10,
+                                paddingVertical: 6,
+                                borderRadius: 5,
+                                marginHorizontal: 4,
+                              }}
+                            >
+                              {JSGetDate(this.state.eventStartDateTime)}
+                            </Text>
+                          </Pressable>
+                          <Pressable onPress={this.showStartTimePicker}>
+                            <Text
+                              style={{
+                                backgroundColor: "#AAAAAA",
+                                paddingHorizontal: 10,
+                                paddingVertical: 6,
+                                borderRadius: 5,
+                                marginHorizontal: 4,
+                              }}
+                            >
+                              {JSClock(this.state.eventStartDateTime, false)}
+                            </Text>
+                          </Pressable>
+                          {this.state.eventStartDateTimeShow && (
+                            <DateTimePicker
+                              testID="dateTimePicker"
+                              value={this.state.eventStartDateTime}
+                              mode={this.state.eventDateTimeMode}
+                              is24Hour={false}
+                              onChange={this.onEventStartDateTimeSelected}
+                            />
+                          )}
+                        </View>
+                      ) : (
+                        <View style={{ flexDirection: "row" }}>
+                          <DateTimePicker
+                            testID="dateTimePicker"
+                            value={this.state.eventStartDateTime}
+                            mode={"date"}
+                            is24Hour={true}
+                            onChange={this.onEventStartDateTimeSelected}
+                          />
+                          <DateTimePicker
+                            testID="dateTimePicker"
+                            value={this.state.eventStartDateTime}
+                            mode={"time"}
+                            is24Hour={false}
+                            onChange={this.onEventStartDateTimeSelected}
+                          />
+                        </View>
+                      )}
+                    </View>
                   </View>
                   <View style={styles.row}>
                     <Text
@@ -1374,21 +1491,101 @@ export default class App extends Component {
                         color: "#2F4858",
                       }}
                     >
-                      End
+                      To
                     </Text>
-                    <DateTimePicker
-                      mode={"date"}
-                      value={this.state.eventEndDate}
-                      onChange={this.onEventEndDateSelected}
-                      style={{ marginLeft: 10, marginTop: 5 }}
-                    />
-                    <DateTimePicker
-                      mode={"time"}
-                      value={this.state.eventEndTime}
-                      onChange={this.onEventEndTimeSelected}
-                      style={{ marginLeft: 10, marginTop: 5 }}
-                    />
+                    <View>
+                      {Platform.OS === "android" ? (
+                        <View style={{ flexDirection: "row" }}>
+                          <Pressable onPress={this.showEndDatePicker}>
+                            <Text
+                              style={{
+                                backgroundColor: "#AAAAAA",
+                                paddingHorizontal: 10,
+                                paddingVertical: 6,
+                                borderRadius: 5,
+                                marginHorizontal: 4,
+                              }}
+                            >
+                              {JSGetDate(this.state.eventEndDateTime)}
+                            </Text>
+                          </Pressable>
+                          <Pressable onPress={this.showEndTimePicker}>
+                            <Text
+                              style={{
+                                backgroundColor: "#AAAAAA",
+                                paddingHorizontal: 10,
+                                paddingVertical: 6,
+                                borderRadius: 5,
+                                marginHorizontal: 4,
+                              }}
+                            >
+                              {JSClock(this.state.eventEndDateTime, false)}
+                            </Text>
+                          </Pressable>
+                          {this.state.eventEndDateTimeShow && (
+                            <DateTimePicker
+                              testID="dateTimePicker"
+                              value={this.state.eventEndDateTime}
+                              mode={this.state.eventDateTimeMode}
+                              is24Hour={false}
+                              onChange={this.onEventEndDateTimeSelected}
+                            />
+                          )}
+                        </View>
+                      ) : (
+                        <View style={{ flexDirection: "row" }}>
+                          <DateTimePicker
+                            testID="dateTimePicker"
+                            value={this.state.eventEndDateTime}
+                            mode={"date"}
+                            onChange={this.onEventEndDateTimeSelected}
+                          />
+                          <DateTimePicker
+                            testID="dateTimePicker"
+                            value={this.state.eventEndDateTime}
+                            mode={"time"}
+                            is24Hour={false}
+                            onChange={this.onEventEndDateTimeSelected}
+                          />
+                        </View>
+                      )}
+                    </View>
                   </View>
+                  <View style={{ flexDirection: "row", alignItems: "center" }}>
+                    <BouncyCheckbox
+                      isChecked={this.state.eventMandatory}
+                      onPress={(isChecked) =>
+                        this.setState({ eventMandatory: isChecked })
+                      }
+                    />
+                    <Text>Mandatory</Text>
+                  </View>
+
+                  <View
+                    style={{
+                      flexDirection: "column",
+                      width: "100%",
+                      paddingVertical: 10,
+                      paddingHorizontal: 25,
+                      marginVertical: 10,
+                    }}
+                  >
+                    <Text style={{ fontSize: 20, marginBottom: 8 }}>
+                      Who can join?
+                    </Text>
+                    <View style={{ flexDirection: "row" }}>
+                      {this.state.audienceType.map((item) => (
+                        <RadioButton
+                          onPress={() => this.onRadioBtnClick(item)}
+                          selected={item.selected}
+                          key={item.id}
+                        >
+                          {item.name}
+                        </RadioButton>
+                      ))}
+                    </View>
+                  </View>
+
                   <View style={[{ width: 300, margin: 10 }]}>
                     <MultiSelect
                       style={styles.dropdown}
@@ -1398,7 +1595,7 @@ export default class App extends Component {
                       iconStyle={styles.iconStyle}
                       data={this.state.searched}
                       valueField="user"
-                      placeholder="Choose friends"
+                      placeholder="Invite friends"
                       value={this.state.selected}
                       search
                       searchQuery={(text) => {
@@ -1673,6 +1870,8 @@ export default class App extends Component {
                                     handleEventCompletion={
                                       this.handleEventCompletion
                                     }
+                                    eventMandatory={event.eventMandatory}
+                                    audienceLevel={event.audienceLevel}
                                   />
                                 ) : (
                                   <View />
@@ -1816,8 +2015,6 @@ export default class App extends Component {
                         if (
                           isOnSameDate(event.startTime, this.state.currentDate)
                         ) {
-                          
-
                           return (
                             <EventViewInRow
                               navigation={this.props.navigation}
@@ -1903,6 +2100,17 @@ export default class App extends Component {
                   }}
                 />
               </ScrollView>
+              <TouchableOpacity
+                activeOpacity={0.7}
+                onPress={this.clickHandler}
+                style={{ padding: 4, marginLeft: 8 }}
+              >
+                <Icon
+                  name="plus-circle"
+                  size={40}
+                  color={themeCon[theme].plusModalColor}
+                />
+              </TouchableOpacity>
             </View>
           </View>
         </View>
@@ -2051,7 +2259,7 @@ const styles = StyleSheet.create({
   dropdown: {
     height: 50,
     backgroundColor: "white",
-    borderRadius: "12px",
+    borderRadius: 12,
     padding: 12,
     shadowColor: "#000",
     shadowOffset: {

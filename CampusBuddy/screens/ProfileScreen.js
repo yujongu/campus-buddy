@@ -14,7 +14,12 @@ import {
   FlatList,
   ActivityIndicator,
 } from "react-native";
-import { auth, db, userSchedule } from "../firebaseConfig";
+import Setting from 'react-native-vector-icons/Feather';
+import Img_icon from 'react-native-vector-icons/Ionicons';
+import Fri_icon from 'react-native-vector-icons/FontAwesome5';
+import Ant from 'react-native-vector-icons/AntDesign'
+import Entypo from 'react-native-vector-icons/Entypo'
+import { auth, db, fetchProfilePicture, userSchedule } from "../firebaseConfig";
 import { EmailAuthProvider } from "firebase/auth";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { signOut } from "firebase/auth";
@@ -34,6 +39,7 @@ import { PointsProgressBar } from "../components/ui/PointsProgressBar";
 import * as ImagePicker from "expo-image-picker";
 import { getDownloadURL, ref, uploadBytesResumable } from "firebase/storage";
 import { storage } from "../firebaseConfig";
+import { ScrollView } from "react-native-gesture-handler";
 
 export default function ProfileScreen({ navigation, route }) {
   const [newId, setNewId] = useState("");
@@ -42,22 +48,34 @@ export default function ProfileScreen({ navigation, route }) {
   const [mode, setMode] = useState(false);
   const theme = useContext(ThemeContext);
   const [profilePicture, setProfilePicture] = useState(null);
+  const [show, setShow] = useState(false);
+  const [show_block, setShowblock] = useState(false);
 
   useEffect(() => {
-    const fetchProfilePicture = async () => {
-      const imageRef = ref(storage, `profilePictures/${auth.currentUser.uid}`);
-      try {
-        const downloadURL = await getDownloadURL(imageRef);
-        setProfilePicture(downloadURL);
-      } catch (error) {
-        if (error.code === "storage/object-not-found") {
-          console.log("No profile picture found, using a default image.");
-        } else {
-          console.error("Error fetching profile picture:", error);
-        }
+    // const fetchProfilePicture = async () => {
+    //   const imageRef = ref(storage, `profilePictures/${auth.currentUser.uid}`);
+    //   try {
+    //     const downloadURL = await getDownloadURL(imageRef);
+    //     setProfilePicture(downloadURL);
+    //   } catch (error) {
+    //     if (error.code === "storage/object-not-found") {
+    //       console.log("No profile picture found, using a default image.");
+    //     } else {
+    //       console.error("Error fetching profile picture:", error);
+    //     }
+    //   }
+    // };
+    // fetchProfilePicture();
+    const getProfilePicture = async (uid) => {
+      const data = await fetchProfilePicture(uid);
+      if (data != null) {
+        setProfilePicture(data);
       }
+
+      return data;
     };
-    fetchProfilePicture();
+
+    getProfilePicture(auth.currentUser.uid);
   }, []);
 
   const pickImage = async () => {
@@ -164,46 +182,114 @@ export default function ProfileScreen({ navigation, route }) {
 
   return (
     <View style={[styles.container]}>
-      {console.log(theme)}
-      {profilePicture && (
-        <Image
-          source={{ uri: profilePicture }}
-          style={{ width: 100, height: 100, borderRadius: 50 }}
-        />
-      )}
-      <Button title="Pick an image from the gallery" onPress={pickImage} />
-      <Text style={[styles.textStyle, { color: theme.color }]}>
-        {auth.currentUser?.uid}
-      </Text>
-
-      <Text style={[styles.textStyle, { color: theme.color }]}>
-        Current Id: {id}
-      </Text>
-      <Switch
-        value={mode}
-        onValueChange={(value) => {
-          setMode(value);
-          EventRegister.emit("changeTheme", value);
-        }}
-      />
-      <Button
-        title="Settings"
-        onPress={() => navigation.navigate("Settings")}
-      />
-      <Button title="Sign Out" onPress={handleSignOut} />
-      <Button
-        title="Friend page"
-        onPress={() => navigation.navigate("Friend")}
-      />
-      <TextInput
-        style={[styles.input]}
-        placeholder="Enter Password"
-        value={password}
-        onChangeText={(text) => setPassword(text)}
-        secureTextEntry={true}
-      />
-      <Button title="Delete Account" onPress={handleDeleteAccount} />
-      <PointsProgressBar id={auth.currentUser?.uid} />
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={show}
+        onRequestClose={() => {
+          setShow(!show);
+          setShowblock(false)
+          setPassword("");
+        }}>
+        <View style={{flex: 1, justifyContent: 'center', alignItems: 'center'}}>
+          <View style={{backgroundColor: !mode ? 'white' : 'black', justifyContent: 'center', alignItems: 'center', width: '70%', height: '30%'}}>
+            {
+              show_block ? 
+              <Text>Blocked list</Text>
+              :
+              <View style={{width: '100%', alignItems: 'center', justifyContent: 'center'}}>
+                <Text style={mode ? styles.text_w : styles.text_t}>Enter your password to delete account</Text>
+                <TextInput
+                  style={[styles.input, {color: mode ? 'white' : 'black'}]}
+                  placeholder="Enter Password"
+                  placeholderTextColor= {mode ? "white" : "black"}
+                  value={password}
+                  onChangeText={(text) => setPassword(text)}
+                  secureTextEntry={true}
+                />
+                <Button title="Delete Account" onPress={handleDeleteAccount} />
+              </View>
+            }
+            <View style={{marginTop: 10}}>
+              <Button title="Close" onPress={() => {
+                setShow(!show)
+                setShowblock(false);
+                setPassword("");
+              }} />
+            </View>
+          </View>
+        </View>
+      </Modal>
+      <View style={{flex: 0.3, width: '100%' ,flexDirection: 'row', justifyContent: 'center', alignContent: 'center'}}>
+        <View style={{width: '100%', alignItems: 'center', justifyContent: 'space-around'}}>
+          {profilePicture && (
+            <Image
+              source={{ uri: profilePicture }}
+              style={{ width: 100, height: 100, borderRadius: 50 }}
+            />
+          )}
+          
+          <View style={{flexDirection: 'row'}}>
+            <Text style={{fontFamily: 'Roboto', fontWeight: 'bold', fontSize: 20, textDecorationLine: 'underline', color: mode ? "white" : "black"}}>
+              {id}
+            </Text>
+            <Text style={{fontFamily: 'Roboto', fontSize: 20, color: mode ? "white" : "black"}}>
+            's profile page
+            </Text>
+          </View>
+        </View>
+      </View>
+      <ScrollView style={{flex: 4, width: '100%'}} contentContainerStyle={{alignItems: 'center', justifyContent: 'center'}}>
+        <TouchableOpacity style={[styles.menu, {borderBottomColor: mode ? "white" : '#D3D3D3'}]} onPress={pickImage}>
+          <Img_icon name = {"images"} size={30} color={mode ? 'white' : 'black'} style={styles.icon_left}/>
+          <Text style={[mode ? styles.text_w : styles.text_b, {fontFamily: 'Roboto'} ]}>Change Profile</Text>
+        </TouchableOpacity>
+        <View style={[styles.menu, {borderBottomColor: mode ? "white" : '#D3D3D3'}]}>
+          <Img_icon name = {'color-palette-outline'} size={30} color={mode ? 'white' : 'black'} style={styles.icon_left}/>
+          <Text style={[mode ? styles.text_w : styles.text_b, {fontFamily: 'Roboto'} ]}>Dark Mode</Text>
+          <View style={styles.icon_right}>
+            <Switch
+              value={mode}
+              onValueChange={(value) => {
+                setMode(value);
+                EventRegister.emit("changeTheme", value);
+              }}
+            />
+          </View>
+        </View>
+        <TouchableOpacity style={[styles.menu, {borderBottomColor: mode ? "white" : '#D3D3D3'}]} onPress={() => navigation.navigate("Settings")}>
+          <Setting name = {"settings"} size={30} style={styles.icon_left} color={mode ? "white": "black"}/>
+          <Text style={[mode ? styles.text_w : styles.text_b, {fontFamily: 'Roboto'} ]}>Settings</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={[styles.menu, {borderBottomColor: mode ? "white" : '#D3D3D3'}]} onPress={() => navigation.navigate("Friend")}>
+          <Fri_icon name = {"user-friends"} size={30} style={styles.icon_left} color={mode ? "white": "black"}/>
+          <Text style={[mode ? styles.text_w : styles.text_b, {fontFamily: 'Roboto'} ]}>
+              Friends page
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={[styles.menu, {borderBottomColor: mode ? "white" : '#D3D3D3'}]} onPress={() => {
+          setShow(!show)
+          setShowblock(true)
+        }}>
+          <Ant name = {"deleteuser"} size={30} style={styles.icon_left} color={mode ? "white": "black"}/>
+          <Text style={[mode ? styles.text_w : styles.text_b, {fontFamily: 'Roboto'} ]}>
+              Blocked accounts
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={[styles.menu, {borderBottomColor: mode ? "white" : '#D3D3D3'}]} onPress={() => navigation.navigate("Goals")}>
+          <Setting name = {"target"} size={30} style={styles.icon_left} color={mode ? "white": "black"}/>
+          <Text style={[mode ? styles.text_w : styles.text_b, {fontFamily: 'Roboto'} ]}>Goals</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={[styles.menu, {borderBottomColor: mode ? "white" : '#D3D3D3'}]} onPress={() => setShow(!show)}>
+          <Ant name = {"delete"} size={30} style={styles.icon_left} color={mode ? "white": "black"}/>
+          <Text style={[mode ? styles.text_w : styles.text_b, {fontFamily: 'Roboto'} ]}>Delete account</Text>
+        </TouchableOpacity>
+        <TouchableOpacity onPress={handleSignOut} style={[styles.menu, {borderBottomColor: mode ? "white" : '#D3D3D3'}]}>
+          <Entypo name={'log-out'} size={30} style={styles.icon_left} color={mode ? "white": "black"}/>
+          <Text style={[mode ? styles.text_w : styles.text_b, {fontFamily: 'Roboto'} ]}>Sign Out</Text>
+        </TouchableOpacity>
+        <PointsProgressBar id={auth.currentUser?.uid} />
+      </ScrollView>
     </View>
   );
 }
@@ -213,7 +299,6 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
-    marginTop: 20,
   },
   input: {
     width: "80%",
@@ -272,4 +357,32 @@ const styles = StyleSheet.create({
   row: {
     flexDirection: "row",
   },
+  menu: {
+    width: '100%',
+    margin: 5,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    height: 60,
+    borderBottomWidth: 1
+  },
+  text_w:{
+    color: "white",
+    fontSize: 15, 
+    fontWeight: 'bold'
+  },
+  text_b: {
+    color: 'black',
+    fontSize: 15, 
+    fontWeight: 'bold'
+  },
+  icon_left: {
+    position: 'absolute', 
+    left: "5%"
+  },
+  icon_right: {
+    position: 'absolute', 
+    right: "5%"
+  },
+  
 });

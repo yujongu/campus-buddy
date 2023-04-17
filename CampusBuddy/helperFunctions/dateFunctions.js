@@ -40,7 +40,7 @@ export const JSGetDate = (time) => {
   return `${monthName} ${d}, ${y}`;
 };
 
-export const JSClock = (time) => {
+export const JSClock = (time, showSeconds = true) => {
   const hour = time.getHours();
   const minute = time.getMinutes();
   const second = time.getSeconds();
@@ -49,11 +49,18 @@ export const JSClock = (time) => {
     temp = "12";
   }
   temp += (minute < 10 ? ":0" : ":") + minute;
-  if (second != 0) {
-    temp += (second < 10 ? ":0" : ":") + second;
+  if (showSeconds) {
+    if (second != 0) {
+      temp += (second < 10 ? ":0" : ":") + second;
+    }
   }
+
   temp += hour >= 12 ? " P.M." : " A.M.";
   return temp;
+};
+
+export const JSGetDateClock = (time, showSeconds = true) => {
+  return JSGetDate(time) + " " + JSClock(time, showSeconds);
 };
 
 export const jsClockToDate = (str) => {
