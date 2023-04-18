@@ -87,7 +87,6 @@ export default function FeedScreen({ navigation, route }) {
       category: EventCategory.EVENT,
       eventMandatory: false,
     },
-
     {
       id: "bd7acbea-c1b1-46c2-aed5-3ad153abb28ba",
       profilePic: "https://picsum.photos/200",

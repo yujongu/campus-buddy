@@ -20,7 +20,6 @@ import {
 import CheckBox from "@react-native-community/checkbox";
 import BouncyCheckbox from "react-native-bouncy-checkbox";
 import DateTimePicker from "@react-native-community/datetimepicker";
-import DropDownPicker from "react-native-dropdown-picker";
 import { ColorWheel } from "../components/ui/ColorWheel";
 import { Colors } from "../constants/colors";
 import * as DocumentPicker from "expo-document-picker";
@@ -49,7 +48,7 @@ import { CalendarViewType } from "../constants/calendarViewType";
 import HolidaySettingModal from "../components/ui/HolidaySettingModal";
 import { SafeAreaView } from "react-native-safe-area-context";
 import MonthViewItem from "../components/MonthViewItem";
-import { MultiSelect } from "react-native-element-dropdown";
+import { Dropdown, MultiSelect } from "react-native-element-dropdown";
 import AntDesign from "react-native-vector-icons/AntDesign";
 import {
   getMonthName,
@@ -70,11 +69,37 @@ import ThemeContext from "../components/ui/ThemeContext";
 import themeCon from "../components/ui/theme";
 import RadioButton from "../components/ui/RadioButton";
 import { AudienceLevelType } from "../constants/AudienceLevelType";
+import { EventRepetitionType } from "../constants/EventRepetitionType";
+import EventRepetitionDetailWeekly from "../components/ui/EventRepetition_Weekly";
+import EventRepetitionDetailDaily from "../components/ui/EventRepetition_Daily";
 
 const leftHeaderWidth = 50;
 const topHeaderHeight = 60;
 const dailyWidth = (Dimensions.get("window").width - leftHeaderWidth) / 3;
 const dailyHeight = Dimensions.get("window").height / 10;
+
+const data = [
+  {
+    label: EventRepetitionType.NEVER.label,
+    value: EventRepetitionType.NEVER.value,
+  },
+  {
+    label: EventRepetitionType.DAILY.label,
+    value: EventRepetitionType.DAILY.value,
+  },
+  {
+    label: EventRepetitionType.WEEKLY.label,
+    value: EventRepetitionType.WEEKLY.value,
+  },
+  {
+    label: EventRepetitionType.MONTHLY.label,
+    value: EventRepetitionType.MONTHLY.value,
+  },
+  {
+    label: EventRepetitionType.YEARLY.label,
+    value: EventRepetitionType.YEARLY.value,
+  },
+];
 
 export default class App extends Component {
   static contextType = ThemeContext;
@@ -138,11 +163,18 @@ export default class App extends Component {
       eventColor: "#8b9cb5",
       value: null,
 
-      eventStartDateTimeShow: false,
+      eventRepetition: EventRepetitionType.NEVER.value,
+      eventRepeteCount: "1",
+
       eventDateTimeMode: "date",
+      eventStartDateTimeShow: false,
       eventStartDateTime: new Date(),
       eventEndDateTimeShow: false,
       eventEndDateTime: new Date(),
+
+      eventRepeatDateShow: false,
+      eventRepeatDate: new Date(),
+
       selected: [],
       searched: [],
       friend_list: [],
@@ -358,6 +390,14 @@ export default class App extends Component {
       }
     }
     this.setState({ monthViewData: temp });
+  };
+
+  handleEventRepetitionCount = (value) => {
+    if (value > 6) {
+      alert("Need to be less than 7");
+    } else {
+      this.setState({ eventRepeteCount: value });
+    }
   };
 
   submitEvent = (eventColor) => {
@@ -1017,7 +1057,6 @@ export default class App extends Component {
 
   showModeForEventStart = (currentMode) => {
     if (Platform.OS === "android") {
-      console.log("HANDLKDJF");
       this.setState({ eventStartDateTimeShow: true });
       // for iOS, add a button that closes the picker
     }
@@ -1025,8 +1064,15 @@ export default class App extends Component {
   };
   showModeForEventEnd = (currentMode) => {
     if (Platform.OS === "android") {
-      console.log("asdfasdfasdfasdf");
       this.setState({ eventEndDateTimeShow: true });
+      // for iOS, add a button that closes the picker
+    }
+    this.setState({ eventDateTimeMode: currentMode });
+  };
+
+  showModeForEventRepeat = (currentMode) => {
+    if (Platform.OS === "android") {
+      this.setState({ eventRepeatDateShow: true });
       // for iOS, add a button that closes the picker
     }
     this.setState({ eventDateTimeMode: currentMode });
@@ -1044,6 +1090,9 @@ export default class App extends Component {
   showEndTimePicker = () => {
     this.showModeForEventEnd("time");
   };
+  showRepeatDatePicker = () => {
+    this.showModeForEventRepeat("date");
+  };
 
   onEventStartDateTimeSelected = (event, value) => {
     this.setState({ eventStartDateTimeShow: false });
@@ -1053,6 +1102,11 @@ export default class App extends Component {
   onEventEndDateTimeSelected = (event, value) => {
     this.setState({ eventEndDateTimeShow: false });
     this.setState({ eventEndDateTime: value });
+  };
+
+  onEventRepeatDateSelected = (event, value) => {
+    this.setState({ eventRepeatDateShow: false });
+    this.setState({ eventRepeatDate: value });
   };
 
   sayHi = (e) => {
@@ -1354,14 +1408,7 @@ export default class App extends Component {
                       onChangeText={(text) => this.setPoints(text)}
                     ></TextInput>
                   </View>
-                  <View style={styles.row}>
-                    <View style={{ flex: 1, paddingTop: 10 }}>
-                      <Icon name="repeat" size={20} color="#2F4858" />
-                    </View>
-                    <View style={{ flex: 8 }}>
-                      <Text>Here</Text>
-                    </View>
-                  </View>
+
                   <View style={styles.row}>
                     <Text
                       style={{
@@ -1501,6 +1548,91 @@ export default class App extends Component {
                       )}
                     </View>
                   </View>
+
+                  <View
+                    style={{
+                      flex: 1,
+                      flexDirection: "row",
+                      alignItems: "center",
+                      marginHorizontal: 25,
+                      marginVertical: 8,
+                    }}
+                  >
+                    <View>
+                      <Text>Repeat</Text>
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Dropdown
+                        style={{
+                          paddingLeft: 10,
+                          marginHorizontal: 10,
+                          height: 50,
+                          borderBottomColor: "grey",
+                          borderBottomWidth: 0.5,
+                        }}
+                        maxHeight={300}
+                        labelField="label"
+                        valueField="value"
+                        placeholderStyle={{ fontSize: 16 }}
+                        placeholder="Select item"
+                        data={data}
+                        value={this.state.eventRepetition}
+                        onChange={(item) => {
+                          this.setState({ eventRepetition: item.value });
+                        }}
+                      />
+                    </View>
+                  </View>
+                  {(() => {
+                    switch (this.state.eventRepetition) {
+                      case EventRepetitionType.NEVER.value:
+                        return <View></View>;
+                      case EventRepetitionType.DAILY.value:
+                        return (
+                          <View style={[styles.row, {}]}>
+                            <EventRepetitionDetailDaily
+                              countVal={this.state.eventRepeteCount}
+                              handleRepeatCount={
+                                this.handleEventRepetitionCount
+                              }
+                              showDatePicker={this.showRepeatDatePicker}
+                              eventRepeatDate={this.state.eventRepeatDate}
+                              eventRepeatDateShow={
+                                this.state.eventRepeatDateShow
+                              }
+                              eventRepeatMode={this.state.eventDateTimeMode}
+                              handleOnDateRepeatSelect={
+                                this.onEventRepeatDateSelected
+                              }
+                            />
+                          </View>
+                        );
+                      case EventRepetitionType.WEEKLY.value:
+                        return (
+                          <View style={[styles.row, {}]}>
+                            <EventRepetitionDetailWeekly />
+                          </View>
+                        );
+                      case EventRepetitionType.MONTHLY.value:
+                        return (
+                          <View style={[styles.row, {}]}>
+                            <Text>Monthly</Text>
+                          </View>
+                        );
+                      case EventRepetitionType.YEARLY.value:
+                        return (
+                          <View style={[styles.row, {}]}>
+                            <Text>Yearly</Text>
+                          </View>
+                        );
+                      default:
+                        return (
+                          <View>
+                            <Text>Something went wrong...!</Text>
+                          </View>
+                        );
+                    }
+                  })()}
                   <View style={{ flexDirection: "row", alignItems: "center" }}>
                     <BouncyCheckbox
                       isChecked={this.state.eventMandatory}
