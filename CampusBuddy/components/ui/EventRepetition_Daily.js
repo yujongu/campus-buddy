@@ -32,7 +32,6 @@ export default function EventRepetitionDetailDaily({
       value: 1,
     },
   ];
-  const [everyValue, setEveryValue] = useState(1);
   const [repetitionDue, setRepetitionDue] = useState(0);
 
   return (
@@ -66,7 +65,7 @@ export default function EventRepetitionDetailDaily({
           <Dropdown
             style={{
               paddingLeft: 10,
-              marginHorizontal: 10,
+              marginHorizontal: 8,
               height: 50,
               borderBottomColor: "grey",
               borderBottomWidth: 0.5,

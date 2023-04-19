@@ -121,7 +121,6 @@ export const jsClockToDate = (str) => {
 };
 
 export const jsDateToDate = (str) => {
-  console.log(str);
   let temp = str.split("/");
   if (temp.length == 3) {
     // const res = new Date();

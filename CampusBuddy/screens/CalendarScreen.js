@@ -31,6 +31,8 @@ import {
   addEvent,
   to_request,
   addPoints,
+  addRepeatingEvent,
+  getUserRecurringEvents,
 } from "../firebaseConfig";
 import { auth, db, userSchedule, getUserEvents } from "../firebaseConfig";
 import EventItem from "../components/ui/EventItem";
@@ -83,21 +85,23 @@ const data = [
     label: EventRepetitionType.NEVER.label,
     value: EventRepetitionType.NEVER.value,
   },
-  {
-    label: EventRepetitionType.DAILY.label,
-    value: EventRepetitionType.DAILY.value,
-  },
+  // {
+  //   label: EventRepetitionType.DAILY.label,
+  //   value: EventRepetitionType.DAILY.value,
+  // },
   {
     label: EventRepetitionType.WEEKLY.label,
     value: EventRepetitionType.WEEKLY.value,
   },
+];
+const repetitionHasEndData = [
   {
-    label: EventRepetitionType.MONTHLY.label,
-    value: EventRepetitionType.MONTHLY.value,
+    label: "Forever",
+    value: 0,
   },
   {
-    label: EventRepetitionType.YEARLY.label,
-    value: EventRepetitionType.YEARLY.value,
+    label: "Until",
+    value: 1,
   },
 ];
 
@@ -127,6 +131,7 @@ export default class App extends Component {
       },
       list: [],
       calendarEventList: [],
+      recurringEventList: [],
       athleticEventList: [],
       totalCalendarList: [],
       midterms: [],
@@ -164,7 +169,17 @@ export default class App extends Component {
       value: null,
 
       eventRepetition: EventRepetitionType.NEVER.value,
-      eventRepeteCount: "1",
+      eventRepeatCount: "1",
+      //For recurring weekly event
+      dayOfTheWeekSelected: [
+        { label: "Sun", value: 0, isSelected: false },
+        { label: "Mon", value: 1, isSelected: false },
+        { label: "Tue", value: 2, isSelected: false },
+        { label: "Wed", value: 3, isSelected: false },
+        { label: "Thu", value: 4, isSelected: false },
+        { label: "Fri", value: 5, isSelected: false },
+        { label: "Sat", value: 6, isSelected: false },
+      ],
 
       eventDateTimeMode: "date",
       eventStartDateTimeShow: false,
@@ -172,6 +187,7 @@ export default class App extends Component {
       eventEndDateTimeShow: false,
       eventEndDateTime: new Date(),
 
+      repetitionHasEndValue: 0,
       eventRepeatDateShow: false,
       eventRepeatDate: new Date(),
 
@@ -202,6 +218,7 @@ export default class App extends Component {
     const res = await userSchedule(auth.currentUser?.uid);
     const result = [];
     const eventResult = [];
+    const recurringEventResult = [];
     if (res != null) {
       /*res["things"].map((element) => {
         const sp = element.data.split(",");
@@ -257,6 +274,46 @@ export default class App extends Component {
         eventResult.push(temp);
       }
     }
+
+    // Getting recurring events from database
+    // recurringEventList
+    const recurringEvents = await getUserRecurringEvents(auth.currentUser?.uid);
+    if (recurringEvents != null && recurringEvents["event"] != undefined) {
+      for (let i = 0; i < recurringEvents["event"].length; i++) {
+        const temp = {
+          category: EventCategory.EVENT,
+          title: recurringEvents["event"][i]["details"]["title"],
+          startTime: new Date(
+            recurringEvents["event"][i]["details"]["startTime"].seconds * 1000
+          ), //multiply 1000 since Javascript uses milliseconds. Timestamp to date.
+          endTime: new Date(
+            recurringEvents["event"][i]["details"]["endTime"].seconds * 1000
+          ),
+          location: recurringEvents["event"][i]["details"]["location"],
+          description: recurringEvents["event"][i]["details"]["description"],
+          color: recurringEvents["event"][i]["details"]["color"],
+          id: recurringEvents["event"][i]["id"],
+          eventMandatory:
+            recurringEvents["event"][i]["details"]["eventMandatory"],
+          audienceLevel:
+            recurringEvents["event"][i]["details"]["audienceLevel"],
+          eventRepetition:
+            recurringEvents["event"][i]["details"]["repetitionPattern"],
+          eventRepetitionCount:
+            recurringEvents["event"][i]["details"]["repetitionValue"],
+          repetitionHasEndValue:
+            recurringEvents["event"][i]["details"]["repetitionHasEndDateValue"],
+          eventRepeatEndDate: new Date(
+            recurringEvents["event"][i]["details"]["repetitionEndDate"]
+              .seconds * 1000
+          ),
+          dayOfTheWeekSelected:
+            recurringEvents["event"][i]["details"]["repetitionDays"],
+        };
+        recurringEventResult.push(temp);
+      }
+    }
+    this.setState({ recurringEventList: recurringEventResult });
     this.checkList(eventResult); //Checks for events that go over multiple days and corrects it
     this.combineAllListsForCalendar(); // Combine list, calendarEventList, and athleticEventsList into one list "totalList"
 
@@ -396,8 +453,17 @@ export default class App extends Component {
     if (value > 6) {
       alert("Need to be less than 7");
     } else {
-      this.setState({ eventRepeteCount: value });
+      this.setState({ eventRepeatCount: value });
     }
+  };
+
+  toggleDayOfTheWeekSelected = (value) => {
+    let tempDayOfTheWeekSelected = [...this.state.dayOfTheWeekSelected];
+
+    tempDayOfTheWeekSelected[value].isSelected =
+      !tempDayOfTheWeekSelected[value].isSelected;
+
+    this.setState({ dayOfTheWeekSelected: tempDayOfTheWeekSelected });
   };
 
   submitEvent = (eventColor) => {
@@ -440,68 +506,99 @@ export default class App extends Component {
         }
       }
 
+      console.log("This is recurrence", this.state.eventRepetition);
       const eventId = uuid.v4();
-      addEvent(
-        auth.currentUser?.uid,
-        this.title,
-        eventSTime,
-        eventETime,
-        this.location,
-        this.description,
-        EventCategory.EVENT,
-        this.points,
-        eventColor,
-        0,
-        eventId,
-        this.state.eventMandatory,
-        selectedAudienceLevel
-      );
+      switch (this.state.eventRepetition) {
+        case 0:
+          addEvent(
+            auth.currentUser?.uid,
+            this.title,
+            eventSTime,
+            eventETime,
+            this.location,
+            this.description,
+            EventCategory.EVENT,
+            this.points,
+            eventColor,
+            0,
+            eventId,
+            this.state.eventMandatory,
+            selectedAudienceLevel
+          );
 
-      this.state.calendarEventList.push({
-        category: EventCategory.EVENT,
-        title: this.title,
-        startTime: eventSTime,
-        endTime: eventETime,
-        location: this.location,
-        description: this.description,
-        color: eventColor,
-        id: eventId,
-        eventMandatory: this.state.eventMandatory,
-        audienceLevel: selectedAudienceLevel,
-      });
-      this.state.totalCalendarList.push({
-        category: EventCategory.EVENT,
-        title: this.title,
-        startTime: eventSTime,
-        endTime: eventETime,
-        location: this.location,
-        description: this.description,
-        color: eventColor,
-        id: eventId,
-        eventMandatory: this.state.eventMandatory,
-        audienceLevel: selectedAudienceLevel,
-      });
+          this.state.calendarEventList.push({
+            category: EventCategory.EVENT,
+            title: this.title,
+            startTime: eventSTime,
+            endTime: eventETime,
+            location: this.location,
+            description: this.description,
+            color: eventColor,
+            id: eventId,
+            eventMandatory: this.state.eventMandatory,
+            audienceLevel: selectedAudienceLevel,
+          });
+          this.state.totalCalendarList.push({
+            category: EventCategory.EVENT,
+            title: this.title,
+            startTime: eventSTime,
+            endTime: eventETime,
+            location: this.location,
+            description: this.description,
+            color: eventColor,
+            id: eventId,
+            eventMandatory: this.state.eventMandatory,
+            audienceLevel: selectedAudienceLevel,
+          });
 
-      const message =
-        EventCategory.EVENT +
-        ";" +
-        this.title +
-        ";" +
-        eventSTime.toString() +
-        ";" +
-        eventETime.toString() +
-        ";" +
-        this.location +
-        ";" +
-        this.description +
-        ";" +
-        eventColor.toString() +
-        ";" +
-        this.points.toString();
+          const message =
+            EventCategory.EVENT +
+            ";" +
+            this.title +
+            ";" +
+            eventSTime.toString() +
+            ";" +
+            eventETime.toString() +
+            ";" +
+            this.location +
+            ";" +
+            this.description +
+            ";" +
+            eventColor.toString() +
+            ";" +
+            this.points.toString();
 
-      this.state.selected.map((email) => {
-        to_request(auth.currentUser?.email, email, "event", message);
-      });
+          this.state.selected.map((email) => {
+            to_request(auth.currentUser?.email, email, "event", message);
+          });
+          break;
+        case 1:
+          break;
+        case 2:
+          addRepeatingEvent(
+            auth.currentUser?.uid,
+            this.title,
+            eventSTime,
+            eventETime,
+            this.location,
+            this.description,
+            EventCategory.EVENT,
+            this.points,
+            eventColor,
+            this.state.eventRepetition,
+            this.state.eventRepeatCount,
+            this.state.repetitionHasEndValue,
+            this.state.eventRepeatDate,
+            this.state.dayOfTheWeekSelected,
+            eventId,
+            this.state.eventMandatory,
+            selectedAudienceLevel
+          );
+
+          break;
+        default:
+          break;
+      }
 
       this.setState({ selected: [] });
       this.setState({ eventStartDateTime: new Date() });
@@ -518,6 +615,22 @@ export default class App extends Component {
       this.setLocation("");
       this.setDescription("");
       this.setTitle("");
+
+      //reset values for recurrence event
+      this.setState({ eventRepetition: EventRepetitionType.NEVER.value });
+      this.setState({ eventRepeatCount: "1" });
+      this.setState({
+        dayOfTheWeekSelected: [
+          { label: "Sun", value: 0, isSelected: false },
+          { label: "Mon", value: 1, isSelected: false },
+          { label: "Tue", value: 2, isSelected: false },
+          { label: "Wed", value: 3, isSelected: false },
+          { label: "Thu", value: 4, isSelected: false },
+          { label: "Fri", value: 5, isSelected: false },
+          { label: "Sat", value: 6, isSelected: false },
+        ],
+      });
+      this.setState({ repetitionHasEndValue: 0 });
     }
   };
   setTitle = (title) => {
@@ -1587,14 +1700,45 @@ export default class App extends Component {
                     switch (this.state.eventRepetition) {
                       case EventRepetitionType.NEVER.value:
                         return <View></View>;
-                      case EventRepetitionType.DAILY.value:
+                      // case EventRepetitionType.DAILY.value:
+                      //   return (
+                      //     <View style={[styles.row, {}]}>
+                      //       <EventRepetitionDetailDaily
+                      //         countVal={this.state.eventRepeatCount}
+                      //         handleRepeatCount={
+                      //           this.handleEventRepetitionCount
+                      //         }
+                      //         showDatePicker={this.showRepeatDatePicker}
+                      //         eventRepeatDate={this.state.eventRepeatDate}
+                      //         eventRepeatDateShow={
+                      //           this.state.eventRepeatDateShow
+                      //         }
+                      //         eventRepeatMode={this.state.eventDateTimeMode}
+                      //         handleOnDateRepeatSelect={
+                      //           this.onEventRepeatDateSelected
+                      //         }
+                      //       />
+                      //     </View>
+                      //   );
+                      case EventRepetitionType.WEEKLY.value:
                         return (
                           <View style={[styles.row, {}]}>
-                            <EventRepetitionDetailDaily
-                              countVal={this.state.eventRepeteCount}
+                            <EventRepetitionDetailWeekly
+                              countVal={this.state.eventRepeatCount}
                               handleRepeatCount={
                                 this.handleEventRepetitionCount
                               }
+                              dayOfTheWeekSelected={
+                                this.state.dayOfTheWeekSelected
+                              }
+                              toggleDayOfTheWeekSelected={
+                                this.toggleDayOfTheWeekSelected
+                              }
+                              data={repetitionHasEndData}
+                              repetitionDue={this.state.repetitionHasEndValue}
+                              handleRepetitionHasEndValue={(value) => {
+                                this.setState({ repetitionHasEndValue: value });
+                              }}
                               showDatePicker={this.showRepeatDatePicker}
                               eventRepeatDate={this.state.eventRepeatDate}
                               eventRepeatDateShow={
@@ -1607,24 +1751,7 @@ export default class App extends Component {
                             />
                           </View>
                         );
-                      case EventRepetitionType.WEEKLY.value:
-                        return (
-                          <View style={[styles.row, {}]}>
-                            <EventRepetitionDetailWeekly />
-                          </View>
-                        );
-                      case EventRepetitionType.MONTHLY.value:
-                        return (
-                          <View style={[styles.row, {}]}>
-                            <Text>Monthly</Text>
-                          </View>
-                        );
-                      case EventRepetitionType.YEARLY.value:
-                        return (
-                          <View style={[styles.row, {}]}>
-                            <Text>Yearly</Text>
-                          </View>
-                        );
+
                       default:
                         return (
                           <View>
@@ -1959,6 +2086,75 @@ export default class App extends Component {
                                   <View />
                                 );
                               })}
+
+                              {this.state.recurringEventList.map((event) => {
+                                return makeVisibleRecurring(
+                                  this.state.weekViewStartDate,
+                                  event,
+                                  this.state.calendarUIVisibilityFilter
+                                ) ? (
+                                  // console.log("Hi", event.dayOfTheWeekSelected)
+                                  event.dayOfTheWeekSelected.map(
+                                    (daySelected) => {
+                                      return daySelected.isSelected &&
+                                        makeVisibleRecurringForDay(
+                                          this.state.weekViewStartDate,
+                                          event,
+                                          daySelected.value
+                                        ) ? (
+                                        <EventItem
+                                          key={`EITEM-${1}-${event.title}-${
+                                            event.startTime
+                                          }-${this.state.weekViewStartDate}-${
+                                            daySelected.value
+                                          }`}
+                                          navigation={this.props.navigation}
+                                          category={event.category}
+                                          day={daySelected.value}
+                                          startTime={new Date(event.startTime)}
+                                          endTime={new Date(event.endTime)}
+                                          title={event.title}
+                                          location={event.location}
+                                          description={event.description}
+                                          color={event.color}
+                                          id={event.id}
+                                          clickable={true}
+                                          handleEventCompletion={
+                                            this.handleEventCompletion
+                                          }
+                                          eventMandatory={event.eventMandatory}
+                                          audienceLevel={event.audienceLevel}
+                                        />
+                                      ) : (
+                                        <View />
+                                      );
+                                    }
+                                  )
+                                ) : (
+                                  // <EventItem
+                                  //   key={`EITEM-${1}-${event.title}-${
+                                  //     event.startTime
+                                  //   }`}
+                                  //   navigation={this.props.navigation}
+                                  //   category={event.category}
+                                  //   day={event.startTime.getDay()}
+                                  //   startTime={new Date(event.startTime)}
+                                  //   endTime={new Date(event.endTime)}
+                                  //   title={event.title}
+                                  //   location={event.location}
+                                  //   description={event.description}
+                                  //   color={event.color}
+                                  //   id={event.id}
+                                  //   clickable={true}
+                                  //   handleEventCompletion={
+                                  //     this.handleEventCompletion
+                                  //   }
+                                  //   eventMandatory={event.eventMandatory}
+                                  //   audienceLevel={event.audienceLevel}
+                                  // />
+                                  <View />
+                                );
+                              })}
                             </View>
                           </ScrollView>
                         </View>
@@ -2225,6 +2421,79 @@ const makeVisible = (weekStartDate, event, filterValues) => {
   if (event.startTime >= s && event.startTime <= e) {
     return true;
   }
+  return false;
+};
+
+const makeVisibleRecurring = (weekStartDate, event, filterValues) => {
+  // if event is school course, make visible
+
+  if (!visibilityFilter(event, filterValues)) {
+    return false;
+  }
+
+  let rE = new Date(event.eventRepeatEndDate);
+  //week range start and end
+  let s = weekStartDate;
+  s.setHours(0);
+  s.setMinutes(0);
+  s.setSeconds(0);
+  let e = new Date(weekStartDate);
+  e.setDate(e.getDate() + 6);
+  e.setHours(23);
+  e.setMinutes(59);
+  e.setSeconds(59);
+
+  //if event is within the week time frame, make visible
+  if (event.startTime >= s && event.startTime <= e) {
+    return true;
+  }
+
+  if (event.startTime >= s && event.startTime > e) {
+    //This is the weeks before the event was even created
+    return false;
+  }
+  if (event.startTime < s && event.startTime <= e) {
+    //This is the weeks after the event was created
+    if (event.repetitionHasEndValue == 0) {
+      //When event does not have a end date for repetition
+      return true;
+    } else {
+      if (rE >= s) {
+        return true;
+      } else {
+        return false;
+      }
+    }
+  }
+  return false;
+};
+
+makeVisibleRecurringForDay = (weekStartDate, event, day) => {
+  let rE = new Date(event.eventRepeatEndDate);
+
+  let s = weekStartDate;
+  s.setHours(0);
+  s.setMinutes(0);
+  s.setSeconds(0);
+  let e = new Date(weekStartDate);
+  e.setDate(e.getDate() + 6);
+  e.setHours(23);
+  e.setMinutes(59);
+  e.setSeconds(59);
+
+  let eDate = new Date(weekStartDate);
+  eDate.setDate(eDate.getDate() + day);
+  if (event.startTime <= eDate) {
+    if (event.repetitionHasEndValue == 0) {
+      return true;
+    }
+    if (eDate <= rE) {
+      return true;
+    } else {
+      return false;
+    }
+  }
+
   return false;
 };
 
