@@ -254,18 +254,6 @@ export async function addEvent(
   audienceLevel
 ) {
   const docRef = doc(db, "events", user_token);
-  // const data={
-  //   title: title,
-  //   startDate: startDate,
-  //   startTime: startTime,
-  //   endDate: endDate,
-  //   endTime: endTime,
-  //   location: location,
-  //   category: category,
-  //   point_value: point_value,
-  //   color: color,
-  //   repetition: repetition
-  // }
   const x = {
     title: title,
     startTime: startTime,
@@ -297,9 +285,78 @@ export async function addEvent(
   }
 }
 
+export async function addRepeatingEvent(
+  user_token,
+  title,
+  startTime,
+  endTime,
+  location,
+  description,
+  category,
+  point_value,
+  color,
+  repetitionPattern,
+  repetitionValue,
+  repetitionHasEndDateValue,
+  repetitionEndDate,
+  repetitionDays,
+  id,
+  eventMandatory,
+  audienceLevel
+) {
+  const docRef = doc(db, "recurring_events", user_token);
+  const x = {
+    title: title,
+    startTime: startTime,
+    endTime: endTime,
+    location: location,
+    description: description,
+    category: category,
+    point_value: point_value,
+    color: color,
+    repetitionPattern: repetitionPattern,
+    repetitionValue: repetitionValue,
+    repetitionHasEndDateValue: repetitionHasEndDateValue,
+    repetitionEndDate: repetitionEndDate,
+    repetitionDays: repetitionDays,
+    eventMandatory: eventMandatory,
+    audienceLevel: audienceLevel,
+  };
+  try {
+    const querySnapShot = await getDoc(doc(db, "recurring_events", user_token));
+    if (!querySnapShot.exists()) {
+      setDoc(docRef, {
+        event: [],
+      });
+    }
+    const data = {
+      id: id,
+      details: x,
+    };
+    updateDoc(docRef, { event: arrayUnion(data) });
+    console.log("Event doc written with ID: ", docRef.id);
+  } catch (e) {
+    console.error("Error adding event: ", e);
+  }
+}
+
 export async function getUserEvents(user_token) {
   try {
     const querySnapShot = await getDoc(doc(db, "events", user_token));
+    if (querySnapShot.exists()) {
+      const result = querySnapShot.data();
+      return result;
+    } else {
+      return null;
+    }
+  } catch (error) {
+    alert("Error getting user events: " + error);
+  }
+}
+
+export async function getUserRecurringEvents(user_token) {
+  try {
+    const querySnapShot = await getDoc(doc(db, "recurring_events", user_token));
     if (querySnapShot.exists()) {
       const result = querySnapShot.data();
       return result;

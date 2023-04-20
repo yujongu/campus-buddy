@@ -6,11 +6,12 @@ import ThemeContext from "../components/ui/ThemeContext";
 import theme from "../components/ui/theme";
 import { SafeAreaView } from "react-native-safe-area-context";
 import defaultProfile from "../assets/defaultProfile.png";
+import { Pressable } from "react-native";
 
 export default function FeedItem({
   navigation,
-  route,
-  id,
+  eventId,
+  userId,
   profilePic = null,
   title,
   description,
@@ -27,43 +28,68 @@ export default function FeedItem({
   const startDate = startTime.split(" ")[1].replace(",", "");
   const startMonth = startTime.split(" ")[0];
 
+  const navigateToFeedDetailPage = () => {
+    navigation.navigate("FeedDetails", {
+      navigation,
+      eventId,
+      userId,
+      profilePic,
+      title,
+      description,
+      location,
+      startTime,
+      endTime,
+      color,
+      pointValue,
+      category,
+      eventMandatory,
+    });
+  };
+
   return (
-    <View
-      style={[styles.container, { backgroundColor: theme.feedItemBackground }]}
-    >
-      <View style={styles.mainContainer}>
-        {profilePic ? (
-          <Image source={{ uri: profilePic }} style={styles.profImg} />
-        ) : (
-          <Image source={defaultProfile} style={styles.profImg} />
-        )}
-        <View style={styles.startDateContainer}>
-          <Text style={[{ fontSize: 30, color: theme.color }]}>
-            {startDate}
-          </Text>
-          <Text style={{ fontSize: 15, color: theme.color }}>{startMonth}</Text>
-        </View>
-        <View style={styles.titleDescriptionContainer}>
-          <Text
-            ellipsizeMode="tail"
-            numberOfLines={1}
-            style={{ fontSize: 18, color: theme.color }}
-          >
-            {title}
-          </Text>
-          <Text
-            ellipsizeMode="tail"
-            numberOfLines={1}
-            style={{ fontSize: 12, color: theme.color }}
-          >
-            {location}
-          </Text>
-        </View>
-      </View>
+    <Pressable onPress={navigateToFeedDetailPage}>
       <View
-        style={[styles.dividingLine, { borderColor: theme.borderColor }]}
-      ></View>
-    </View>
+        style={[
+          styles.container,
+          { backgroundColor: theme.feedItemBackground },
+        ]}
+      >
+        <View style={styles.mainContainer}>
+          {profilePic ? (
+            <Image source={{ uri: profilePic }} style={styles.profImg} />
+          ) : (
+            <Image source={defaultProfile} style={styles.profImg} />
+          )}
+          <View style={styles.startDateContainer}>
+            <Text style={[{ fontSize: 30, color: theme.color }]}>
+              {startDate}
+            </Text>
+            <Text style={{ fontSize: 15, color: theme.color }}>
+              {startMonth}
+            </Text>
+          </View>
+          <View style={styles.titleDescriptionContainer}>
+            <Text
+              ellipsizeMode="tail"
+              numberOfLines={1}
+              style={{ fontSize: 18, color: theme.color }}
+            >
+              {title}
+            </Text>
+            <Text
+              ellipsizeMode="tail"
+              numberOfLines={1}
+              style={{ fontSize: 12, color: theme.color }}
+            >
+              {location}
+            </Text>
+          </View>
+        </View>
+        <View
+          style={[styles.dividingLine, { borderColor: theme.borderColor }]}
+        ></View>
+      </View>
+    </Pressable>
   );
 }
 

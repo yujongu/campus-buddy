@@ -19,6 +19,7 @@ export default function FeedScreen({ navigation, route }) {
   const FEEDDATA = [
     {
       id: "bd7acbea-c1b1-46c2-aed5-3aad53abb28ba",
+      userId: "NAALKSDJFLSDJFKLS",
       profilePic: null,
       title:
         "Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged. It was popularised in the 1960s with the release of Letraset sheets containing Lorem Ipsum passages, and more recently with desktop publishing software like Aldus PageMaker including versions of Lorem Ipsum.",
@@ -33,6 +34,7 @@ export default function FeedScreen({ navigation, route }) {
     },
     {
       id: "bd7acbea-c1b1-46c2-aed5-3ad5s3abb28ba",
+      userId: "NAALKSDJFLSDJFKLS",
       profilePic: "https://picsum.photos/200",
       // profilePic: null,
       title: "This is title",
@@ -47,6 +49,7 @@ export default function FeedScreen({ navigation, route }) {
     },
     {
       id: "bd7acbea-c1b1-46c2-aed5d-3ad53abb28ba",
+      userId: "NAALKSDJFLSDJFKLS",
       profilePic: null,
       title:
         "Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged. It was popularised in the 1960s with the release of Letraset sheets containing Lorem Ipsum passages, and more recently with desktop publishing software like Aldus PageMaker including versions of Lorem Ipsum.",
@@ -61,6 +64,7 @@ export default function FeedScreen({ navigation, route }) {
     },
     {
       id: "bd7acbea-c1b1-46c2-aed5-f3ad53abb28ba",
+      userId: "NAALKSDJFLSDJFKLS",
       profilePic: null,
       title: "This is the title",
       description:
@@ -75,8 +79,8 @@ export default function FeedScreen({ navigation, route }) {
     },
     {
       id: "bd7acbea-c1b1-46gc2-aed5-3ad53abb28ba",
+      userId: "NAALKSDJFLSDJFKLS",
       profilePic: "https://picsum.photos/200",
-      // profilePic: null,
       title: "This is the title",
       description: "This is a description",
       location: "At school",
@@ -87,13 +91,12 @@ export default function FeedScreen({ navigation, route }) {
       category: EventCategory.EVENT,
       eventMandatory: false,
     },
-
     {
       id: "bd7acbea-c1b1-46c2-aed5-3ad153abb28ba",
+      userId: "NAALKSDJFLSDJFKLS",
       profilePic: "https://picsum.photos/200",
-      // profilePic: null,
       title:
-        "Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged. It was popularised in the 1960s with the release of Letraset sheets containing Lorem Ipsum passages, and more recently with desktop publishing software like Aldus PageMaker including versions of Lorem Ipsum.",
+        "Lorem Ipsum is simply dummy tsrambled it to make a type specimen book. It has survived not only five cctronicset sheets containing Lorem Ipsum passages, and more recently with desktop publishing software like Aldus PageMaker including versions of Lorem Ipsum.",
       description: "This is a description",
       location: "At home",
       startTime: JSGetDateClock(new Date(), false),
@@ -105,8 +108,8 @@ export default function FeedScreen({ navigation, route }) {
     },
     {
       id: "bd7acbea-c1b1-46c2-aed5-36ad53abb28ba",
+      userId: "NAALKSDJFLSDJFKLS",
       profilePic: "https://picsum.photos/200",
-      // profilePic: null,
       title: "This is the title",
       description: "This is a description",
       location: "At school",
@@ -134,6 +137,9 @@ export default function FeedScreen({ navigation, route }) {
         data={FEEDDATA}
         renderItem={({ item }) => (
           <FeedItem
+            navigation={navigation}
+            eventId={item.id}
+            userId={item.userId}
             profilePic={item.profilePic}
             title={item.title}
             description={item.description}
@@ -143,6 +149,7 @@ export default function FeedScreen({ navigation, route }) {
             color={item.color}
             pointValue={item.pointValue}
             category={item.category}
+            eventMandatory={item.eventMandatory}
           />
         )}
         keyExtractor={(item) => item.id}
