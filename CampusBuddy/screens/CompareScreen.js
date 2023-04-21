@@ -62,7 +62,7 @@ export default function CompareScreen({props, navigation}) {
         title = "Go Back"
         onPress = {() => navigation.navigate("Calendar")}
         />
-      <Text style={styles.enter}>Enter schedule 1:</Text>
+      <Text style={styles.enter}>Search a user to compare schedule:</Text>
       <SearchBar 
           placeholder="Choose a user..."
           lightTheme
@@ -72,7 +72,7 @@ export default function CompareScreen({props, navigation}) {
           autoCorrect={false}
       />
   
-      <Text style={styles.enter}>Enter schedule 2:</Text>
+      <Text style={styles.enter}>Search a user to compare schedule:</Text>
       <SearchBar 
           placeholder="Choose a user..."
           lightTheme
