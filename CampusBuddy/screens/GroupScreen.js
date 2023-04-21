@@ -33,8 +33,8 @@ import {
 
 export default function GroupScreen({ navigation, route }) {
 
-  const [groups, setGroups] = useState("");
-  const [groupName, setGroupName] = useState("");
+  const [groups, setGroups] = useState('');
+  const [groupName, setGroupName] = useState('');
 
   const handleAddGroup = () => {
     if (groupName.trim() === '') {
@@ -42,23 +42,52 @@ export default function GroupScreen({ navigation, route }) {
     }
 
     const newGroup = {
-      id: groups.length + 1,
-      name: groupName.trim(),
+      groupName: groupName.trim(),
+      mamberList: [],
     };
+
+    database().ref(`groups/${newGroup.id}`).set(newGroup);
 
     setGroups([...groups, newGroup]);
     setGroupName('');
   };
 
+  const renderItem = ({ item }) => (
+    <View style={styles.group}>
+      <Text style={styles.groupName}>{item.name}</Text>
+    </View>
+  );
+
+  useEffect(() => {
+    const groupsRef = database().ref('groups');
+  
+    groupsRef.on('value', (snapshot) => {
+      const groupsData = snapshot.val();
+      if (groupsData) {
+        const groupsList = Object.keys(groupsData).map((groupId) => {
+          return {
+            id: groupId,
+            name: groupsData[groupId].name,
+            memberList: groupsData[groupId].memberList,
+          };
+        });
+  
+        setGroups(groupsList);
+      }
+    });
+  
+    return () => groupsRef.off();
+  }, []);
+
   return (
     <View style={styles.container}>
-      {/* <Text style={styles.title}>Groups to Follow</Text>
+      <Text style={styles.title}>Groups to Follow</Text>
 
-      {groups.map((group) => (
-        <View key={group.id} style={styles.group}>
-          <Text style={styles.groupName}>{group.name}</Text>
-        </View>
-      ))}
+      <FlatList
+        data={groups}
+        renderItem={renderItem}
+        keyExtractor={(item) => item.id.toString()}
+      />
 
       <View style={styles.addGroup}>
         <TextInput
@@ -70,7 +99,7 @@ export default function GroupScreen({ navigation, route }) {
         <TouchableOpacity style={styles.addButton} onPress={handleAddGroup}>
           <Text style={styles.addButtonText}>Add</Text>
         </TouchableOpacity>
-      </View> */}
+      </View>
     </View>
   );
 }
