@@ -10,9 +10,16 @@ import {
   Alert,
   TouchableOpacity,
   FlatList,
-  Pressable
+  Pressable,
 } from "react-native";
-import { auth, db } from "../firebaseConfig";
+import {
+  addGroup,
+  addMembersToGroup,
+  addNicknameInGroup,
+  auth,
+  db,
+  removeMemberFromGroup,
+} from "../firebaseConfig";
 import { FloatingAction } from "react-native-floating-action";
 import {
   updateDoc,
@@ -22,15 +29,17 @@ import {
   arrayUnion,
   getDoc,
   deleteField,
+  query,
+  collection,
+  where,
 } from "firebase/firestore";
 import { Component } from "react";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import AntDesign from 'react-native-vector-icons/AntDesign';
-import { MultiSelect } from 'react-native-element-dropdown';
+import AntDesign from "react-native-vector-icons/AntDesign";
+import { MultiSelect } from "react-native-element-dropdown";
 import { ScrollView } from "react-native-gesture-handler";
 
-
-var all = []
+var all = [];
 
 export default class FriendScreen extends Component {
   constructor(props) {
@@ -44,8 +53,8 @@ export default class FriendScreen extends Component {
           text: "Add a group",
           icon: require("../assets/people.png"),
           name: "add_group",
-          position: 1
-        }
+          position: 1,
+        },
       ],
       group_visible: false,
       input: "",
@@ -57,7 +66,7 @@ export default class FriendScreen extends Component {
       currentFriend: null,
       all_groups: [],
       all: [],
-      data: []
+      data: [],
     };
   }
 
@@ -71,21 +80,22 @@ export default class FriendScreen extends Component {
 
   submitNickname = () => {
     const { currentFriend, nickname } = this.state;
-  
+
     // Update the friend's nickname in the user's friend list
     // You can save the nickname in a new property, e.g. "nickname"
-  
+
     // Hide the nickname input
     this.setState({ showNicknameInput: false, currentFriend: null });
   };
 
-  setNickname = (email, nickname) => {
-    this.setState((prevState) => ({
-      nicknames: {
-        ...prevState.nicknames,
-        [email]: nickname,
-      },
-    }));
+  setNickname = async (group, email, oldNickname, newNickname) => {
+    await addNicknameInGroup(group, email, oldNickname, newNickname);
+    // this.setState((prevState) => ({
+    //   nicknames: {
+    //     ...prevState.nicknames,
+    //     [email]: nickname,
+    //   },
+    // }));
   };
 
   componentDidMount() {
@@ -94,23 +104,100 @@ export default class FriendScreen extends Component {
       (doc) => {
         const data = doc.data()["friends"];
         const data2 = doc.data()["favorite"];
-        this.setState({favor: data2, list:data, searched: [...data2, ...data]})
-        this.setState({all : [...this.state.list, ...this.state.favor], data: doc.data()})
-        this.setState({all_groups: Object.keys(doc.data()).filter((group) => {
-          if(group != "favorite" && group != "friends"){
-            return group
-          }
-        })})
+
+        this.setState({
+          favor: data2,
+          list: data,
+          searched: [...data2, ...data],
+        });
+
+        const tempData = this.state.data;
+
+        if (tempData["friends"] != undefined) {
+          delete tempData.friends;
+          delete tempData.favorite;
+        }
+        tempData.friends = doc.data().friends;
+        tempData.favorite = doc.data().favorite;
+
+        this.setState({
+          all: [...this.state.list, ...this.state.favor],
+          // data: doc.data(),
+          data: tempData,
+        });
       }
-      );
-    return () => subscriber();
+    );
+
+    //Joey's code. Format group data fetched from groups collection.
+    //this.state.all_groups have group names in an array.
+    //this.state.data is an object, with each field representing a group
+    /**
+     * {
+     * "G With Joey Friend":
+     *   [
+     *     {"favorite": false, "user": "joey@gmail.com"},
+     *     {"favorite": false, "user": "joeyfriend@gmail.com"}
+     *   ],
+     * "Hdhd":
+     *   [
+     *     {"favorite": false, "user": "joey@gmail.com"}
+     *   ],
+     * "favorite":
+     *   [],
+     * "friends":
+     *   [
+     *     {"favorite": false, "user": "joeyfriend2@gmail.com"},
+     *     {"favorite": false, "user": "joeyfriend@gmail.com"}
+     *   ]
+     * }
+     */
+
+    const q = query(
+      collection(db, "groups"),
+      where("memberList", "array-contains", auth.currentUser?.email)
+    );
+    const groupsWithMeee = onSnapshot(q, (querySnapshot) => {
+      let myGroups = { ...this.state.data };
+      // let all_groups = this.state.all_groups;
+      let all_groups = [];
+
+      querySnapshot.forEach((doc) => {
+        // doc.data() is never undefined for query doc snapshots
+        let gName = doc.data().groupName;
+        if (!all_groups.includes(gName)) {
+          all_groups.push(gName);
+        }
+        let members = doc.data().memberList;
+        let nicknames = doc.data().nicknames;
+        myGroups[gName] = [];
+        members.forEach((member) => {
+          let nicknameTemp = "";
+          if (nicknames) {
+            nicknames.forEach((nickname) => {
+              if (nickname.user == member) {
+                nicknameTemp = nickname.nickname;
+              }
+            });
+          }
+
+          let m = { favorite: false, user: member, nickname: nicknameTemp };
+          myGroups[gName].push(m);
+        });
+      });
+      this.setState({ data: myGroups });
+      this.setState({ all_groups });
+    });
+    return () => {
+      groupsWithMeee();
+      subscriber();
+    };
   }
 
   removeFriend = (item) => {
     const me = doc(db, "friend_list", auth.currentUser?.email);
     const friend = doc(db, "friend_list", item.user);
     try {
-      if(item.favorite){
+      if (item.favorite) {
         updateDoc(me, {
           favorite: arrayRemove(item),
         });
@@ -121,7 +208,7 @@ export default class FriendScreen extends Component {
             });
           }
         });
-      }else{
+      } else {
         updateDoc(me, {
           friends: arrayRemove(item),
         });
@@ -150,27 +237,27 @@ export default class FriendScreen extends Component {
   favorite_handler = (item) => {
     const me = doc(db, "friend_list", auth.currentUser?.email);
     try {
-        if(item.favorite){
-          updateDoc(me, {
-            favorite: arrayRemove(item),
-          });
-          item.favorite = !item.favorite
-          updateDoc(me, {
-            friends: arrayUnion(item)
-          });
-        }else{
-          updateDoc(me, {
-            friends: arrayRemove(item),
-          });
-          item.favorite = !item.favorite
-          updateDoc(me, {
-            favorite: arrayUnion(item)
-          });
-        }
+      if (item.favorite) {
+        updateDoc(me, {
+          favorite: arrayRemove(item),
+        });
+        item.favorite = !item.favorite;
+        updateDoc(me, {
+          friends: arrayUnion(item),
+        });
+      } else {
+        updateDoc(me, {
+          friends: arrayRemove(item),
+        });
+        item.favorite = !item.favorite;
+        updateDoc(me, {
+          favorite: arrayUnion(item),
+        });
+      }
     } catch (e) {
-     console.error("Favorite friend: ", e);
+      console.error("Favorite friend: ", e);
     }
-  }
+  };
 
   handleAddNickname = () => {
     const { selected, nickname } = this.state;
@@ -198,42 +285,44 @@ export default class FriendScreen extends Component {
   renderItem = (item) => {
     return (
       <View style={styles.item}>
-        <View style={{flexDirection: 'row', justifyContent: "center", alignContent: "space-around"}}>
-        <TouchableOpacity
-            onPress={() => 
-                this.favorite_handler(item)
-            }
+        <View
+          style={{
+            flexDirection: "row",
+            justifyContent: "center",
+            alignContent: "space-around",
+          }}
         >
-          <MaterialCommunityIcons
-            name={item.favorite ? "heart" : "heart-outline"}
-            size={28}
-            color={item.favorite ? "red" : "black"}
-          />
-        </TouchableOpacity>
-        <TouchableOpacity
-        onPress={() =>
-          this.props.navigation.navigate("user_profile", {
-            email: item.user,
-          })
-        }
-      >
-        <Text style={{ color: "black", fontSize: 15 }}>{item.user}</Text>
-        {this.state.nicknames[item.user] && (
-          <Text style={{ color: "grey", fontSize: 12 }}>
-            {this.state.nicknames[item.user]}
-          </Text>
-        )}
-      </TouchableOpacity>
+          <TouchableOpacity onPress={() => this.favorite_handler(item)}>
+            <MaterialCommunityIcons
+              name={item.favorite ? "heart" : "heart-outline"}
+              size={28}
+              color={item.favorite ? "red" : "black"}
+            />
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() =>
+              this.props.navigation.navigate("user_profile", {
+                email: item.user,
+              })
+            }
+          >
+            <Text style={{ color: "black", fontSize: 15 }}>{item.user}</Text>
+            {this.state.nicknames[item.user] && (
+              <Text style={{ color: "grey", fontSize: 12 }}>
+                {this.state.nicknames[item.user]}
+              </Text>
+            )}
+          </TouchableOpacity>
         </View>
-        <View style={{ flexDirection: 'column' }}>
+        <View style={{ flexDirection: "column" }}>
           <TouchableOpacity
             onPress={() =>
               Alert.alert(
-                'Unfriend',
-                'Do you really want to unfriend?',
+                "Unfriend",
+                "Do you really want to unfriend?",
                 [
-                  { text: 'Yes', onPress: () => this.removeFriend(item) },
-                  { text: 'Cancel', style: 'cancel' },
+                  { text: "Yes", onPress: () => this.removeFriend(item) },
+                  { text: "Cancel", style: "cancel" },
                 ],
                 { cancelable: false }
               )
@@ -242,8 +331,7 @@ export default class FriendScreen extends Component {
             <Text>Unfriend</Text>
           </TouchableOpacity>
 
-
-          <TouchableOpacity
+          {/* <TouchableOpacity
             onPress={() => {
               Alert.prompt(
                 "Add Nickname",
@@ -252,172 +340,236 @@ export default class FriendScreen extends Component {
                   if (nickname) {
                     this.setNickname(item.user, nickname);
                   } else {
-                    Alert.alert("Invalid input", "Please enter a valid nickname");
+                    Alert.alert(
+                      "Invalid input",
+                      "Please enter a valid nickname"
+                    );
                   }
                 }
               );
             }}
           >
             <Text>Add Nickname</Text>
-          </TouchableOpacity>
-  
+          </TouchableOpacity> */}
         </View>
       </View>
     );
   };
 
   removeGroup = (item, group) => {
-    const me = doc(db, "friend_list", auth.currentUser?.email);
-    getDoc(me).then((snap) => {
-      // if (snap.data()[group] == 1){
-        updateDoc(me, {
-          [group]: deleteField(),
-        });
-      // }else{
-      //   updateDoc(me, {
-      //     [group]: arrayRemove(item),
-      //   });
-      // }
-    })
-    Alert.alert("Ungroup", "Succesfully ungrouped!")
-  }
+    // const me = doc(db, "friend_list", auth.currentUser?.email);
+    // getDoc(me).then((snap) => {
+    //   // if (snap.data()[group] == 1){
+    //   updateDoc(me, {
+    //     [group]: deleteField(),
+    //   });
+    //   // }else{
+    //   //   updateDoc(me, {
+    //   //     [group]: arrayRemove(item),
+    //   //   });
+    //   // }
+    // });
+    // Alert.alert("Ungroup", "Succesfully ungrouped!");
 
+    //COmmented above code
+    //Joey's code
+    const rmMember = async () => {
+      await removeMemberFromGroup(group, item);
+    };
+    const res = rmMember();
+    if (res) {
+      Alert.alert("Ungroup", "Succesfully ungrouped!");
+    }
+  };
+
+  //item contains {favorite : asdf , user: asldfjk}
   renderItem2 = (item, group) => {
     return (
       <View style={styles.item}>
-        <View style={{flexDirection: 'row', justifyContent: "center", alignContent: "space-around"}}>
-        
-        <TouchableOpacity
-        onPress={() =>
-          this.props.navigation.navigate("user_profile", {
-            email: item.user,
-          })
-        }
-      >
-        <Text style={{ color: "black", fontSize: 15 }}>{item.user}</Text>
-        {this.state.nicknames[item.user] && (
-          <Text style={{ color: "grey", fontSize: 12 }}>
-            {this.state.nicknames[item.user]}
-          </Text>
-        )}
-      </TouchableOpacity>
-        </View>
-        <View style={{ flexDirection: 'column' }}>
+        <View
+          style={{
+            flexDirection: "row",
+            justifyContent: "center",
+            alignContent: "space-around",
+          }}
+        >
           <TouchableOpacity
             onPress={() =>
-              Alert.alert(
-                'Unfriend',
-                'Do you really want to ungroup?',
-                [
-                  { text: 'Yes', onPress: () => this.removeGroup(item, group) },
-                  { text: 'Cancel', style: 'cancel' },
-                ],
-                { cancelable: false }
-              )
+              this.props.navigation.navigate("user_profile", {
+                email: item.user,
+              })
             }
           >
-            <Text>Ungroup</Text>
+            <Text style={{ color: "black", fontSize: 15 }}>{item.user}</Text>
+            {/* {this.state.nicknames[item.user] && (
+              <Text style={{ color: "grey", fontSize: 12 }}>
+                {this.state.nicknames[item.user]}
+              </Text>
+            )} */}
+            {/* Replace nicknames state to database nickname */}
+            {item.nickname != "" && (
+              <Text style={{ color: "grey", fontSize: 12 }}>
+                {item.nickname}
+              </Text>
+            )}
           </TouchableOpacity>
-
-
-          <TouchableOpacity
-            onPress={() => {
-              Alert.prompt(
-                "Add Nickname",
-                "Enter a nickname for this friend",
-                (nickname) => {
-                  if (nickname) {
-                    this.setNickname(item.user, nickname);
-                  } else {
-                    Alert.alert("Invalid input", "Please enter a valid nickname");
-                  }
-                }
-              );
-            }}
-          >
-            <Text>Add Nickname</Text>
-          </TouchableOpacity>
-  
         </View>
+        {item.user == auth.currentUser.email ? (
+          <View style={{ flexDirection: "column" }}>
+            <TouchableOpacity
+              onPress={() =>
+                Alert.alert(
+                  "Leave",
+                  "Do you really want to leave the group?",
+                  [
+                    {
+                      text: "Yes",
+                      onPress: () => this.removeGroup(item, group),
+                    },
+                    { text: "Cancel", style: "cancel" },
+                  ],
+                  { cancelable: false }
+                )
+              }
+            >
+              <Text>Leave Group</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              onPress={() => {
+                Alert.prompt(
+                  "Add Nickname",
+                  "Enter a nickname for this friend",
+                  (nickname) => {
+                    if (nickname) {
+                      this.setNickname(
+                        group,
+                        item.user,
+                        item.nickname,
+                        nickname
+                      );
+                    } else {
+                      Alert.alert(
+                        "Invalid input",
+                        "Please enter a valid nickname"
+                      );
+                    }
+                  }
+                );
+              }}
+            >
+              <Text>Add Nickname</Text>
+            </TouchableOpacity>
+          </View>
+        ) : (
+          <View></View>
+        )}
       </View>
     );
   };
 
   floating_handler = (name) => {
     //if user clicked add_group button then show group modal
-    if(name === "add_group"){
-      this.setState({input: "", selected: []})
-      this.setState({group_visible: !this.state.group_visible})
+    if (name === "add_group") {
+      this.setState({ input: "", selected: [] });
+      this.setState({ group_visible: !this.state.group_visible });
     }
-  }
+  };
   renderGroups = (group) => {
     return (
       <View>
-          <View>
-            <Text style={{marginLeft: 10, fontSize: 20, marginTop: -30}}>{"\n\n" + group + ":"}</Text>
-            {/* <FlatList 
+        <View>
+          <Text style={{ marginLeft: 10, fontSize: 20, marginTop: -30 }}>
+            {"\n\n" + group + ":"}
+          </Text>
+          {/* <FlatList 
               data = {this.state.data[group]}
               renderItem={({item}) => this.renderItem2(item, group)}
             /> */}
-            {this.state.data[group].map((item) => this.renderItem2(item, group))}
-          </View>
+
+          {this.state.data[group].map((item) => this.renderItem2(item, group))}
+        </View>
       </View>
-    )
-  }
+    );
+  };
   renderDataItem = (item) => {
     return (
-        <View style={styles.item2}>
-            <Text style={styles.selectedTextStyle}>{item.user}</Text>
-            {
-              this.state.selected.indexOf(item.user) > -1 ?
-              <AntDesign style={styles.icon} color="black" name="check" size={20} />
-              :
-              <AntDesign style={styles.icon} color="black" name="plus" size={20} />
-            }
-        </View>
+      <View style={styles.item2}>
+        <Text style={styles.selectedTextStyle}>{item.user}</Text>
+        {this.state.selected.indexOf(item.user) > -1 ? (
+          <AntDesign style={styles.icon} color="black" name="check" size={20} />
+        ) : (
+          <AntDesign style={styles.icon} color="black" name="plus" size={20} />
+        )}
+      </View>
     );
   };
 
   filter_friends = (text) => {
-    const updatedData = [...this.state.favor, ...this.state.list].filter((item) => {
-      return item.user.includes(text)
-    });
-    if(updatedData.length > 0){
-      this.setState({searched: updatedData})
-    }
-  }
-
-  handle_create = () =>{
-    //check for the duplicate group name in friend list
-    var check = false;
-    if(this.state.input === ""){
-      Alert.alert("Warning", "Please enter the name of group")
-    }else{
-      const duplicate = getDoc(doc(db, "friend_list", auth.currentUser?.email)).then((doc) => {
-        if(Object.keys(doc.data()).indexOf(this.state.input) > -1){
-          Alert.alert("Duplicate", "Group name is already existing")
-        }else{
-          check = true;
-        }
-      })
-      if(!check){
-        const selected = []
-        this.state.selected.map(choice => {
-          this.state.all.map(data => {
-            if(data.user == choice){
-              const {_index, ...rest} = data
-              selected.push(rest)
-            }
-          })
-        })
-        updateDoc(doc(db, "friend_list", auth.currentUser?.email), {
-          [this.state.input] : selected
-        });
-        Alert.alert("Succeed!", "Successfully a created group: " + this.state.input)
-        this.setState({group_visible: !this.state.group_visible})
+    const updatedData = [...this.state.favor, ...this.state.list].filter(
+      (item) => {
+        return item.user.includes(text);
       }
+    );
+    if (updatedData.length > 0) {
+      this.setState({ searched: updatedData });
     }
-  }
+  };
+
+  handle_create = async () => {
+    //check for the duplicate group name in friend list
+
+    var check = false;
+
+    if (this.state.input === "") {
+      Alert.alert("Warning", "Please enter the name of group");
+    } else if (this.state.input.length > 30) {
+      Alert.alert("Warning", "Group name has to be within 30 characters");
+    } else {
+      const groupId = await addGroup(this.state.input, auth.currentUser.email);
+      if (groupId == null) {
+        Alert.alert("Duplicate", "Group name already exists!");
+      } else {
+        const res = await addMembersToGroup(groupId, this.state.selected);
+        if (res) {
+          Alert.alert(
+            "Succeed!",
+            "Successfully a created group: " + this.state.input
+          );
+          this.setState({ group_visible: !this.state.group_visible });
+        }
+      }
+
+      //   const duplicate = getDoc(
+      //     doc(db, "friend_list", auth.currentUser?.email)
+      //   ).then((doc) => {
+      //     if (Object.keys(doc.data()).indexOf(this.state.input) > -1) {
+      //       Alert.alert("Duplicate", "Group name is already existing");
+      //     } else {
+      //       check = true;
+      //     }
+      //   });
+      //   if (!check) {
+      //     const selected = [];
+      //     this.state.selected.map((choice) => {
+      //       this.state.all.map((data) => {
+      //         if (data.user == choice) {
+      //           const { _index, ...rest } = data;
+      //           selected.push(rest);
+      //         }
+      //       });
+      //     });
+      //     updateDoc(doc(db, "friend_list", auth.currentUser?.email), {
+      //       [this.state.input]: selected,
+      //     });
+      //     Alert.alert(
+      //       "Succeed!",
+      //       "Successfully a created group: " + this.state.input
+      //     );
+      //     this.setState({ group_visible: !this.state.group_visible });
+      //   }
+    }
+  };
 
   render() {
     const { showNicknameInput } = this.state;
@@ -444,13 +596,19 @@ export default class FriendScreen extends Component {
             transparent={true}
             visible={this.state.group_visible}
           >
-            <View style={{flex: 1, justifyContent: 'center', alignItems: 'center',}}>
+            <View
+              style={{
+                flex: 1,
+                justifyContent: "center",
+                alignItems: "center",
+              }}
+            >
               <View style={styles.modalView}>
-                <View style={{marginBottom: 25}}>
+                <View style={{ marginBottom: 25 }}>
                   <Text>Group Name: </Text>
                   <TextInput
                     style={styles.input2}
-                    onChangeText={text => this.setState({ input : text})}
+                    onChangeText={(text) => this.setState({ input: text })}
                     placeholder="Type here ..."
                     value={this.state.input}
                   />
@@ -467,42 +625,62 @@ export default class FriendScreen extends Component {
                     value={this.state.selected}
                     search
                     searchQuery={(text) => {
-                      this.filter_friends(text)
-                      }
-                    }
+                      this.filter_friends(text);
+                    }}
                     searchPlaceholder="Search..."
-                    onChange={item => {
-                        this.setState({selected: item})
+                    onChange={(item) => {
+                      this.setState({ selected: item });
                     }}
                     renderItem={this.renderDataItem}
                     renderSelectedItem={(item, unSelect) => (
-                        <TouchableOpacity onPress={() => unSelect && unSelect(item)}>
-                            <View style={styles.selectedStyle}>
-                                <Text style={styles.textSelectedStyle}>{item.user}</Text>
-                                <AntDesign color="black" name="delete" size={17} />
-                            </View>
-                        </TouchableOpacity>
+                      <TouchableOpacity
+                        onPress={() => unSelect && unSelect(item)}
+                      >
+                        <View style={styles.selectedStyle}>
+                          <Text style={styles.textSelectedStyle}>
+                            {item.user}
+                          </Text>
+                          <AntDesign color="black" name="delete" size={17} />
+                        </View>
+                      </TouchableOpacity>
                     )}
                   />
                   <StatusBar />
                 </View>
-                <View style={{flexDirection: "row", justifyContent: "space-around"}}>
+                <View
+                  style={{
+                    flexDirection: "row",
+                    justifyContent: "space-around",
+                  }}
+                >
                   <Pressable
-                    style={[styles.button, styles.buttonClose, {marginRight: 10}]}
-                    onPress={() => this.handle_create()}>
+                    style={[
+                      styles.button,
+                      styles.buttonClose,
+                      { marginRight: 10 },
+                    ]}
+                    onPress={() => this.handle_create()}
+                  >
                     <Text style={styles.textStyle}>Create</Text>
                   </Pressable>
                   <Pressable
                     style={[styles.button, styles.buttonClose]}
-                    onPress={() => this.setState({group_visible: !this.state.group_visible})}>
+                    onPress={() =>
+                      this.setState({
+                        group_visible: !this.state.group_visible,
+                      })
+                    }
+                  >
                     <Text style={styles.textStyle}>Cancel</Text>
                   </Pressable>
                 </View>
               </View>
             </View>
           </Modal>
-          
-          <Text style={{fontSize: 20, marginTop: -40, marginLeft: 10}}>{"\n\n"}Favorites:</Text>
+
+          <Text style={{ fontSize: 20, marginTop: -40, marginLeft: 10 }}>
+            {"\n\n"}Favorites:
+          </Text>
           <View>
             {this.state.favor && this.state.favor.length ? (
               // <FlatList
@@ -511,10 +689,14 @@ export default class FriendScreen extends Component {
               // />
               this.state.favor.map((item) => this.renderItem(item))
             ) : (
-              <Text style={{marginLeft: 10, marginTop: 5}}>No favorite friends yet</Text>
+              <Text style={{ marginLeft: 10, marginTop: 5 }}>
+                No favorite friends yet
+              </Text>
             )}
           </View>
-          <Text style={{fontSize: 20, marginTop: -40, marginLeft: 10}}>{"\n\n"}Friends:</Text>
+          <Text style={{ fontSize: 20, marginTop: -40, marginLeft: 10 }}>
+            {"\n\n"}Friends:
+          </Text>
           <View>
             {this.state.list && this.state.list.length ? (
               // <FlatList
@@ -523,22 +705,30 @@ export default class FriendScreen extends Component {
               // />
               this.state.list.map((item) => this.renderItem(item))
             ) : (
-              <Text style={{marginLeft: 10, marginTop: 5}}>No friends yet</Text>
+              <Text style={{ marginLeft: 10, marginTop: 5 }}>
+                No friends yet
+              </Text>
             )}
           </View>
           <View>
-            {
-              this.state.all_groups.map((item) => this.renderGroups(item))
-            }
+            {this.state.all_groups.map((item) => this.renderGroups(item))}
           </View>
 
           {nicknameInput}
         </ScrollView>
-        <View style={{elevation: 999, zIndex: 999, position: 'absolute', right: 10, bottom: 30}}>
+        <View
+          style={{
+            elevation: 999,
+            zIndex: 999,
+            position: "absolute",
+            right: 10,
+            bottom: 30,
+          }}
+        >
           <FloatingAction
             actions={this.state.actions}
-            onPressItem={name => {
-              this.floating_handler(name)
+            onPressItem={(name) => {
+              this.floating_handler(name);
             }}
           />
         </View>
@@ -573,7 +763,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     zIndex: -1,
     elevation: -1,
-    borderRadius: 30
+    borderRadius: 30,
   },
   button: {
     borderRadius: 20,
@@ -590,11 +780,11 @@ const styles = StyleSheet.create({
   },
   modalView: {
     margin: 20,
-    backgroundColor: 'white',
+    backgroundColor: "white",
     borderRadius: 20,
     padding: 35,
-    alignItems: 'center',
-    shadowColor: '#000',
+    alignItems: "center",
+    shadowColor: "#000",
     shadowOffset: {
       width: 0,
       height: 2,
@@ -612,16 +802,15 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
 
-
   dropdown: {
     height: 50,
-    backgroundColor: 'white',
+    backgroundColor: "white",
     borderRadius: 12,
     padding: 12,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: {
-        width: 0,
-        height: 1,
+      width: 0,
+      height: 1,
     },
     shadowOpacity: 0.2,
     shadowRadius: 1.41,
@@ -629,50 +818,50 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   placeholderStyle: {
-      fontSize: 16,
+    fontSize: 16,
   },
   selectedTextStyle: {
-      fontSize: 14,
+    fontSize: 14,
   },
   iconStyle: {
-      width: 20,
-      height: 20,
+    width: 20,
+    height: 20,
   },
   inputSearchStyle: {
-      height: 40,
-      fontSize: 16,
+    height: 40,
+    fontSize: 16,
   },
   icon: {
-      marginRight: 5,
+    marginRight: 5,
   },
   item2: {
-      padding: 17,
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'center',
+    padding: 17,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
   },
   selectedStyle: {
-      flexDirection: 'row',
-      justifyContent: 'center',
-      alignItems: 'center',
-      borderRadius: 14,
-      backgroundColor: 'white',
-      shadowColor: '#000',
-      marginTop: 8,
-      marginRight: 12,
-      paddingHorizontal: 12,
-      paddingVertical: 8,
-      shadowOffset: {
-          width: 0,
-          height: 1,
-      },
-      shadowOpacity: 0.2,
-      shadowRadius: 1.41,
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    borderRadius: 14,
+    backgroundColor: "white",
+    shadowColor: "#000",
+    marginTop: 8,
+    marginRight: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    shadowOffset: {
+      width: 0,
+      height: 1,
+    },
+    shadowOpacity: 0.2,
+    shadowRadius: 1.41,
 
-      elevation: 2,
+    elevation: 2,
   },
   textSelectedStyle: {
-      marginRight: 5,
-      fontSize: 16,
+    marginRight: 5,
+    fontSize: 16,
   },
-  });
+});
