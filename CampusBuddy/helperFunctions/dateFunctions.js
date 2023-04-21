@@ -36,9 +36,21 @@ export const getMonthInt = (monthName) => {
   return MonthName.indexOf(monthName);
 };
 
-export const getWeekDayName = (weekdayNumber) => {
+export const getWeekDayName = (weekdayNumber, isFullname = false) => {
   const WeekdayName = ["Sun", "Mon", "Tues", "Wed", "Thur", "Fri", "Sat"];
-  return WeekdayName[weekdayNumber];
+  const WeekdayFullName = [
+    "Sunday",
+    "Monday",
+    "Tuesday",
+    "Wednesday",
+    "Thursday",
+    "Friday",
+    "Saturday",
+  ];
+
+  return isFullname
+    ? WeekdayFullName[weekdayNumber]
+    : WeekdayName[weekdayNumber];
 };
 
 export const isOnSameDate = (dateA, dateB) => {

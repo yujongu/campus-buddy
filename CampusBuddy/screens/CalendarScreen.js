@@ -2070,6 +2070,9 @@ export default class App extends Component {
                                       event.startTime
                                     }`}
                                     navigation={this.props.navigation}
+                                    weekviewStartDate={
+                                      this.state.weekViewStartDate
+                                    }
                                     category={event.category}
                                     day={event.startTime.getDay()}
                                     startTime={new Date(event.startTime)}
@@ -2113,6 +2116,7 @@ export default class App extends Component {
                                             daySelected.value
                                           }`}
                                           navigation={this.props.navigation}
+                                          weekviewStartDate={this.state.weekViewStartDate.toString()}
                                           category={event.category}
                                           day={daySelected.value}
                                           startTime={new Date(event.startTime)}

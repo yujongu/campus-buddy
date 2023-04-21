@@ -1,13 +1,25 @@
 import React from "react";
 import Icon from "react-native-vector-icons/FontAwesome";
-import { StyleSheet, View, Text, TouchableOpacity, Button } from "react-native";
+import {
+  StyleSheet,
+  View,
+  Text,
+  TouchableOpacity,
+  Button,
+  Modal,
+  Pressable,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
 import { EventCategory } from "../constants/eventCategory";
-import { JSGetDate } from "../helperFunctions/dateFunctions";
+import { JSGetDate, getWeekDayName } from "../helperFunctions/dateFunctions";
+import { useState } from "react";
+import { auth, overwriteRecurringEvents } from "../firebaseConfig";
 
 export default function EventDetailsScreen({ route }) {
   const {
+    id,
+    weekviewStartDate,
     category,
     day,
     startTime,
@@ -31,6 +43,12 @@ export default function EventDetailsScreen({ route }) {
     removeFromCalendar();
     navigation.goBack();
   };
+
+  const currDate = new Date(weekviewStartDate);
+  currDate.setDate(currDate.getDate() + day);
+
+  const [editVisible, setEditVisible] = useState(false);
+
   return (
     <SafeAreaView
       style={{
@@ -39,6 +57,57 @@ export default function EventDetailsScreen({ route }) {
           category == EventCategory.SCHOOLCOURSE ? "#D1FF96" : color,
       }}
     >
+      <Modal
+        animationType="fade"
+        transparent={true}
+        visible={editVisible}
+        onRequestClose={() => {
+          this.setState({ visible: !this.state.visible });
+        }}
+      >
+        <Pressable
+          style={{
+            flex: 1,
+            flexDirection: "column",
+            justifyContent: "center",
+            alignItems: "center",
+            backgroundColor: "rgba(0,0,0,0.5)",
+          }}
+          onPress={() => setEditVisible(false)}
+        >
+          <View
+            style={{
+              backgroundColor: "white",
+              marginHorizontal: 20,
+              height: "60%",
+              width: "80%",
+              borderRadius: 10,
+              padding: 15,
+            }}
+          >
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                justifyContent: "space-between",
+              }}
+            >
+              <Text style={{ fontSize: 16 }}>
+                Cancel {getWeekDayName(day, true)}'s event?
+              </Text>
+
+              <Button
+                title="Yes"
+                onPress={() => {
+                  overwriteRecurringEvents(auth.currentUser?.uid, id, currDate);
+                  alert(`${JSGetDate(currDate)} event is now canceled`);
+                }}
+              />
+            </View>
+          </View>
+        </Pressable>
+      </Modal>
+
       <View style={{}}>
         <View style={styles.headerContainer}>
           <TouchableOpacity onPress={() => navigation.goBack()}>
@@ -46,6 +115,11 @@ export default function EventDetailsScreen({ route }) {
               <Icon name="times" size={24} color="black" />
             </View>
           </TouchableOpacity>
+          {eventRepetition == 2 ? (
+            <Button title="Edit Event" onPress={() => setEditVisible(true)} />
+          ) : (
+            <View />
+          )}
 
           <Button title="Mark as completed" onPress={removeEvent} />
         </View>
@@ -70,7 +144,6 @@ export default function EventDetailsScreen({ route }) {
         ) : (
           <View />
         )}
-
         <View style={styles.contentContainer}>
           <Text style={styles.eventDescriptionText}>{description}</Text>
         </View>

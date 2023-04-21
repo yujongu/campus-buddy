@@ -46,6 +46,8 @@ export default class EventItem extends React.Component {
   };
 
   showDetails(
+    id,
+    weekviewStartDate,
     category,
     day,
     startTime,
@@ -66,6 +68,8 @@ export default class EventItem extends React.Component {
   ) {
     if (clickable) {
       this.props.navigation.navigate("EventDetails", {
+        id,
+        weekviewStartDate,
         category,
         day,
         startTime: this.JSClock(startTime),
@@ -89,6 +93,7 @@ export default class EventItem extends React.Component {
 
   render() {
     const {
+      weekviewStartDate,
       category,
       day,
       startTime,
@@ -108,7 +113,6 @@ export default class EventItem extends React.Component {
       eventRepetitionHasEnd,
       eventRepeatEndDate,
     } = this.props;
-
     let nHeight =
       category == "Empty"
         ? 0
@@ -121,6 +125,8 @@ export default class EventItem extends React.Component {
       <Pressable
         onPress={() =>
           this.showDetails(
+            id,
+            weekviewStartDate,
             category,
             day,
             startTime,
