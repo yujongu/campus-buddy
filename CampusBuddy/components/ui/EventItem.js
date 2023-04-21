@@ -2,6 +2,7 @@ import { Pressable } from "@react-native-material/core";
 import React from "react";
 import { View, Text, Dimensions } from "react-native";
 import { EventCategory } from "../../constants/eventCategory";
+import { JSGetDate } from "../../helperFunctions/dateFunctions";
 const leftHeaderWidth = 50;
 const topHeaderHeight = 20;
 const dailyWidth = (Dimensions.get("window").width - leftHeaderWidth) / 3;
@@ -54,7 +55,14 @@ export default class EventItem extends React.Component {
     description,
     host,
     color,
-    clickable
+    clickable,
+    eventMandatory,
+    audienceLevel,
+
+    eventRepetition,
+    eventRepetitionCount,
+    eventRepetitionHasEnd,
+    eventRepeatEndDate
   ) {
     if (clickable) {
       this.props.navigation.navigate("EventDetails", {
@@ -68,6 +76,13 @@ export default class EventItem extends React.Component {
         host,
         color,
         removeFromCalendar: this.removeFromCalendar,
+        eventMandatory,
+        audienceLevel,
+
+        eventRepetition,
+        eventRepetitionCount,
+        eventRepetitionHasEnd,
+        eventRepeatEndDate,
       });
     }
   }
@@ -87,6 +102,11 @@ export default class EventItem extends React.Component {
       clickable,
       eventMandatory,
       audienceLevel,
+
+      eventRepetition,
+      eventRepetitionCount,
+      eventRepetitionHasEnd,
+      eventRepeatEndDate,
     } = this.props;
 
     let nHeight =
@@ -110,7 +130,14 @@ export default class EventItem extends React.Component {
             description != undefined ? description : "",
             host,
             color,
-            clickable
+            clickable,
+            eventMandatory,
+            audienceLevel,
+
+            eventRepetition,
+            eventRepetitionCount,
+            eventRepetitionHasEnd,
+            eventRepeatEndDate
           )
         }
       >

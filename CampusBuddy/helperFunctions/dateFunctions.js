@@ -53,6 +53,9 @@ export const isOnSameDate = (dateA, dateB) => {
 };
 
 export const JSGetDate = (time) => {
+  if (!time) {
+    return "";
+  }
   const monthName = getMonthName(time.getMonth());
   const d = time.getDate();
   const y = time.getFullYear();

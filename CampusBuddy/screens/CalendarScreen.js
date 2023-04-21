@@ -2128,6 +2128,18 @@ export default class App extends Component {
                                           }
                                           eventMandatory={event.eventMandatory}
                                           audienceLevel={event.audienceLevel}
+                                          eventRepetition={
+                                            event.eventRepetition
+                                          }
+                                          eventRepetitionCount={
+                                            event.eventRepetitionCount
+                                          }
+                                          eventRepetitionHasEnd={
+                                            event.repetitionHasEndValue
+                                          }
+                                          eventRepeatEndDate={
+                                            new Date(event.eventRepeatEndDate)
+                                          }
                                         />
                                       ) : (
                                         <View />

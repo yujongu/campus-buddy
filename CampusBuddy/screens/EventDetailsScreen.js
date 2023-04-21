@@ -4,6 +4,7 @@ import { StyleSheet, View, Text, TouchableOpacity, Button } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
 import { EventCategory } from "../constants/eventCategory";
+import { JSGetDate } from "../helperFunctions/dateFunctions";
 
 export default function EventDetailsScreen({ route }) {
   const {
@@ -17,13 +18,19 @@ export default function EventDetailsScreen({ route }) {
     host,
     color,
     removeFromCalendar: removeFromCalendar,
+    eventMandatory,
+    audienceLevel,
+
+    eventRepetition,
+    eventRepetitionCount,
+    eventRepetitionHasEnd,
+    eventRepeatEndDate,
   } = route.params;
   const navigation = useNavigation();
   const removeEvent = () => {
     removeFromCalendar();
     navigation.goBack();
   };
-
   return (
     <SafeAreaView
       style={{
@@ -50,6 +57,20 @@ export default function EventDetailsScreen({ route }) {
           </Text>
           <Text style={styles.eventLocationText}>@{location}</Text>
         </View>
+        {eventRepetition ? (
+          <View style={{ alignItems: "center", marginTop: 10 }}>
+            <Text>Recurring Every {eventRepetition == 2 ? "Week" : ""}</Text>
+            <Text>
+              Until{" "}
+              {eventRepetitionHasEnd == 1
+                ? JSGetDate(eventRepeatEndDate)
+                : "forever!"}
+            </Text>
+          </View>
+        ) : (
+          <View />
+        )}
+
         <View style={styles.contentContainer}>
           <Text style={styles.eventDescriptionText}>{description}</Text>
         </View>
