@@ -132,6 +132,7 @@ export default class App extends Component {
       list: [],
       calendarEventList: [],
       recurringEventList: [],
+      recurringEventOverwriteList: [],
       athleticEventList: [],
       totalCalendarList: [],
       midterms: [],
@@ -219,6 +220,8 @@ export default class App extends Component {
     const result = [];
     const eventResult = [];
     const recurringEventResult = [];
+    const recurringEventOverwriteResult = [];
+
     if (res != null) {
       /*res["things"].map((element) => {
         const sp = element.data.split(",");
@@ -277,43 +280,74 @@ export default class App extends Component {
 
     // Getting recurring events from database
     // recurringEventList
-    const recurringEvents = await getUserRecurringEvents(auth.currentUser?.uid);
-    if (recurringEvents != null && recurringEvents["event"] != undefined) {
-      for (let i = 0; i < recurringEvents["event"].length; i++) {
-        const temp = {
-          category: EventCategory.EVENT,
-          title: recurringEvents["event"][i]["details"]["title"],
-          startTime: new Date(
-            recurringEvents["event"][i]["details"]["startTime"].seconds * 1000
-          ), //multiply 1000 since Javascript uses milliseconds. Timestamp to date.
-          endTime: new Date(
-            recurringEvents["event"][i]["details"]["endTime"].seconds * 1000
-          ),
-          location: recurringEvents["event"][i]["details"]["location"],
-          description: recurringEvents["event"][i]["details"]["description"],
-          color: recurringEvents["event"][i]["details"]["color"],
-          id: recurringEvents["event"][i]["id"],
-          eventMandatory:
-            recurringEvents["event"][i]["details"]["eventMandatory"],
-          audienceLevel:
-            recurringEvents["event"][i]["details"]["audienceLevel"],
-          eventRepetition:
-            recurringEvents["event"][i]["details"]["repetitionPattern"],
-          eventRepetitionCount:
-            recurringEvents["event"][i]["details"]["repetitionValue"],
-          repetitionHasEndValue:
-            recurringEvents["event"][i]["details"]["repetitionHasEndDateValue"],
-          eventRepeatEndDate: new Date(
-            recurringEvents["event"][i]["details"]["repetitionEndDate"]
-              .seconds * 1000
-          ),
-          dayOfTheWeekSelected:
-            recurringEvents["event"][i]["details"]["repetitionDays"],
-        };
-        recurringEventResult.push(temp);
+
+    onSnapshot(doc(db, "recurring_events", auth.currentUser.uid), (doc) => {
+      let recurringEvents = doc.data();
+
+      if (recurringEvents != null && recurringEvents["event"] != undefined) {
+        // recurringEventResult.length = 0;
+        for (let i = 0; i < recurringEvents["event"].length; i++) {
+          const temp = {
+            category: EventCategory.EVENT,
+            title: recurringEvents["event"][i]["details"]["title"],
+            startTime: new Date(
+              recurringEvents["event"][i]["details"]["startTime"].seconds * 1000
+            ), //multiply 1000 since Javascript uses milliseconds. Timestamp to date.
+            endTime: new Date(
+              recurringEvents["event"][i]["details"]["endTime"].seconds * 1000
+            ),
+            location: recurringEvents["event"][i]["details"]["location"],
+            description: recurringEvents["event"][i]["details"]["description"],
+            color: recurringEvents["event"][i]["details"]["color"],
+            id: recurringEvents["event"][i]["id"],
+            eventMandatory:
+              recurringEvents["event"][i]["details"]["eventMandatory"],
+            audienceLevel:
+              recurringEvents["event"][i]["details"]["audienceLevel"],
+            eventRepetition:
+              recurringEvents["event"][i]["details"]["repetitionPattern"],
+            eventRepetitionCount:
+              recurringEvents["event"][i]["details"]["repetitionValue"],
+            repetitionHasEndValue:
+              recurringEvents["event"][i]["details"][
+                "repetitionHasEndDateValue"
+              ],
+            eventRepeatEndDate: new Date(
+              recurringEvents["event"][i]["details"]["repetitionEndDate"]
+                .seconds * 1000
+            ),
+            dayOfTheWeekSelected:
+              recurringEvents["event"][i]["details"]["repetitionDays"],
+          };
+          recurringEventResult.push(temp);
+        }
       }
-    }
-    this.setState({ recurringEventList: recurringEventResult });
+
+      if (
+        recurringEvents != null &&
+        recurringEvents["cancelRecurringEvent"] != undefined
+      ) {
+        recurringEventOverwriteResult.length = 0;
+        for (
+          let i = 0;
+          i < recurringEvents["cancelRecurringEvent"].length;
+          i++
+        ) {
+          let item = recurringEvents["cancelRecurringEvent"][i];
+
+          const temp = {
+            eventId: item.eventId,
+            overwriteDate: new Date(item.overwriteDate.seconds * 1000),
+          };
+          recurringEventOverwriteResult.push(temp);
+        }
+      }
+      this.setState({ recurringEventList: recurringEventResult });
+      this.setState({
+        recurringEventOverwriteList: recurringEventOverwriteResult,
+      });
+    });
+
     this.checkList(eventResult); //Checks for events that go over multiple days and corrects it
     this.combineAllListsForCalendar(); // Combine list, calendarEventList, and athleticEventsList into one list "totalList"
 
@@ -506,7 +540,6 @@ export default class App extends Component {
         }
       }
 
-      console.log("This is recurrence", this.state.eventRepetition);
       const eventId = uuid.v4();
       switch (this.state.eventRepetition) {
         case 0:
@@ -2144,6 +2177,11 @@ export default class App extends Component {
                                           eventRepeatEndDate={
                                             new Date(event.eventRepeatEndDate)
                                           }
+                                          overwriteData={this.state.recurringEventOverwriteList.filter(
+                                            (item) => {
+                                              return item.eventId == event.id;
+                                            }
+                                          )}
                                         />
                                       ) : (
                                         <View />

@@ -37,6 +37,8 @@ export default function EventDetailsScreen({ route }) {
     eventRepetitionCount,
     eventRepetitionHasEnd,
     eventRepeatEndDate,
+
+    canceledEvent,
   } = route.params;
   const navigation = useNavigation();
   const removeEvent = () => {
@@ -44,6 +46,7 @@ export default function EventDetailsScreen({ route }) {
     navigation.goBack();
   };
 
+  console.log(canceledEvent);
   const currDate = new Date(weekviewStartDate);
   currDate.setDate(currDate.getDate() + day);
 
@@ -92,15 +95,30 @@ export default function EventDetailsScreen({ route }) {
                 justifyContent: "space-between",
               }}
             >
-              <Text style={{ fontSize: 16 }}>
-                Cancel {getWeekDayName(day, true)}'s event?
-              </Text>
+              {canceledEvent ? (
+                <Text style={{ fontSize: 16 }}>
+                  reschedule {getWeekDayName(day, true)}'s event?
+                </Text>
+              ) : (
+                <Text style={{ fontSize: 16 }}>
+                  Cancel {getWeekDayName(day, true)}'s event?
+                </Text>
+              )}
 
               <Button
                 title="Yes"
                 onPress={() => {
-                  overwriteRecurringEvents(auth.currentUser?.uid, id, currDate);
-                  alert(`${JSGetDate(currDate)} event is now canceled`);
+                  overwriteRecurringEvents(
+                    auth.currentUser?.uid,
+                    id,
+                    currDate,
+                    canceledEvent
+                  );
+                  canceledEvent
+                    ? alert(`${JSGetDate(currDate)} event is now live`)
+                    : alert(`${JSGetDate(currDate)} event is now canceled`);
+                  setEditVisible(false);
+                  navigation.goBack();
                 }}
               />
             </View>
@@ -139,6 +157,18 @@ export default function EventDetailsScreen({ route }) {
               {eventRepetitionHasEnd == 1
                 ? JSGetDate(eventRepeatEndDate)
                 : "forever!"}
+            </Text>
+          </View>
+        ) : (
+          <View />
+        )}
+
+        {canceledEvent ? (
+          <View style={{ alignItems: "center", padding: 10, margin: 10 }}>
+            <Text
+              style={{ fontSize: 26, color: "red", backgroundColor: "white" }}
+            >
+              This event has been canceled
             </Text>
           </View>
         ) : (

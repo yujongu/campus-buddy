@@ -11,6 +11,7 @@ import { EmailAuthProvider, credential } from "firebase/auth";
 import {
   arrayRemove,
   deleteDoc,
+  onSnapshot,
   query,
   runTransaction,
   where,
@@ -371,7 +372,8 @@ export async function getUserRecurringEvents(user_token) {
 export async function overwriteRecurringEvents(
   user_token,
   eventId,
-  overwriteDate
+  overwriteDate,
+  removeFromArray
 ) {
   const docRef = doc(db, "recurring_events", user_token);
   try {
@@ -380,9 +382,16 @@ export async function overwriteRecurringEvents(
       console.error("Something went wrong overwriteRecurringEvents");
       return;
     }
-    updateDoc(docRef, {
-      cancelRecurringEvent: arrayUnion({ eventId, overwriteDate }),
-    });
+    if (removeFromArray) {
+      updateDoc(docRef, {
+        cancelRecurringEvent: arrayRemove({ eventId, overwriteDate }),
+      });
+    } else {
+      updateDoc(docRef, {
+        cancelRecurringEvent: arrayUnion({ eventId, overwriteDate }),
+      });
+    }
+
     console.log("Overwrite event doc written with ID: ", docRef.id);
   } catch (error) {
     console.error(error);

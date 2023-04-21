@@ -64,7 +64,9 @@ export default class EventItem extends React.Component {
     eventRepetition,
     eventRepetitionCount,
     eventRepetitionHasEnd,
-    eventRepeatEndDate
+    eventRepeatEndDate,
+
+    canceledEvent
   ) {
     if (clickable) {
       this.props.navigation.navigate("EventDetails", {
@@ -87,6 +89,8 @@ export default class EventItem extends React.Component {
         eventRepetitionCount,
         eventRepetitionHasEnd,
         eventRepeatEndDate,
+
+        canceledEvent,
       });
     }
   }
@@ -112,6 +116,7 @@ export default class EventItem extends React.Component {
       eventRepetitionCount,
       eventRepetitionHasEnd,
       eventRepeatEndDate,
+      overwriteData,
     } = this.props;
     let nHeight =
       category == "Empty"
@@ -120,6 +125,23 @@ export default class EventItem extends React.Component {
 
     let startHeightOffset =
       category == "Empty" ? 0 : 30 - startTime.getMinutes();
+
+    const currDate = new Date(weekviewStartDate);
+    currDate.setDate(currDate.getDate() + day);
+
+    let canceledEvent = false;
+    if (overwriteData) {
+      for (let i = 0; i < overwriteData.length; i++) {
+        owDate = overwriteData[i].overwriteDate;
+        if (
+          currDate.getFullYear() == owDate.getFullYear() &&
+          currDate.getMonth() == owDate.getMonth() &&
+          currDate.getDate() == owDate.getDate()
+        ) {
+          canceledEvent = true;
+        }
+      }
+    }
 
     return (
       <Pressable
@@ -143,7 +165,9 @@ export default class EventItem extends React.Component {
             eventRepetition,
             eventRepetitionCount,
             eventRepetitionHasEnd,
-            eventRepeatEndDate
+            eventRepeatEndDate,
+
+            canceledEvent
           )
         }
       >
@@ -173,6 +197,30 @@ export default class EventItem extends React.Component {
           >
             <Text style={{ fontSize: 16 }}>{title}</Text>
             <Text style={{ fontSize: 12 }}>{location}</Text>
+            <View
+              style={{
+                width: dailyWidth * 0.9,
+                height: nHeight,
+                position: "absolute",
+                backgroundColor: "grey",
+                opacity: 0.7,
+                justifyContent: "center",
+                alignItems: "center",
+                display: canceledEvent ? "flex" : "none",
+              }}
+            >
+              <Text
+                style={{
+                  color: "red",
+                  fontSize: 16,
+                  fontWeight: 800,
+                  transform: [{ rotate: "35deg" }],
+                  backgroundColor: "white",
+                }}
+              >
+                Canceled
+              </Text>
+            </View>
           </View>
         ) : (
           <View />
