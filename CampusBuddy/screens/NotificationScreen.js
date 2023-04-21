@@ -206,7 +206,11 @@ export default class NotificationScreen extends Component {
       //   repetition,
       0,
       //   id;
-      eventId
+      eventId,
+      //eventMandatory
+      temp[8],
+      //audienceLevel
+      temp[9]
     );
 
     const reqRef = doc(db, "requests", auth.currentUser?.email);
