@@ -6,9 +6,15 @@ import {
   createUserWithEmailAndPassword,
   sendPasswordResetEmail,
 } from "firebase/auth";
-import { getStorage } from "firebase/storage";
+import { getDownloadURL, getStorage, ref } from "firebase/storage";
 import { EmailAuthProvider, credential } from "firebase/auth";
-import { query, where } from "firebase/firestore";
+import {
+  arrayRemove,
+  deleteDoc,
+  query,
+  runTransaction,
+  where,
+} from "firebase/firestore";
 import {
   getFirestore,
   collection,
@@ -132,6 +138,22 @@ export async function createUser(username, first, last, email, password) {
     });
 }
 
+export async function fetchProfilePicture(user_id) {
+  const imageRef = ref(storage, `profilePictures/${user_id}`);
+  try {
+    const downloadURL = await getDownloadURL(imageRef);
+    return downloadURL;
+  } catch (error) {
+    if (error.code === "storage/object-not-found") {
+      console.log("No profile picture found, using a default image.");
+      return null;
+    } else {
+      console.error("Error fetching profile picture:", error);
+      return null;
+    }
+  }
+}
+
 export async function addSchedule(user_token, data) {
   const docRef = doc(db, "schedule", user_token);
   const querySnapShot = await getDoc(docRef);
@@ -178,6 +200,44 @@ export async function userSchedule(user_token) {
   }
 }
 
+export async function getGoals(user_token) {
+  try {
+    const querySnapShot = await getDoc(doc(db, "goals", user_token));
+    if (querySnapShot.exists()) {
+      const result = querySnapShot.data();
+      return result;
+    } else {
+      return null;
+    }
+  } catch (error) {
+    alert("Error retrieving user goals " + error);
+  }
+}
+
+export async function addGoal(user_token, id, points, category, deadline) {
+  const docRef = doc(db, "goals", user_token);
+
+  try {
+    const querySnapShot = await getDoc(doc(db, "goals", user_token));
+    if (!querySnapShot.exists()) {
+      setDoc(docRef, {
+        goal_list: [],
+      });
+    }
+    const data = {
+      id: id,
+      points: points,
+      category: category,
+      deadline: deadline,
+      progress: 0,
+    };
+    updateDoc(docRef, { goal_list: arrayUnion(data) });
+    console.log("Goal written with ID: ", docRef.id);
+  } catch (e) {
+    console.error("Error adding goal: ", e);
+  }
+}
+
 export async function addEvent(
   user_token,
   title,
@@ -189,21 +249,11 @@ export async function addEvent(
   point_value,
   color,
   repetition,
-  id
+  id,
+  eventMandatory,
+  audienceLevel
 ) {
   const docRef = doc(db, "events", user_token);
-  // const data={
-  //   title: title,
-  //   startDate: startDate,
-  //   startTime: startTime,
-  //   endDate: endDate,
-  //   endTime: endTime,
-  //   location: location,
-  //   category: category,
-  //   point_value: point_value,
-  //   color: color,
-  //   repetition: repetition
-  // }
   const x = {
     title: title,
     startTime: startTime,
@@ -214,6 +264,8 @@ export async function addEvent(
     point_value: point_value,
     color: color,
     repetition: repetition,
+    eventMandatory: eventMandatory,
+    audienceLevel: audienceLevel,
   };
   try {
     const querySnapShot = await getDoc(doc(db, "events", user_token));
@@ -233,9 +285,78 @@ export async function addEvent(
   }
 }
 
+export async function addRepeatingEvent(
+  user_token,
+  title,
+  startTime,
+  endTime,
+  location,
+  description,
+  category,
+  point_value,
+  color,
+  repetitionPattern,
+  repetitionValue,
+  repetitionHasEndDateValue,
+  repetitionEndDate,
+  repetitionDays,
+  id,
+  eventMandatory,
+  audienceLevel
+) {
+  const docRef = doc(db, "recurring_events", user_token);
+  const x = {
+    title: title,
+    startTime: startTime,
+    endTime: endTime,
+    location: location,
+    description: description,
+    category: category,
+    point_value: point_value,
+    color: color,
+    repetitionPattern: repetitionPattern,
+    repetitionValue: repetitionValue,
+    repetitionHasEndDateValue: repetitionHasEndDateValue,
+    repetitionEndDate: repetitionEndDate,
+    repetitionDays: repetitionDays,
+    eventMandatory: eventMandatory,
+    audienceLevel: audienceLevel,
+  };
+  try {
+    const querySnapShot = await getDoc(doc(db, "recurring_events", user_token));
+    if (!querySnapShot.exists()) {
+      setDoc(docRef, {
+        event: [],
+      });
+    }
+    const data = {
+      id: id,
+      details: x,
+    };
+    updateDoc(docRef, { event: arrayUnion(data) });
+    console.log("Event doc written with ID: ", docRef.id);
+  } catch (e) {
+    console.error("Error adding event: ", e);
+  }
+}
+
 export async function getUserEvents(user_token) {
   try {
     const querySnapShot = await getDoc(doc(db, "events", user_token));
+    if (querySnapShot.exists()) {
+      const result = querySnapShot.data();
+      return result;
+    } else {
+      return null;
+    }
+  } catch (error) {
+    alert("Error getting user events: " + error);
+  }
+}
+
+export async function getUserRecurringEvents(user_token) {
+  try {
+    const querySnapShot = await getDoc(doc(db, "recurring_events", user_token));
     if (querySnapShot.exists()) {
       const result = querySnapShot.data();
       return result;
@@ -273,6 +394,97 @@ export async function friendList(user_token) {
       friends: res,
     });
     return null;
+  }
+}
+
+/** If group name exists, returns group doc id. Else returns null  */
+export async function addGroup(groupName, groupAuthor) {
+  try {
+    const res = await getDocs(
+      query(collection(db, "groups"), where("groupName", "==", groupName))
+    );
+    if (res.empty) {
+      const docRef = await addDoc(collection(db, "groups"), {
+        groupName,
+        memberList: [groupAuthor],
+      });
+      // console.log("Group created with docref id: ", docRef.id);
+      return docRef.id;
+    } else {
+      return null;
+    }
+  } catch (e) {
+    console.log(e);
+  }
+}
+
+export async function addMembersToGroup(gid, memberList) {
+  try {
+    const docRef = await doc(db, "groups", gid);
+    await updateDoc(docRef, { memberList: arrayUnion(...memberList) });
+    return true;
+  } catch (e) {
+    console.log(e);
+    return false;
+  }
+}
+
+export async function removeMemberFromGroup(groupName, memberInfo) {
+  const q = query(
+    collection(db, "groups"),
+    where("groupName", "==", groupName)
+  );
+
+  const querySnapshot = await getDocs(q);
+
+  if (querySnapshot.size == 1) {
+    const groupDocRef = doc(db, "groups", querySnapshot.docs[0].id);
+
+    await updateDoc(groupDocRef, { memberList: arrayRemove(memberInfo.user) });
+    const data = await getDoc(groupDocRef);
+    if (data.data().memberList.length == 0) {
+      //if I'm the last member of the group, remove the group all together.
+      await deleteDoc(doc(db, "groups", querySnapshot.docs[0].id));
+    }
+    return true;
+  } else {
+    return false;
+  }
+}
+
+export async function addNicknameInGroup(
+  groupName,
+  email,
+  prevNickname,
+  newNickname
+) {
+  const q = query(
+    collection(db, "groups"),
+    where("groupName", "==", groupName)
+  );
+
+  const querySnapshot = await getDocs(q);
+
+  if (querySnapshot.size == 1) {
+    const groupDocRef = doc(db, "groups", querySnapshot.docs[0].id);
+
+    try {
+      await runTransaction(db, async (transaction) => {
+        const docRef = await transaction.get(groupDocRef);
+        if (!docRef.exists()) {
+          throw "Document does not exist!";
+        }
+
+        transaction.update(groupDocRef, {
+          nicknames: arrayRemove({ nickname: prevNickname, user: email }),
+        });
+        transaction.update(groupDocRef, {
+          nicknames: arrayUnion({ nickname: newNickname, user: email }),
+        });
+      });
+    } catch (e) {
+      console.error(e);
+    }
   }
 }
 

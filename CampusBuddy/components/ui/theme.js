@@ -1,3 +1,5 @@
+import { Colors } from "../../constants/colors";
+
 const theme = {
   light: {
     theme: "light",
@@ -7,6 +9,8 @@ const theme = {
     calendarUIInnerBackground: "#F8F8F8",
     plusModalColor: "black",
     borderColor: "black",
+    statusBarColor: "dark",
+    feedItemBackground: Colors.light.background,
   },
   dark: {
     theme: "dark",
@@ -17,6 +21,8 @@ const theme = {
     calendarUIInnerBackground: "grey",
     plusModalColor: "white",
     borderColor: "white",
+    statusBarColor: "light",
+    feedItemBackground: Colors.dark.background,
   },
 };
 

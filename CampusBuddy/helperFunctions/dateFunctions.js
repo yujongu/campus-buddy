@@ -17,6 +17,25 @@ export const getMonthName = (monthNumber) => {
   return MonthName[monthNumber];
 };
 
+export const getMonthInt = (monthName) => {
+  const MonthName = [
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
+  ];
+
+  return MonthName.indexOf(monthName);
+};
+
 export const getWeekDayName = (weekdayNumber) => {
   const WeekdayName = ["Sun", "Mon", "Tues", "Wed", "Thur", "Fri", "Sat"];
   return WeekdayName[weekdayNumber];
@@ -40,7 +59,7 @@ export const JSGetDate = (time) => {
   return `${monthName} ${d}, ${y}`;
 };
 
-export const JSClock = (time) => {
+export const JSClock = (time, showSeconds = true) => {
   const hour = time.getHours();
   const minute = time.getMinutes();
   const second = time.getSeconds();
@@ -49,11 +68,35 @@ export const JSClock = (time) => {
     temp = "12";
   }
   temp += (minute < 10 ? ":0" : ":") + minute;
-  if (second != 0) {
-    temp += (second < 10 ? ":0" : ":") + second;
+  if (showSeconds) {
+    if (second != 0) {
+      temp += (second < 10 ? ":0" : ":") + second;
+    }
   }
+
   temp += hour >= 12 ? " P.M." : " A.M.";
   return temp;
+};
+
+export const JSGetDateClock = (time, showSeconds = true) => {
+  return JSGetDate(time) + " " + JSClock(time, showSeconds);
+};
+
+export const reverseJSGetDateClock = (str) => {
+  let temp = str.split(" ");
+  let timeTemp = temp[3].split(":");
+  let resDate = new Date();
+  resDate.setFullYear(temp[2]);
+  resDate.setMonth(getMonthInt(temp[0]));
+  resDate.setDate(temp[1].replace(",", ""));
+
+  if (temp[4] == "P.M.") {
+    resDate.setHours(parseInt(timeTemp[0]) + 12);
+  } else {
+    resDate.setHours(parseInt(timeTemp[0]));
+  }
+  resDate.setMinutes(timeTemp[1]);
+  return resDate;
 };
 
 export const jsClockToDate = (str) => {
