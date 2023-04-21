@@ -36,6 +36,8 @@ export default function GroupScreen({ navigation, route }) {
   const [groups, setGroups] = useState('');
   const [groupName, setGroupName] = useState('');
 
+  // Group Id??
+
   const handleAddGroup = () => {
     if (groupName.trim() === '') {
       return;
@@ -59,7 +61,7 @@ export default function GroupScreen({ navigation, route }) {
   );
 
   useEffect(() => {
-    const groupsRef = database().ref('groups');
+    const groupsRef = database().ref('group');
   
     groupsRef.on('value', (snapshot) => {
       const groupsData = snapshot.val();
