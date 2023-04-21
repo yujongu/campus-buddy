@@ -12,7 +12,17 @@ import {
   ScrollView,
   Button,
 } from 'react-native';
-import { updateDoc, doc, arrayRemove, collection, where, getDoc,getDocs,query, onSnapshot, arrayUnion } from "firebase/firestore";
+import {
+  updateDoc,
+  doc,
+  arrayRemove,
+  collection,
+  where,
+  getDoc,
+  getDocs,
+  query,
+  onSnapshot,
+  arrayUnion } from "firebase/firestore";
 
 export default function SettingsScreen({ navigation, route })  {
   const [newId, setNewId] = useState("");

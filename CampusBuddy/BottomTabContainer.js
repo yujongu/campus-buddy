@@ -3,7 +3,6 @@ import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import FeedScreen from "./screens/FeedScreen";
 import SearchScreen from "./screens/SearchScreen";
 import CalendarScreen from "./screens/CalendarScreen";
-import CompareScreen from './screens/CompareScreen';
 import ProfileScreen from "./screens/ProfileScreen";
 import NotificationScreen from "./screens/NotificationScreen";
 import Ionicons from "react-native-vector-icons/Ionicons";
