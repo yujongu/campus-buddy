@@ -75,14 +75,6 @@ export default class CalendarColorModal extends React.Component {
     this.setState({});
   }
 
-//   handleListChange = (val) => {
-//     this.props.selectCountryHolidaySettingModal(val);
-//   };
-
-//   saveData = async (val) => {
-//     this.props.storeData(val);
-//   };
-
   render() {
     const {
       calendarColorVisible,
