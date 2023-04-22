@@ -30,6 +30,8 @@ import {
 } from "firebase/firestore";
 import uuid from "react-native-uuid";
 import { FieldValue } from "firebase/firestore";
+import { AudienceLevelType } from "./constants/AudienceLevelType";
+import { JSGetDateClock } from "./helperFunctions/dateFunctions";
 
 // TODO: Add SDKs for Firebase products that you want to use
 // https://firebase.google.com/docs/web/setup#available-libraries
@@ -608,4 +610,102 @@ export async function addPoints(user_token, category, points) {
   } catch (e) {
     console.error("Error updating points: ", e);
   }
+}
+
+export async function getFeed(user_token, user_email) {
+  //Fetch all friends' token and email address
+  const friendsSnapshot = await getDoc(doc(db, "friend_list", user_email));
+
+  let fList = new Map();
+
+  //Include myself
+  let friendList = [user_email];
+  if (friendsSnapshot.exists()) {
+    friendsSnapshot.data().favorite.forEach((fav) => {
+      friendList.push(fav.user);
+    });
+    friendsSnapshot.data().friends.forEach((friend) => {
+      friendList.push(friend.user);
+    });
+  }
+
+  const usersSnapshot = await getDocs(collection(db, "users"));
+  usersSnapshot.forEach((doc) => {
+    if (friendList.indexOf(doc.data().email) != -1) {
+      fList.set(doc.id, doc.data().email);
+    }
+  });
+
+  let eventList = [];
+  const eventsSnapshot = await getDocs(collection(db, "events"));
+  const eventPromises = []; // Create an array to hold all the promises
+
+  eventsSnapshot.forEach((doc) => {
+    const promise = (async () => {
+      const data = await fetchProfilePicture(doc.id);
+
+      for (eventItem of doc.data().event) {
+        switch (eventItem.details.audienceLevel) {
+          case AudienceLevelType.PUBLIC.value:
+            const eventItemDetail = eventItem.details;
+            const x = {
+              id: eventItem.id,
+              userId: doc.id,
+              profilePic: data,
+              title: eventItemDetail.title,
+              description: eventItemDetail.description,
+              location: eventItemDetail.location,
+              startTime: JSGetDateClock(
+                new Date(eventItemDetail.startTime.seconds * 1000),
+                false
+              ),
+              endTime: JSGetDateClock(
+                new Date(eventItemDetail.endTime.seconds * 1000),
+                false
+              ),
+              color: eventItemDetail.color,
+              pointValue: eventItemDetail.point_value,
+              category: eventItemDetail.category,
+              eventMandatory: eventItemDetail.eventMandatory,
+            };
+            eventList.push(x);
+            break;
+          case AudienceLevelType.PRIVATE.value:
+            //Don't fetch private events
+            break;
+          case AudienceLevelType.FRIENDS.value:
+            if (fList.get(doc.id) != undefined) {
+              const eventItemDetail = eventItem.details;
+              const x = {
+                id: eventItem.id,
+                userId: doc.id,
+                profilePic: data,
+                title: eventItemDetail.title,
+                description: eventItemDetail.description,
+                location: eventItemDetail.location,
+                startTime: JSGetDateClock(
+                  new Date(eventItemDetail.startTime.seconds * 1000),
+                  false
+                ),
+                endTime: JSGetDateClock(
+                  new Date(eventItemDetail.endTime.seconds * 1000),
+                  false
+                ),
+                color: eventItemDetail.color,
+                pointValue: eventItemDetail.point_value,
+                category: eventItemDetail.category,
+                eventMandatory: eventItemDetail.eventMandatory,
+              };
+              eventList.push(x);
+            }
+            break;
+        }
+      }
+    })();
+    eventPromises.push(promise); // Add the promise to the array
+  });
+
+  await Promise.all(eventPromises); // Wait for all promises to resolve
+
+  return eventList;
 }
