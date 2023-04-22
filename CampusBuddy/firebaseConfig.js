@@ -577,7 +577,8 @@ export async function recordLevelUp(user_token, category, points){
   const level = Math.floor(points / 100);
   const time = new Date();
   try {
-    const querySnapShot = await getDoc(doc(db, "levelups", user_token));
+
+    const querySnapShot = await getDoc(docRef);
     const data = {
       id: id,
       category: category,
@@ -586,16 +587,23 @@ export async function recordLevelUp(user_token, category, points){
     };
     if (querySnapShot.exists()) {
       const oldLevelUps = querySnapShot.data();
-      for(let lvl in oldLevelUps) m
+      let newLevelUps = [];
+      querySnapShot.data().forEach((element) => { //go through all of that user's levelups.
+        if (element.category === category){ //if the levelup has a matching category
+          newLevelUps.push(data);           //add the new levelup instead
+        }
+        else{                               //otherwise,
+          newLevelUps.push(element);        //add the existing levelup.
+        }
+      })
+      updateDoc(docRef, { levelup: newLevelUps });
     }
-    //TODO: Check if this user already has an older levelup in this category, and overwrite it instead if so.
     else{
       setDoc(docRef, {
-        levelup: [],
+        levelup: [data],
       });
     }
 
-    updateDoc(docRef, { levelup: arrayUnion(data) });
     console.log("Levelup doc written with ID: ", docRef.id);
   } catch (e) {
     console.error("Error recording levelup: ", e);
