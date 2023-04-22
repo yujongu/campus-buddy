@@ -18,42 +18,16 @@ export default function SettingsScreen({ navigation, route })  {
   const [newId, setNewId] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [id, setId] = useState("");
-  const [isCalendarPublic, setCalendar] = useState(false);
-  const [isPointsPublic, setPoints] = useState(false);
+  const [isCalendarPublic, setCalendar] = useState(null);
+  const [isPointsPublic, setPoints] = useState(null);
   const toggleCalendarSwitch = () => {
-    setCalendar(previousState => !previousState);
-    const userDocRef = doc(db, "users", auth.currentUser.uid);
-    updateDoc(userDocRef, { calendar_privacy: isCalendarPublic })
-      .then(() => {
-        console.log("Calendar privacy updated successfully.");
-      })
-      .catch((error) => {
-        console.error("Error updating calendar privacy:", error);
-      });
+    setCalendar(current => !current);
   }
 
   const togglePointsSwitch = () => {
-    setPoints(previousState => !previousState);
-    const userDocRef = doc(db, "users", auth.currentUser.uid);
-    updateDoc(userDocRef, { points_privacy: isPointsPublic })
-      .then(() => {
-        console.log("Points privacy updated successfully.");
-      })
-      .catch((error) => {
-        console.error("Error updating points privacy:", error);
-      });
+    setPoints(current => !current);
   }
 
-  // const handleChangeId = () => {
-  //   const userDocRef = doc(db, "users", auth.currentUser.uid);
-  //   updateDoc(userDocRef, { id: newId })
-  //     .then(() => {
-  //       console.log("username updated successfully.");
-  //     })
-  //     .catch((error) => {
-  //       console.error("Error updating username:", error);
-  //     });
-  // }
 
   const handleChangeId = async () => {
     try {
@@ -88,20 +62,31 @@ export default function SettingsScreen({ navigation, route })  {
       });
   }
 
-  useEffect(() => {
+  const handleGoBack = () => {
     const userDocRef = doc(db, "users", auth.currentUser.uid);
-    const unsubscribe = onSnapshot(userDocRef, (doc) => {
-      if (doc.exists()) {
-        setId(doc.data().id);
-        setCalendar(doc.data().calendar_privacy);
-        setCalendar(doc.data().points_privacy);
+    updateDoc(userDocRef, { points_privacy: isPointsPublic, calendar_privacy: isCalendarPublic })
+      .then(() => {
+        console.log("Points privacy updated successfully to", isPointsPublic);
+      })
+      .catch((error) => {
+        console.error("Error updating points privacy:", error);
+      });
+    navigation.navigate("Home");
+  }
+
+  useEffect(() => {
+    const fetchData = async () => {
+      const res = await getDoc(doc(db, "users", auth.currentUser.uid));
+      if (res != null) {
+        setId(res.data().id);
+        setCalendar(res.data().calendar_privacy);
+        setPoints(res.data().points_privacy);
       } else {
         console.log("No such document!");
       }
-    });
-    return () => {
-      unsubscribe();
-    };
+};
+    
+  fetchData();
   }, []);
 
   return (
@@ -219,7 +204,7 @@ export default function SettingsScreen({ navigation, route })  {
         <TouchableOpacity
           style={styles.buttonStyle}
           activeOpacity={0.5}
-          onPress={() => navigation.navigate("Home")}>
+          onPress={() => handleGoBack()}>
           <Text style={styles.buttonTextStyle}>Go Back</Text>
         </TouchableOpacity>
 
