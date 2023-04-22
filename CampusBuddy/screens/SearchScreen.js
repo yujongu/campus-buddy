@@ -18,6 +18,7 @@ import theme from "../components/ui/theme";
 import { doc, getDoc, setDoc, arrayUnion, updateDoc, collection, getDocs } from "firebase/firestore";
 import { fetchSignInMethodsForEmail, getAuth } from "firebase/auth";
 import Block from "react-native-vector-icons/Entypo";
+import { useIsFocused } from "@react-navigation/native";
 
 const handleRequest = (email, user_ID) => {
   to_request(auth.currentUser?.email, email, "friend", "");
@@ -153,6 +154,7 @@ export default class SearchScreen extends Component {
         this.setState({target_uid: doc.id})
       }
     })
+
     const userDocRef = doc(db, "block", auth.currentUser.uid);
     const targetDoc = doc(db, "block", this.state.target_uid)
     const docSnap = await getDoc(userDocRef);
@@ -215,7 +217,7 @@ export default class SearchScreen extends Component {
 
     //check if block list exists. If not, create one
     const docSnap = await getDoc(block);
-
+    
     if (docSnap.exists()) {
       docSnap.data()["blocked_to"].forEach((user) => {
         this.setState({ blocked: [...this.state.blocked, user.split('/')[1]]})
