@@ -54,11 +54,31 @@ export default function GroupScreen({ navigation, route }) {
     setGroupName('');
   };
 
-  const renderItem = ({ item }) => (
-    <View style={styles.group}>
-      <Text style={styles.groupName}>{item.name}</Text>
-    </View>
-  );
+  const renderItem = ({ item }) => {
+    const handleDeleteGroup = () => {
+      const filteredGroups = groups.filter((group) => group.id !== item.id);
+      setGroups(filteredGroups);
+      database().ref(`groups/${item.id}`).remove();
+    };
+  
+    return (
+      <View style={styles.groupContainer}>
+        <TouchableOpacity
+          onPress={() =>
+            navigation.navigate('Group Details', { groupId: item.id })
+          }
+        >
+          <Text style={styles.groupName}>{item.name}</Text>
+          <Text style={styles.memberList}>
+            {item.memberList.join(', ')}
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity onPress={handleDeleteGroup}>
+          <Text style={styles.deleteButton}>Delete</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  };
 
   useEffect(() => {
     const groupsRef = database().ref('group');
