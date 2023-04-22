@@ -239,7 +239,7 @@ export default class App extends Component {
           category: EventCategory.SCHOOLCOURSE,
           title: res["classes"][i]["class"]["title"],
           startTime: new Date(
-            res["classes"][i]["class"]["startTime"].seconds 
+            res["classes"][i]["class"]["startTime"].seconds * 1000
           ), //multiply 1000 since Javascript uses milliseconds. Timestamp to date.
           endTime: new Date(
             res["classes"][i]["class"]["endTime"].seconds * 1000
