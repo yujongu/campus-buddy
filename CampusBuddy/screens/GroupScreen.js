@@ -107,6 +107,8 @@ export default function GroupScreen({ navigation, route }) {
     setGroupName('');
   };
 
+
+  // Define a function to handle deleting the group
   const renderItem = ({ item }) => {
     const handleDeleteGroup = () => {
       const filteredGroups = groups.filter((group) => group.id !== item.id);
