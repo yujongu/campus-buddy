@@ -149,25 +149,53 @@ export default function GroupScreen({ navigation, route }) {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Groups to Follow</Text>
-
-      <FlatList
-        data={groups}
-        renderItem={renderItem}
-        keyExtractor={(item) => item.id.toString()}
-      />
-
-      <View style={styles.addGroup}>
+      <View style={styles.inputContainer}>
         <TextInput
-          placeholder="Enter group name"
-          style={styles.groupNameInput}
-          value={groupName}
-          onChangeText={(text) => setGroupName(text)}
+          style={styles.inputField}
+          value={newGroup}
+          onChangeText={(text) => setNewGroup(text)}
+          placeholder="Add a new group"
         />
         <TouchableOpacity style={styles.addButton} onPress={handleAddGroup}>
           <Text style={styles.addButtonText}>Add</Text>
         </TouchableOpacity>
       </View>
+      <View style={styles.groupListContainer}>
+        <FlatList
+          data={groups}
+          renderItem={renderItem}
+          keyExtractor={(item) => item.id}
+        />
+      </View>
+      <TouchableOpacity style={styles.modalButton} onPress={handleOpenModal}>
+        <Text style={styles.modalButtonText}>View Followed Groups</Text>
+      </TouchableOpacity>
+      <Modal visible={modalVisible} animationType="slide">
+        <View style={styles.modalContainer}>
+          <Text style={styles.modalTitle}>Followed Groups</Text>
+          <FlatList
+            data={groups.filter((group) => group.following)}
+            renderItem={({ item }) => (
+              <View style={styles.modalItem}>
+                <Text style={styles.modalItemName}>{item.name}</Text>
+                <TouchableOpacity
+                  style={styles.modalItemButton}
+                  onPress={() => handleUnfollowGroup(item)}
+                >
+                  <Text style={styles.modalItemButtonText}>Unfollow</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+            keyExtractor={(item) => item.id}
+          />
+          <TouchableOpacity
+            style={styles.modalCloseButton}
+            onPress={handleCloseModal}
+          >
+            <Text style={styles.modalCloseButtonText}>Close</Text>
+          </TouchableOpacity>
+        </View>
+      </Modal>
     </View>
   );
 }
