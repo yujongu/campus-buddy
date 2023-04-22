@@ -37,33 +37,37 @@ export default function GroupScreen({ navigation, route }) {
   const [groupName, setGroupName] = useState('');
 
   // Group Id??
+  // Set up an effect to retrieve the list of groups from Firebase and update state
   useEffect(() => {
+    // Define a reference to the 'groups' node in the Firebase database
     const groupsRef = database().ref('groups');
 
+    // Set up a listener for changes to the 'groups' node
     groupsRef.on('value', (snapshot) => {
-      const groupsData = snapshot.val();
-      if (groupsData) {
-        const groupsList = Object.keys(groupsData).map((groupId) => {
-          return {
-            id: groupId,
-            name: groupsData[groupId].name,
-            memberList: groupsData[groupId].memberList,
-          };
-        });
-
-        setGroups(groupsList);
-      }
+      // Convert the data snapshot to an array of group objects and update state
+      const data = snapshot.val();
+      const groups = data ? Object.values(data) : [];
+      setGroups(groups);
     });
 
-    return () => groupsRef.off();
+    // Clean up the listener when the component unmounts
+    return () => groupsRef.off('value');
   }, []);
 
 //   const handleAddGroup = () => {
-//     const groupsRef = database().ref('groups');
-//     const newGroupRef = groupsRef.push();
-//     newGroupRef.set(newGroup);
-
-//     setNewGroup({ name: '', memberList: [] });
+    // if (groupName.trim() === '') {
+    //     return;
+    //   }
+  
+    //   const newGroup = {
+    //     groupName: groupName.trim(),
+    //     mamberList: [],
+    //   };
+  
+    //   database().ref(`groups/${newGroup.id}`).set(newGroup);
+  
+    //   setGroups([...groups, newGroup]);
+    //   setGroupName('');
 //   };
 
 //   const renderItem = ({ item }) => {
@@ -92,69 +96,56 @@ export default function GroupScreen({ navigation, route }) {
 //     );
 //   }
   const handleAddGroup = () => {
-    if (groupName.trim() === '') {
-      return;
-    }
+    // Define a reference to the 'groups' node in the Firebase database
+    const groupsRef = database().ref('groups');
 
-    const newGroup = {
-      groupName: groupName.trim(),
-      mamberList: [],
-    };
+    // Generate a new ID for the new group
+    const newGroupId = groupsRef.push().key;
 
-    database().ref(`groups/${newGroup.id}`).set(newGroup);
+    // Set the new group data in the database
+    groupsRef.child(newGroupId).set({
+      id: newGroupId,
+      name: newGroup,
+      memberList: [],
+    });
 
-    setGroups([...groups, newGroup]);
-    setGroupName('');
+    // Reset the newGroup state variable to clear the input field
+    setNewGroup('');
   };
 
 
   // Define a function to handle deleting the group
   const renderItem = ({ item }) => {
-    const handleDeleteGroup = () => {
-      const filteredGroups = groups.filter((group) => group.id !== item.id);
-      setGroups(filteredGroups);
-      database().ref(`groups/${item.id}`).remove();
-    };
+    // Define a function to handle deleting the group
+    const handleDelete = () => {
+        // Define a reference to the group in the Firebase database
+        const groupRef = database().ref(`groups/${item.id}`);
   
-    return (
-      <View style={styles.groupContainer}>
-        <TouchableOpacity
-          onPress={() =>
-            navigation.navigate('Group Details', { groupId: item.id })
-          }
-        >
+        // Remove the group from the database
+        groupRef.remove();
+      };
+  
+      // Render the group information and a delete button for the item
+      return (
+        <View style={styles.groupItem}>
           <Text style={styles.groupName}>{item.name}</Text>
-          <Text style={styles.memberList}>
-            {item.memberList.join(', ')}
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity onPress={handleDeleteGroup}>
-          <Text style={styles.deleteButton}>Delete</Text>
-        </TouchableOpacity>
-      </View>
-    );
+          <TouchableOpacity style={styles.deleteButton} onPress={handleDelete}>
+            <Text style={styles.deleteButtonText}>Delete</Text>
+          </TouchableOpacity>
+        </View>
+      );
   };
 
-  useEffect(() => {
-    const groupsRef = database().ref('group');
-  
-    groupsRef.on('value', (snapshot) => {
-      const groupsData = snapshot.val();
-      if (groupsData) {
-        const groupsList = Object.keys(groupsData).map((groupId) => {
-          return {
-            id: groupId,
-            name: groupsData[groupId].name,
-            memberList: groupsData[groupId].memberList,
-          };
-        });
-  
-        setGroups(groupsList);
-      }
-    });
-  
-    return () => groupsRef.off();
-  }, []);
+  const handleOpenModal = () => {
+    // Set modalVisible state variable to true
+    setModalVisible(true);
+  };
+
+  const handleCloseModal = () => {
+    // Set modalVisible state variable to false
+    setModalVisible(false);
+  };
+
 
   return (
     <View style={styles.container}>
