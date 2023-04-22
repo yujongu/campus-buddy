@@ -29,6 +29,7 @@ import {
   arrayRemove,
   onSnapshot,
   arrayUnion,
+  getDoc,
 } from "firebase/firestore";
 import React, { useState, useEffect, useContext } from "react";
 import { SHA256 } from "crypto-js";
@@ -40,6 +41,7 @@ import * as ImagePicker from "expo-image-picker";
 import { getDownloadURL, ref, uploadBytesResumable } from "firebase/storage";
 import { storage } from "../firebaseConfig";
 import { ScrollView } from "react-native-gesture-handler";
+import { block } from "react-native-reanimated";
 
 export default function ProfileScreen({ navigation, route }) {
   const [newId, setNewId] = useState("");
@@ -50,6 +52,7 @@ export default function ProfileScreen({ navigation, route }) {
   const [profilePicture, setProfilePicture] = useState(null);
   const [show, setShow] = useState(false);
   const [show_block, setShowblock] = useState(false);
+  const [blocked_list, setBlocked_list] = useState([]);
 
   useEffect(() => {
     // const fetchProfilePicture = async () => {
@@ -163,7 +166,7 @@ export default function ProfileScreen({ navigation, route }) {
         console.log(hashedPassword);
       });
   };
-  useEffect(() => {
+  useEffect(() => {    
     const userDocRef = doc(db, "users", auth.currentUser.uid);
     const unsubscribe = onSnapshot(userDocRef, (doc) => {
       if (doc.exists()) {

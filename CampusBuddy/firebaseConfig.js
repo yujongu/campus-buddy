@@ -5,6 +5,9 @@ import {
   getAuth,
   createUserWithEmailAndPassword,
   sendPasswordResetEmail,
+  getIdToken,
+  fetchSignInMethodsForEmail,
+  SignInMethod
 } from "firebase/auth";
 import { getDownloadURL, getStorage, ref } from "firebase/storage";
 import { EmailAuthProvider, credential } from "firebase/auth";
@@ -28,7 +31,9 @@ import {
   addDoc,
 } from "firebase/firestore";
 import uuid from "react-native-uuid";
+
 import { FieldValue } from "firebase/firestore";
+import { firebase } from "@react-native-firebase/storage";
 
 // TODO: Add SDKs for Firebase products that you want to use
 // https://firebase.google.com/docs/web/setup#available-libraries
@@ -53,6 +58,18 @@ const db = getFirestore();
 const storage = getStorage(app);
 export { auth, db, storage };
 const dbRef = collection(db, "users");
+
+// export async function getUID(email){
+  // const getUID = await collection(db, 'users')
+  // const querySnapshot = await getDocs(getUID);
+  // querySnapshot.forEach((doc) => {
+  //   // console.log(doc.id, " => ", doc.data()["email"])
+  //   if (doc.data()["email"] == email){
+  //     console.log(doc.id)
+  //     return doc.id;
+  //   }
+  // })
+// }
 
 export async function checkUser(firstName, lastName, userId) {
   console.log(userId);
@@ -550,4 +567,5 @@ export async function addPoints(user_token, category, points) {
   } catch (e) {
     console.error("Error updating points: ", e);
   }
+  
 }
