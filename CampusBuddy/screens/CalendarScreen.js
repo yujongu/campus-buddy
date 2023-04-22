@@ -134,6 +134,7 @@ export default class App extends Component {
       list: [],
       calendarEventList: [],
       recurringEventList: [],
+      recurringEventOverwriteList: [],
       athleticEventList: [],
       totalCalendarList: [],
       midterms: [],
@@ -223,6 +224,8 @@ export default class App extends Component {
     const result = [];
     const eventResult = [];
     const recurringEventResult = [];
+    const recurringEventOverwriteResult = [];
+
     if (res != null) {
       /*res["things"].map((element) => {
         const sp = element.data.split(",");
@@ -281,43 +284,73 @@ export default class App extends Component {
 
     // Getting recurring events from database
     // recurringEventList
-    const recurringEvents = await getUserRecurringEvents(auth.currentUser?.uid);
-    if (recurringEvents != null && recurringEvents["event"] != undefined) {
-      for (let i = 0; i < recurringEvents["event"].length; i++) {
-        const temp = {
-          category: EventCategory.EVENT,
-          title: recurringEvents["event"][i]["details"]["title"],
-          startTime: new Date(
-            recurringEvents["event"][i]["details"]["startTime"].seconds * 1000
-          ), //multiply 1000 since Javascript uses milliseconds. Timestamp to date.
-          endTime: new Date(
-            recurringEvents["event"][i]["details"]["endTime"].seconds * 1000
-          ),
-          location: recurringEvents["event"][i]["details"]["location"],
-          description: recurringEvents["event"][i]["details"]["description"],
-          color: recurringEvents["event"][i]["details"]["color"],
-          id: recurringEvents["event"][i]["id"],
-          eventMandatory:
-            recurringEvents["event"][i]["details"]["eventMandatory"],
-          audienceLevel:
-            recurringEvents["event"][i]["details"]["audienceLevel"],
-          eventRepetition:
-            recurringEvents["event"][i]["details"]["repetitionPattern"],
-          eventRepetitionCount:
-            recurringEvents["event"][i]["details"]["repetitionValue"],
-          repetitionHasEndValue:
-            recurringEvents["event"][i]["details"]["repetitionHasEndDateValue"],
-          eventRepeatEndDate: new Date(
-            recurringEvents["event"][i]["details"]["repetitionEndDate"]
-              .seconds * 1000
-          ),
-          dayOfTheWeekSelected:
-            recurringEvents["event"][i]["details"]["repetitionDays"],
-        };
-        recurringEventResult.push(temp);
+
+    onSnapshot(doc(db, "recurring_events", auth.currentUser.uid), (doc) => {
+      let recurringEvents = doc.data();
+      if (recurringEvents != null && recurringEvents["event"] != undefined) {
+        recurringEventResult.length = 0;
+        for (let i = 0; i < recurringEvents["event"].length; i++) {
+          const temp = {
+            category: EventCategory.EVENT,
+            title: recurringEvents["event"][i]["details"]["title"],
+            startTime: new Date(
+              recurringEvents["event"][i]["details"]["startTime"].seconds * 1000
+            ), //multiply 1000 since Javascript uses milliseconds. Timestamp to date.
+            endTime: new Date(
+              recurringEvents["event"][i]["details"]["endTime"].seconds * 1000
+            ),
+            location: recurringEvents["event"][i]["details"]["location"],
+            description: recurringEvents["event"][i]["details"]["description"],
+            color: recurringEvents["event"][i]["details"]["color"],
+            id: recurringEvents["event"][i]["id"],
+            eventMandatory:
+              recurringEvents["event"][i]["details"]["eventMandatory"],
+            audienceLevel:
+              recurringEvents["event"][i]["details"]["audienceLevel"],
+            eventRepetition:
+              recurringEvents["event"][i]["details"]["repetitionPattern"],
+            eventRepetitionCount:
+              recurringEvents["event"][i]["details"]["repetitionValue"],
+            repetitionHasEndValue:
+              recurringEvents["event"][i]["details"][
+                "repetitionHasEndDateValue"
+              ],
+            eventRepeatEndDate: new Date(
+              recurringEvents["event"][i]["details"]["repetitionEndDate"]
+                .seconds * 1000
+            ),
+            dayOfTheWeekSelected:
+              recurringEvents["event"][i]["details"]["repetitionDays"],
+          };
+          recurringEventResult.push(temp);
+        }
       }
-    }
-    this.setState({ recurringEventList: recurringEventResult });
+
+      if (
+        recurringEvents != null &&
+        recurringEvents["cancelRecurringEvent"] != undefined
+      ) {
+        recurringEventOverwriteResult.length = 0;
+        for (
+          let i = 0;
+          i < recurringEvents["cancelRecurringEvent"].length;
+          i++
+        ) {
+          let item = recurringEvents["cancelRecurringEvent"][i];
+
+          const temp = {
+            eventId: item.eventId,
+            overwriteDate: new Date(item.overwriteDate.seconds * 1000),
+          };
+          recurringEventOverwriteResult.push(temp);
+        }
+      }
+      this.setState({ recurringEventList: recurringEventResult });
+      this.setState({
+        recurringEventOverwriteList: recurringEventOverwriteResult,
+      });
+    });
+
     this.checkList(eventResult); //Checks for events that go over multiple days and corrects it
     this.combineAllListsForCalendar(); // Combine list, calendarEventList, and athleticEventsList into one list "totalList"
 
@@ -510,7 +543,6 @@ export default class App extends Component {
         }
       }
 
-      console.log("This is recurrence", this.state.eventRepetition);
       const eventId = uuid.v4();
       switch (this.state.eventRepetition) {
         case 0:
@@ -570,7 +602,11 @@ export default class App extends Component {
             ";" +
             eventColor.toString() +
             ";" +
-            this.points.toString();
+            this.points.toString() +
+            ";" +
+            this.state.eventMandatory +
+            ";" +
+            selectedAudienceLevel;
 
           this.state.selected.map((email) => {
             to_request(auth.currentUser?.email, email, "event", message);
@@ -2087,6 +2123,9 @@ export default class App extends Component {
                                       event.startTime
                                     }`}
                                     navigation={this.props.navigation}
+                                    weekviewStartDate={
+                                      this.state.weekViewStartDate
+                                    }
                                     category={event.category}
                                     day={event.startTime.getDay()}
                                     startTime={new Date(event.startTime)}
@@ -2114,7 +2153,6 @@ export default class App extends Component {
                                   event,
                                   this.state.calendarUIVisibilityFilter
                                 ) ? (
-                                  // console.log("Hi", event.dayOfTheWeekSelected)
                                   event.dayOfTheWeekSelected.map(
                                     (daySelected) => {
                                       return daySelected.isSelected &&
@@ -2130,6 +2168,7 @@ export default class App extends Component {
                                             daySelected.value
                                           }`}
                                           navigation={this.props.navigation}
+                                          weekviewStartDate={this.state.weekViewStartDate.toString()}
                                           category={event.category}
                                           day={daySelected.value}
                                           startTime={new Date(event.startTime)}
@@ -2145,6 +2184,23 @@ export default class App extends Component {
                                           }
                                           eventMandatory={event.eventMandatory}
                                           audienceLevel={event.audienceLevel}
+                                          eventRepetition={
+                                            event.eventRepetition
+                                          }
+                                          eventRepetitionCount={
+                                            event.eventRepetitionCount
+                                          }
+                                          eventRepetitionHasEnd={
+                                            event.repetitionHasEndValue
+                                          }
+                                          eventRepeatEndDate={
+                                            new Date(event.eventRepeatEndDate)
+                                          }
+                                          overwriteData={this.state.recurringEventOverwriteList.filter(
+                                            (item) => {
+                                              return item.eventId == event.id;
+                                            }
+                                          )}
                                         />
                                       ) : (
                                         <View />
@@ -2453,17 +2509,20 @@ const makeVisibleRecurring = (weekStartDate, event, filterValues) => {
   }
 
   let rE = new Date(event.eventRepeatEndDate);
+
   //week range start and end
   let s = weekStartDate;
   s.setHours(0);
   s.setMinutes(0);
   s.setSeconds(0);
+  s.setMilliseconds(0);
+
   let e = new Date(weekStartDate);
   e.setDate(e.getDate() + 6);
   e.setHours(23);
   e.setMinutes(59);
   e.setSeconds(59);
-
+  e.setMilliseconds(0);
   //if event is within the week time frame, make visible
   if (event.startTime >= s && event.startTime <= e) {
     return true;
@@ -2491,23 +2550,36 @@ const makeVisibleRecurring = (weekStartDate, event, filterValues) => {
 
 makeVisibleRecurringForDay = (weekStartDate, event, day) => {
   let rE = new Date(event.eventRepeatEndDate);
+  rE.setHours(23);
+  rE.setMinutes(59);
+  rE.setSeconds(59);
+  rE.setMilliseconds(0);
 
   let s = weekStartDate;
   s.setHours(0);
   s.setMinutes(0);
   s.setSeconds(0);
+  s.setMilliseconds(0);
+
   let e = new Date(weekStartDate);
   e.setDate(e.getDate() + 6);
   e.setHours(23);
   e.setMinutes(59);
   e.setSeconds(59);
+  e.setMilliseconds(0);
 
   let eDate = new Date(weekStartDate);
   eDate.setDate(eDate.getDate() + day);
+  eDate.setHours(23);
+  eDate.setMinutes(59);
+  eDate.setSeconds(59);
+  eDate.setMilliseconds(0);
+
   if (event.startTime <= eDate) {
     if (event.repetitionHasEndValue == 0) {
       return true;
     }
+
     if (eDate <= rE) {
       return true;
     } else {
