@@ -2,6 +2,7 @@ import { Pressable } from "@react-native-material/core";
 import React from "react";
 import { View, Text, Dimensions } from "react-native";
 import { EventCategory } from "../../constants/eventCategory";
+import { JSGetDate } from "../../helperFunctions/dateFunctions";
 const leftHeaderWidth = 50;
 const topHeaderHeight = 20;
 const dailyWidth = (Dimensions.get("window").width - leftHeaderWidth) / 3;
@@ -45,6 +46,8 @@ export default class EventItem extends React.Component {
   };
 
   showDetails(
+    id,
+    weekviewStartDate,
     category,
     day,
     startTime,
@@ -54,10 +57,21 @@ export default class EventItem extends React.Component {
     description,
     host,
     color,
-    clickable
+    clickable,
+    eventMandatory,
+    audienceLevel,
+
+    eventRepetition,
+    eventRepetitionCount,
+    eventRepetitionHasEnd,
+    eventRepeatEndDate,
+
+    canceledEvent
   ) {
     if (clickable) {
       this.props.navigation.navigate("EventDetails", {
+        id,
+        weekviewStartDate,
         category,
         day,
         startTime: this.JSClock(startTime),
@@ -68,12 +82,22 @@ export default class EventItem extends React.Component {
         host,
         color,
         removeFromCalendar: this.removeFromCalendar,
+        eventMandatory,
+        audienceLevel,
+
+        eventRepetition,
+        eventRepetitionCount,
+        eventRepetitionHasEnd,
+        eventRepeatEndDate,
+
+        canceledEvent,
       });
     }
   }
 
   render() {
     const {
+      weekviewStartDate,
       category,
       day,
       startTime,
@@ -87,8 +111,13 @@ export default class EventItem extends React.Component {
       clickable,
       eventMandatory,
       audienceLevel,
-    } = this.props;
 
+      eventRepetition,
+      eventRepetitionCount,
+      eventRepetitionHasEnd,
+      eventRepeatEndDate,
+      overwriteData,
+    } = this.props;
     let nHeight =
       category == "Empty"
         ? 0
@@ -97,10 +126,29 @@ export default class EventItem extends React.Component {
     let startHeightOffset =
       category == "Empty" ? 0 : 30 - startTime.getMinutes();
 
+    const currDate = new Date(weekviewStartDate);
+    currDate.setDate(currDate.getDate() + day);
+
+    let canceledEvent = false;
+    if (overwriteData) {
+      for (let i = 0; i < overwriteData.length; i++) {
+        owDate = overwriteData[i].overwriteDate;
+        if (
+          currDate.getFullYear() == owDate.getFullYear() &&
+          currDate.getMonth() == owDate.getMonth() &&
+          currDate.getDate() == owDate.getDate()
+        ) {
+          canceledEvent = true;
+        }
+      }
+    }
+
     return (
       <Pressable
         onPress={() =>
           this.showDetails(
+            id,
+            weekviewStartDate,
             category,
             day,
             startTime,
@@ -110,7 +158,16 @@ export default class EventItem extends React.Component {
             description != undefined ? description : "",
             host,
             color,
-            clickable
+            clickable,
+            eventMandatory,
+            audienceLevel,
+
+            eventRepetition,
+            eventRepetitionCount,
+            eventRepetitionHasEnd,
+            eventRepeatEndDate,
+
+            canceledEvent
           )
         }
       >
@@ -140,6 +197,30 @@ export default class EventItem extends React.Component {
           >
             <Text style={{ fontSize: 16 }}>{title}</Text>
             <Text style={{ fontSize: 12 }}>{location}</Text>
+            <View
+              style={{
+                width: dailyWidth * 0.9,
+                height: nHeight,
+                position: "absolute",
+                backgroundColor: "grey",
+                opacity: 0.7,
+                justifyContent: "center",
+                alignItems: "center",
+                display: canceledEvent ? "flex" : "none",
+              }}
+            >
+              <Text
+                style={{
+                  color: "red",
+                  fontSize: 16,
+                  fontWeight: 800,
+                  transform: [{ rotate: "35deg" }],
+                  backgroundColor: "white",
+                }}
+              >
+                Canceled
+              </Text>
+            </View>
           </View>
         ) : (
           <View />
