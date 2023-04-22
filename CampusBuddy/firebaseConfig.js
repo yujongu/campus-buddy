@@ -613,3 +613,33 @@ export async function getLevelUps(user_token){
     alert(`Error getting levelups for user ${user_token}: ` + error);
   }
 }
+
+//gets the events of all friends of a user. Each event will have the audience level "Friend."
+export async function getFriendEvents(user_token){
+var result = [];
+const querySnapShot = await getDoc(doc(db, "friend_list", user_token)); //this user's friend list
+if(!querySnapShot.exists()){
+  return result;
+}
+querySnapShot.forEach((doc) => {
+  const friend = doc.
+}
+
+
+}
+
+export async function getFriendIds(user_token){
+  const uEmail = getUserEmail(user_token);
+  var res = [];
+   
+}
+export async function getUserEmail(user_token){
+  var res = [];
+  try {
+    const querySnapShot = await getDoc(doc(db, "users", user_token));
+    res.push(querySnapShot.email);
+    return res;
+  } catch(e) {
+    console.error("Error getting user's email: ", e);
+  }
+}
