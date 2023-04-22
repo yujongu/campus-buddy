@@ -14,7 +14,11 @@ import { useNavigation } from "@react-navigation/native";
 import { EventCategory } from "../constants/eventCategory";
 import { JSGetDate, getWeekDayName } from "../helperFunctions/dateFunctions";
 import { useState } from "react";
-import { auth, overwriteRecurringEvents } from "../firebaseConfig";
+import {
+  auth,
+  overwriteRecurringEvents,
+  removeRecurringEvents,
+} from "../firebaseConfig";
 
 export default function EventDetailsScreen({ route }) {
   const {
@@ -82,7 +86,6 @@ export default function EventDetailsScreen({ route }) {
             style={{
               backgroundColor: "white",
               marginHorizontal: 20,
-              height: "60%",
               width: "80%",
               borderRadius: 10,
               padding: 15,
@@ -117,6 +120,25 @@ export default function EventDetailsScreen({ route }) {
                   canceledEvent
                     ? alert(`${JSGetDate(currDate)} event is now live`)
                     : alert(`${JSGetDate(currDate)} event is now canceled`);
+                  setEditVisible(false);
+                  navigation.goBack();
+                }}
+              />
+            </View>
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                justifyContent: "space-between",
+              }}
+            >
+              <Text style={{ fontSize: 16 }}>Cancel all future events?</Text>
+
+              <Button
+                title="Yes"
+                onPress={() => {
+                  removeRecurringEvents(auth.currentUser?.uid, id, currDate);
+                  alert(`All future events have been canceled`);
                   setEditVisible(false);
                   navigation.goBack();
                 }}

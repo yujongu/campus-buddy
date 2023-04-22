@@ -368,6 +368,34 @@ export async function getUserRecurringEvents(user_token) {
     alert("Error getting user events: " + error);
   }
 }
+export async function removeRecurringEvents(user_token, eventId, newEndDate) {
+  const docRef = doc(db, "recurring_events", user_token);
+  try {
+    const querySnapShot = await getDoc(doc(db, "recurring_events", user_token));
+    if (!querySnapShot.exists()) {
+      console.error("Something went wrong overwriteRecurringEvents");
+      return;
+    }
+
+    for (let i = 0; i < querySnapShot.data().event.length; i++) {
+      let item = querySnapShot.data().event[i];
+
+      if (item.id == eventId) {
+        console.log(item.details);
+        let tempItem = querySnapShot.data().event[i];
+        tempItem.details.repetitionHasEndDateValue = 1;
+        tempItem.details.repetitionEndDate = newEndDate;
+        await runTransaction(db, async (transaction) => {
+          transaction.update(docRef, { event: arrayRemove(item) });
+          transaction.update(docRef, { event: arrayUnion(tempItem) });
+        });
+      }
+    }
+    console.log("Overwrite event doc written with ID: ", docRef.id);
+  } catch (error) {
+    console.error(error);
+  }
+}
 
 export async function overwriteRecurringEvents(
   user_token,

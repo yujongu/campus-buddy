@@ -283,9 +283,8 @@ export default class App extends Component {
 
     onSnapshot(doc(db, "recurring_events", auth.currentUser.uid), (doc) => {
       let recurringEvents = doc.data();
-
       if (recurringEvents != null && recurringEvents["event"] != undefined) {
-        // recurringEventResult.length = 0;
+        recurringEventResult.length = 0;
         for (let i = 0; i < recurringEvents["event"].length; i++) {
           const temp = {
             category: EventCategory.EVENT,
@@ -2133,7 +2132,6 @@ export default class App extends Component {
                                   event,
                                   this.state.calendarUIVisibilityFilter
                                 ) ? (
-                                  // console.log("Hi", event.dayOfTheWeekSelected)
                                   event.dayOfTheWeekSelected.map(
                                     (daySelected) => {
                                       return daySelected.isSelected &&
@@ -2490,17 +2488,20 @@ const makeVisibleRecurring = (weekStartDate, event, filterValues) => {
   }
 
   let rE = new Date(event.eventRepeatEndDate);
+
   //week range start and end
   let s = weekStartDate;
   s.setHours(0);
   s.setMinutes(0);
   s.setSeconds(0);
+  s.setMilliseconds(0);
+
   let e = new Date(weekStartDate);
   e.setDate(e.getDate() + 6);
   e.setHours(23);
   e.setMinutes(59);
   e.setSeconds(59);
-
+  e.setMilliseconds(0);
   //if event is within the week time frame, make visible
   if (event.startTime >= s && event.startTime <= e) {
     return true;
@@ -2528,23 +2529,36 @@ const makeVisibleRecurring = (weekStartDate, event, filterValues) => {
 
 makeVisibleRecurringForDay = (weekStartDate, event, day) => {
   let rE = new Date(event.eventRepeatEndDate);
+  rE.setHours(23);
+  rE.setMinutes(59);
+  rE.setSeconds(59);
+  rE.setMilliseconds(0);
 
   let s = weekStartDate;
   s.setHours(0);
   s.setMinutes(0);
   s.setSeconds(0);
+  s.setMilliseconds(0);
+
   let e = new Date(weekStartDate);
   e.setDate(e.getDate() + 6);
   e.setHours(23);
   e.setMinutes(59);
   e.setSeconds(59);
+  e.setMilliseconds(0);
 
   let eDate = new Date(weekStartDate);
   eDate.setDate(eDate.getDate() + day);
+  eDate.setHours(23);
+  eDate.setMinutes(59);
+  eDate.setSeconds(59);
+  eDate.setMilliseconds(0);
+
   if (event.startTime <= eDate) {
     if (event.repetitionHasEndValue == 0) {
       return true;
     }
+
     if (eDate <= rE) {
       return true;
     } else {
