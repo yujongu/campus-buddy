@@ -523,6 +523,25 @@ export async function getUserId(email) {
   }
 }
 
+export async function getUsername(email) {
+  var res = "";
+  try {
+    const querySnapShot = await getDocs(collection(db, "users"));
+    querySnapShot.forEach(async (element) => {
+      if (element.data().email == email) {
+        // console.log("id found", element.id);
+        // res.push(element.id);
+        res = element.data().id
+        // const schedule = await userSchedule(element.id)
+        // console.log("schedule", schedule);
+      }
+    });
+    return res;
+  } catch (e) {
+    console.error("Error getting user's id: ", e);
+  }
+}
+
 export async function to_request(own, to_user, type, message) {
   const docRef = doc(db, "requests", own);
   const docRef_to = doc(db, "requests", to_user);
