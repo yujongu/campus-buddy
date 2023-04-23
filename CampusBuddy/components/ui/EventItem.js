@@ -12,6 +12,7 @@ export default class EventItem extends React.Component {
     super(props);
     this.state = {
       showEvent: true,
+      multipleSelected: false,
     };
   }
   removeFromCalendar = () => {
@@ -44,6 +45,11 @@ export default class EventItem extends React.Component {
     temp += hour >= 12 ? " P.M." : " A.M.";
     return temp;
   };
+
+  multipleSelector = (id) => {
+    this.setState({multipleSelected: !this.state.multipleSelected});
+    this.props.handleMultipleSelected(this.state.multipleSelected, id);
+  }
 
   showDetails(
     id,
@@ -145,6 +151,7 @@ export default class EventItem extends React.Component {
 
     return (
       <Pressable
+        onLongPress={() => this.multipleSelector(id)}
         onPress={() =>
           this.showDetails(
             id,
@@ -191,8 +198,9 @@ export default class EventItem extends React.Component {
               borderRadius: 10,
               overflow: "hidden",
               backgroundColor: color == null ? "#D1FF96" : color,
-              borderLeftWidth: eventMandatory == true ? 3 : 0,
-              borderColor: "red",
+              borderLeftWidth: this.state.multipleSelected ? 3 : eventMandatory == true ? 3 : 0,
+              borderWidth: this.state.multipleSelected ? 4 : 0,
+              borderColor: this.state.multipleSelected ? "black" : "red",
             }}
           >
             <Text style={{ fontSize: 16 }}>{title}</Text>

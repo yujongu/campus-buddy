@@ -139,6 +139,7 @@ export default class App extends Component {
       holidays: [],
       testlist: [],
       holidayCountryList: [],
+      selectedList: [],
       selectedCountryCode: "",
       createEventVisible: false,
       holidaySettingVisible: false,
@@ -1274,6 +1275,22 @@ export default class App extends Component {
     { useNativeDriver: false }
   );
 
+  handleMultipleSelected = (selected, id) => {
+    var newList = []; //must use new array otherwise calendar does not re-render because it doesn't recognize the state has changed
+    if (selected) {
+      this.state.selectedList.push(id);
+      newList = this.state.selectedList;
+      this.setState({selectedList: newList})
+    }
+    else {
+      const removeIndex = this.state.selectedList.indexOf(id);
+      this.state.selectedList.splice(removeIndex, 1);
+      newList = this.state.selectedList;
+      this.setState({selectedList: newList})
+    }
+    console.log(this.state.selectedList, this.state.selectedList.length)
+  }
+
   handleEventCompletion = async (category, id) => {
     console.log(category);
     console.log(id);
@@ -2118,6 +2135,9 @@ export default class App extends Component {
                                     handleEventCompletion={
                                       this.handleEventCompletion
                                     }
+                                    handleMultipleSelected= {
+                                      this.handleMultipleSelected
+                                    }
                                     eventMandatory={event.eventMandatory}
                                     audienceLevel={event.audienceLevel}
                                   />
@@ -2289,6 +2309,7 @@ export default class App extends Component {
                           Sat
                         </Text>
                       </View>
+                      
                       <FlatList
                         scrollEnabled={false}
                         data={this.state.monthViewData}
@@ -2372,7 +2393,9 @@ export default class App extends Component {
                     </View>
                   );
               }
-            })()}
+            })()} 
+          {
+            this.state.selectedList.length == 0 ? 
             <View style={{ flexDirection: "row", margin: 8 }}>
               <ScrollView horizontal={true}>
                 <BouncyCheckbox
@@ -2446,6 +2469,15 @@ export default class App extends Component {
                 />
               </TouchableOpacity>
             </View>
+            :
+            <View style={{ flexDirection: "row", margin: 8 }}>
+              <Text>
+                {this.state.selectedList.length} selected
+              </Text>
+              </View>
+          }
+
+
           </View>
         </View>
       </SafeAreaView>
