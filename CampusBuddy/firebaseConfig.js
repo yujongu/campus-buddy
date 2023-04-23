@@ -546,6 +546,22 @@ export async function addNicknameInGroup(
   }
 }
 
+export async function getGroupSchedule(groupName) {
+  try {
+    const q = query(collection(db, "groups"), where("groupName", "==", groupName));
+    const querySnapshot = await getDocs(q);
+    if (querySnapshot.size == 1) {
+      const data = querySnapshot.docs[0].data();
+      return data.schedule || [];
+    } else {
+      return [];
+    }
+  } catch (e) {
+    console.log(e);
+    return [];
+  }
+}
+
 export async function getUserId(email) {
   var res = [];
   try {
