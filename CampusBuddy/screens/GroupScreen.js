@@ -39,6 +39,8 @@ export default function GroupScreen({ navigation, route }) {
   const [modalVisible, setModalVisible] = useState(false);
   const [schedule, setSchedule] = useState([]);
 
+  const [groupSchedule, setGroupSchedule] = useState([]);
+
   const { groups } = route.params;
 
   const handleOpenModal = async () => {
@@ -46,6 +48,11 @@ export default function GroupScreen({ navigation, route }) {
     setSchedule(groupSchedule);
     setModalVisible(true);
   };
+
+  const loadGroupSchedule = async (groupName) => {
+    const schedule = await getGroupSchedule(groupName);
+    setGroupSchedule(schedule);
+  }
 
   const renderItem = ({ item }) => (
     <View style={styles.item}>
@@ -61,9 +68,12 @@ export default function GroupScreen({ navigation, route }) {
         renderItem={renderItem}
         keyExtractor={(item, index) => index.toString()}
       />
-      <TouchableOpacity style={styles.button} onPress={handleOpenModal}>
+      <TouchableOpacity style={styles.button} onPress={() => loadGroupSchedule(groupName)}>
         <Text style={styles.buttonText}>Group Schedule</Text>
       </TouchableOpacity>
+
+      {/* <Text>Schedule: {item.groupSchedule.map(scheduleItem => scheduleItem.title).join(', ')}</Text> */}
+
       <Modal
         animationType="slide"
         transparent={true}
