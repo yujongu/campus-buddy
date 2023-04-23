@@ -9,6 +9,7 @@ import {
   Animated,
   FlatList,
   Modal,
+  TextInput,
 } from "react-native";
 import ThemeContext from "../components/ui/ThemeContext";
 import { SafeAreaView, useSafeAreaFrame } from "react-native-safe-area-context";
@@ -16,6 +17,8 @@ import BackIcon from "react-native-vector-icons/Feather";
 import { Colors } from "../constants/colors";
 import defaultProfile from "../assets/defaultProfile.png";
 import Ant from "react-native-vector-icons/AntDesign";
+import Feather from "react-native-vector-icons/Feather";
+import Entypo from "react-native-vector-icons/Entypo";
 import FontAwesome from "react-native-vector-icons/FontAwesome";
 
 import {
@@ -41,7 +44,7 @@ import {
   updateDoc,
 } from "firebase/firestore";
 import { Button } from "react-native-elements";
-import { TextInput } from "react-native-gesture-handler";
+import { Keyboard } from "react-native";
 
 export default function FeedDetailScreen({ navigation, route }) {
   const theme = useContext(ThemeContext);
@@ -69,12 +72,16 @@ export default function FeedDetailScreen({ navigation, route }) {
   const [liked, setLiked] = useState(false);
   const [numLike, setNumlike] = useState(0);
   const [numComments, setNumcomments] = useState(0);
-  const [expand, setExpand] = useState(true);
-  const [showCOC, setShowcoc] = useState(false);
   const [modal, setModal] = useState(false);
-  const [profile, setProfile] = useState();
-  const [profile_comment, setCProfile] = useState();
   const [current_prof, setCurrent] = useState();
+  const [profiles, setProfiles] = useState({});
+  const [text, setText] = useState("");
+  const [text2, setText2] = useState("");
+  
+  //individual condition for reply button and more comments button
+  const [reply, setReply] = useState();
+  const [showCOC, setShowcoc] = useState(false);
+  const [moreCom, setMorecom] = useState();
 
   const incrementLike = async () => {
     if (liked) {
@@ -95,109 +102,89 @@ export default function FeedDetailScreen({ navigation, route }) {
     setLiked(!liked);
   };
 
-  const loadmyprofile = async (item) => {
-    console.log(item)
-    const uid = await getUserId(item);
-    const data = await fetchProfilePicture(uid);
-    if (data != null) {
-      setProfile(data)
-    }
-  }
-
-  const loadProfile = async (item) => {
-    // console.log(item);
-    const uid = await getUserId(item);
-    const data = await fetchProfilePicture(uid);
-    if (data != null) {
-      setCProfile(data)
-    }
-  };
-
   const renderItem = ({ item }) => {
     var check = item.item.coc.length > 0;
+    
     return (
-      <View style={{flex: 1,flexDirection: 'column'}}>
-          {check ? (
-            <View style={{ flexDirection: "column" }}>
-              <View style={{ flexDirection: "row" }}>
-                {profile != null ? (
-                <Image
-                  source={{ uri: profile }}
-                  style={{ width: 40, height: 40, borderRadius: 50 }}
-                />
-              ) : (
-                <Image
-                  source={require("../assets/user.png")}
-                  style={{ width: 40, height: 40, borderRadius: 50 }}
-                />
-              )}
-                <View style={{ marginLeft: 10, justifyContent: "center" }}>
-                  <Text style={{ fontSize: 14 }}>{item.item.user}</Text>
-                  <Text style={{ fontWeight: "bold", fontSize: 20 }}>
-                    {item.item.comment}
-                  </Text>
-                </View>
+      <View
+        style={{
+          flex: 1,
+          flexDirection: "column",
+          marginTop: 10,
+          marginLeft: 10,
+        }}
+      >
+        <View style={{ flexDirection: "column" }}>
+          <View style={{ flexDirection: "row" }}>
+            {profiles[item.item.user] != null ? (
+              <Image
+                source={{ uri: profiles[item.item.user] }}
+                style={{ width: 40, height: 40, borderRadius: 50 }}
+              />
+            ) : (
+              <Image
+                source={defaultProfile}
+                style={{ width: 40, height: 40, borderRadius: 50 }}
+              />
+            )}
+            <View style={{flexDirection: 'row', justifyContent: 'space-between', width: '80%'}}>
+              <View style={{ marginLeft: 10, justifyContent: "center" }}>
+                <Text style={{ fontSize: 14 }}>{item.item.user}</Text>
+                <Text style={{ fontWeight: "bold", fontSize: 20 }}>
+                  {item.item.comment}
+                </Text>
               </View>
-              {!showCOC ? (
-                <Text
-                  style={{ marginLeft: 10, marginTop: 5 }}
-                  onPress={() => setShowcoc(!showCOC)}
-                >
-                  See more comments.
-                </Text>
-              ) : (
-                <Text
-                  style={{ marginLeft: 10, marginTop: 5 }}
-                  onPress={() => setShowcoc(!showCOC)}
-                >
-                  Collapse comments.
-                </Text>
-              )}
+              <TouchableOpacity style={{right: 0, justifyContent: 'center'}} onPress={
+                ()=> {
+                  if(reply != item.item._id){
+                    setReply(item.item._id)
+                  }else{
+                    setReply(null)
+                  }
+                }
+              }>
+                <Entypo name="reply" size={25}/>
+              </TouchableOpacity>
             </View>
-          ) : (
-            //when no coc
-            // <View
-            //   key={item.item}
-            //   style={{ flexDirection: "row", alignItems: "center" , marginTop: 10}}
-            // >
-            //   {profile == null ? (
-            //     <Image
-            //       source={{ uri: profile }}
-            //       style={{ width: 40, height: 40, borderRadius: 50 }}
-            //     />
-            //   ) : (
-            //     <Image
-            //       source={require("../assets/user.png")}
-            //       style={{ width: 40, height: 40, borderRadius: 50 }}
-            //     />
-            //   )}
-            //   <View style={{ marginLeft: 10 }}>
-            //     <Text style={{ fontSize: 14 }}>{item.item.user}</Text>
-            //     <Text style={{ fontSize: 20, fontWeight: "bold" }}>
-            //       {item.item.comment}
-            //     </Text>
-            //   </View>
-            // </View>
-          )}
-          {showCOC && check ? (
+          </View>
+          {check ? (
+            !(moreCom == item.item._id) ? (
+              <Text
+                style={{ marginLeft: 10, marginTop: 5 }}
+                onPress={() => 
+                  setMorecom(item.item._id)
+                }
+              >
+                See more comments.
+              </Text>
+            ) : (
+              <Text
+                style={{ marginLeft: 10, marginTop: 5 }}
+                onPress={() => 
+                  setMorecom(null)
+                }
+              >
+                Collapse comments.
+              </Text>
+            )
+          ) : null}
+          {moreCom == item.item._id && check ? (
             <View style={{ marginLeft: 20 }}>
               {item.item.coc.map((comment) => {
-                loadProfile(comment.user);
-                // loadmyprofile(item.item.user);
                 return (
                   <View
                     key={comment}
                     style={{ flexDirection: "row", alignItems: "center" }}
                   >
-                    {profile_comment != null ? (
+                    {profiles[comment.user] != null ? (
                       <Image
-                        source={{ uri: profile_comment }}
-                        style={{ width: 40, height: 40, borderRadius: 50 }}
+                        source={{ uri: profiles[comment.user] }}
+                        style={{ width: 30, height: 30, borderRadius: 50 }}
                       />
                     ) : (
                       <Image
-                        source={require("../assets/user.png")}
-                        style={{ width: 40, height: 40, borderRadius: 50 }}
+                        source={defaultProfile}
+                        style={{ width: 30, height: 30, borderRadius: 50 }}
                       />
                     )}
                     <View style={{ marginLeft: 10 }}>
@@ -211,7 +198,66 @@ export default function FeedDetailScreen({ navigation, route }) {
               })}
             </View>
           ) : null}
-       
+        </View>
+        {
+          reply==item.item._id ?
+          <View
+            style={{
+              backgroundColor: "gray",
+              borderRadius: 50,
+              flexDirection: "row",
+              width: "95%",
+            }}
+          >
+            {current_prof != null ? (
+              <View style={{ flex: 1 }}>
+                <Image
+                  source={{ uri: current_prof }}
+                  style={{ width: 30, height: 30, borderRadius: 50 }}
+                />
+              </View>
+            ) : (
+              <View style={{ flex: 1 }}>
+                <Image
+                  source={defaultProfile}
+                  style={{ width: 30, height: 30, borderRadius: 50 }}
+                />
+              </View>
+            )}
+            <TextInput
+              placeholder="Enter a comment..."
+              onChangeText={(text) => handleChange2(text)}
+              value={text2}
+              style={{
+                marginLeft: 10,
+                backgroundColor: "light gray",
+                borderRadius: 10,
+                flex: 9,
+              }}
+            />
+            <View
+              style={{
+                flex: 1,
+                justifyContent: "center",
+                alignItems: "center",
+              }}
+            >
+              <TouchableOpacity onPress={() => submit_comment2(item.item._id)}>
+                <Feather name="send" size={20} color={"black"} />
+              </TouchableOpacity>
+            </View>
+          </View>
+          :
+          null
+        }
+        <View
+          style={{
+            borderBottomColor: "black",
+            borderBottomWidth: 2,
+            width: "95%",
+            marginTop: 5
+          }}
+        ></View>
       </View>
     );
   };
@@ -229,11 +275,16 @@ export default function FeedDetailScreen({ navigation, route }) {
         total_comments: 0,
       });
     } else {
-      onSnapshot(docRef, (doc) => {
+      await onSnapshot(docRef, (doc) => {
         const comments = doc.data()["comments"];
         const likes = doc.data()["likes"];
         const tlikes = doc.data()["total_likes"];
         const tcomments = doc.data()["total_comments"];
+
+        //initialize individual buttons to false
+        setReply(null);
+        setMorecom(null);
+
         setNumlike(tlikes);
         setComments(comments);
         setNumcomments(tcomments);
@@ -251,12 +302,94 @@ export default function FeedDetailScreen({ navigation, route }) {
     if (data != null) {
       setCurrent(data);
     }
-  }
+  };
+
+  const load_comment_profiles = async () => {
+    // console.log(comments)
+    var temp = {};
+    if (comments.length > 0) {
+      // console.log(comments);
+      comments.forEach((com) => {
+        // console.log(com.user);
+        temp[com.user] = null;
+        if (com.coc != []) {
+          com.coc.forEach((comm) => {
+            temp[comm.user] = null;
+          });
+        }
+      });
+      for (const user in temp) {
+        const uid = await getUserId(user);
+        const data = await fetchProfilePicture(uid);
+        if (data != null) {
+          temp[user] = data;
+        }
+      }
+    }
+    setProfiles(temp);
+  };
+
+  const submit_comment = async () => {
+    // console.log(text)
+    const docRef = doc(db, "like_comment", eventId);
+    const data = {
+      coc: [],
+      comment: text,
+      user: auth.currentUser?.email,
+      _id: numComments
+    };
+    await updateDoc(docRef, {
+      total_comments: increment(1),
+      comments: arrayUnion(data),
+    });
+    setText('');
+    Keyboard.dismiss()
+  };
+
+  const submit_comment2 = async (_id) => {
+    // console.log(_id)
+    const docRef = doc(db, "like_comment", eventId);
+    if(text2 != ""){
+      const data = {
+        comment: text2,
+        user: auth.currentUser?.email,
+      };
+      temp = {}
+      const docdata = await getDoc(docRef)
+      // for (const i in docdata.data()["comments"]){
+      //   console.log(docdata.data()["comments"][i])
+      // }
+      // docdata.data()["comments"][_id].coc
+      let t = docdata.data()["comments"]
+      t[_id].coc.push(data)
+      // const data2 = docdata.data()["comments"].map((comment) => {
+      //   if(comment._id == _id){
+      //     comment.coc.push(data)
+      //   }
+      // })
+      // console.log(data2)
+      await updateDoc(docRef, {
+        total_comments: increment(1),
+        comments: t
+      });
+    }
+    setText2('');
+    Keyboard.dismiss()
+  };
+
+  const handleChange = (text) => {
+    setText(text);
+  };
+
+  const handleChange2 = (text) => {
+    setText2(text);
+  };
 
   useEffect(() => {
     load_data();
     load_current_user_profile();
-  }, []);
+    load_comment_profiles();
+  }, [numComments, numLike]);
 
   return (
     <SafeAreaView style={{ flex: 1 }}>
@@ -277,37 +410,51 @@ export default function FeedDetailScreen({ navigation, route }) {
         >
           <FlatList
             data={comments}
-            renderItem={(item) => {
-              loadProfile(item.item.user)
-              renderItem({ item })
-            }}
+            renderItem={(item) => renderItem({ item })}
           />
-          <View style={{backgroundColor: 'gray', borderRadius: 50, flexDirection: 'row', width: '100%'}}>
-            {
-              current_prof != null ?
-              (
-                <View style={{flex: 1}}>
-                  <Image
-                    source={{ uri: current_prof }}
-                    style={{ width: 40, height: 40, borderRadius: 50 }}
-                  />
-                </View>
-              ) : (
-                <View style={{flex: 1 }}>
-                  <Image
-                    source={require("../assets/user.png")}
-                    style={{ width: 40, height: 40, borderRadius: 50}}
-                  />
-                </View>
-              )
-            }
+          <View
+            style={{
+              backgroundColor: "gray",
+              borderRadius: 50,
+              flexDirection: "row",
+              width: "100%",
+            }}
+          >
+            {current_prof != null ? (
+              <View style={{ flex: 1 }}>
+                <Image
+                  source={{ uri: current_prof }}
+                  style={{ width: 40, height: 40, borderRadius: 50 }}
+                />
+              </View>
+            ) : (
+              <View style={{ flex: 1 }}>
+                <Image
+                  source={defaultProfile}
+                  style={{ width: 40, height: 40, borderRadius: 50 }}
+                />
+              </View>
+            )}
             <TextInput
               placeholder="Enter a comment..."
-              style={{marginLeft: 10, backgroundColor: 'white', borderRadius: 50, flex: 10}}
+              onChangeText={(text) => handleChange(text)}
+              value={text}
+              style={{
+                marginLeft: 10,
+                backgroundColor: "light gray",
+                borderRadius: 10,
+                flex: 9,
+              }}
             />
-            <View style={{flex: 1}}>
-              <TouchableOpacity>
-                <Text>Submit</Text>
+            <View
+              style={{
+                flex: 1,
+                justifyContent: "center",
+                alignItems: "center",
+              }}
+            >
+              <TouchableOpacity onPress={() => submit_comment()}>
+                <Feather name="send" size={30} color={"black"} />
               </TouchableOpacity>
             </View>
           </View>
