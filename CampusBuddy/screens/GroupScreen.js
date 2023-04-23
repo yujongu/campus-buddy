@@ -31,6 +31,8 @@ import {
 } from "firebase/firestore";
 
 // Working on process
+// Hello World
+// I'm stuck lol
 
 export default function GroupScreen({ navigation, route }) {
 
