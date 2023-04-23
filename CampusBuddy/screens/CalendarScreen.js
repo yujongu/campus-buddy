@@ -44,6 +44,7 @@ import {
   updateDoc,
   getDoc,
   arrayRemove,
+  arrayUnion
 } from "firebase/firestore";
 import { EventCategory, EventCategoryColors } from "../constants/eventCategory";
 import { CalendarViewType } from "../constants/calendarViewType";
@@ -139,6 +140,7 @@ export default class App extends Component {
       holidays: [],
       testlist: [],
       holidayCountryList: [],
+      selectedList: [],
       selectedCountryCode: "",
       createEventVisible: false,
       holidaySettingVisible: false,
@@ -204,6 +206,71 @@ export default class App extends Component {
       eventMandatory: false,
     };
   }
+  getEvents = async () => {
+     // Getting schedules from database
+     const res = await userSchedule(auth.currentUser?.uid);
+     const result = [];
+     const eventResult = [];
+
+ 
+     if (res != null) {
+       /*res["things"].map((element) => {
+         const sp = element.data.split(",");
+         const temp = {
+           category: EventCategory.SCHOOLCOURSE,
+           title: sp[3],
+           startTime: new Date(sp[2]),
+           endTime: new Date(sp[0]),
+           location: sp[1],
+         };
+         result.push(temp);
+       });*/
+       for (let i = 0; i < res["classes"].length; i++) {
+         const temp = {
+           category: EventCategory.SCHOOLCOURSE,
+           title: res["classes"][i]["class"]["title"],
+           startTime: new Date(
+             res["classes"][i]["class"]["startTime"].seconds * 1000
+           ), //multiply 1000 since Javascript uses milliseconds. Timestamp to date.
+           endTime: new Date(
+             res["classes"][i]["class"]["endTime"].seconds * 1000
+           ),
+           location: res["classes"][i]["class"]["location"],
+           color: res["classes"][i]["class"]["color"] == null ? "#D1FF96" : res["classes"][i]["class"]["color"],
+           id: res["classes"][i]["id"],
+         };
+         result.push(temp);
+       }
+     }
+ 
+     this.setState({ list: result });
+ 
+     // Getting events from database
+     const events = await getUserEvents(auth.currentUser?.uid);
+     if (events != null && events["event"] != undefined) {
+       for (let i = 0; i < events["event"].length; i++) {
+         const temp = {
+           category: EventCategory.EVENT,
+           title: events["event"][i]["details"]["title"],
+           startTime: new Date(
+             events["event"][i]["details"]["startTime"].seconds * 1000
+           ), //multiply 1000 since Javascript uses milliseconds. Timestamp to date.
+           endTime: new Date(
+             events["event"][i]["details"]["endTime"].seconds * 1000
+           ),
+           location: events["event"][i]["details"]["location"],
+           description: events["event"][i]["details"]["description"],
+           color: events["event"][i]["details"]["color"],
+           id: events["event"][i]["id"],
+           eventMandatory: events["event"][i]["details"]["eventMandatory"],
+           audienceLevel: events["event"][i]["details"]["audienceLevel"],
+         };
+         eventResult.push(temp);
+       }
+     }
+     this.checkList(eventResult); //Checks for events that go over multiple days and corrects it
+     this.combineAllListsForCalendar();
+  }
 
   async componentDidMount() {
     //Get the athletic events
@@ -215,71 +282,14 @@ export default class App extends Component {
 
     //Set month view calendar UI with the start date and store in monthViewData
     this.createMonthViewData(tempDate);
-    // Getting schedules from database
-    const res = await userSchedule(auth.currentUser?.uid);
-    const result = [];
-    const eventResult = [];
-    const recurringEventResult = [];
-    const recurringEventOverwriteResult = [];
-
-    if (res != null) {
-      /*res["things"].map((element) => {
-        const sp = element.data.split(",");
-        const temp = {
-          category: EventCategory.SCHOOLCOURSE,
-          title: sp[3],
-          startTime: new Date(sp[2]),
-          endTime: new Date(sp[0]),
-          location: sp[1],
-        };
-        result.push(temp);
-      });*/
-      for (let i = 0; i < res["classes"].length; i++) {
-        const temp = {
-          category: EventCategory.SCHOOLCOURSE,
-          title: res["classes"][i]["class"]["title"],
-          startTime: new Date(
-            res["classes"][i]["class"]["startTime"].seconds * 1000
-          ), //multiply 1000 since Javascript uses milliseconds. Timestamp to date.
-          endTime: new Date(
-            res["classes"][i]["class"]["endTime"].seconds * 1000
-          ),
-          location: res["classes"][i]["class"]["location"],
-          color: "#D1FF96",
-          id: res["classes"][i]["id"],
-        };
-        result.push(temp);
-      }
-    }
-
-    this.setState({ list: result });
-
-    // Getting events from database
-    const events = await getUserEvents(auth.currentUser?.uid);
-    if (events != null && events["event"] != undefined) {
-      for (let i = 0; i < events["event"].length; i++) {
-        const temp = {
-          category: EventCategory.EVENT,
-          title: events["event"][i]["details"]["title"],
-          startTime: new Date(
-            events["event"][i]["details"]["startTime"].seconds * 1000
-          ), //multiply 1000 since Javascript uses milliseconds. Timestamp to date.
-          endTime: new Date(
-            events["event"][i]["details"]["endTime"].seconds * 1000
-          ),
-          location: events["event"][i]["details"]["location"],
-          description: events["event"][i]["details"]["description"],
-          color: events["event"][i]["details"]["color"],
-          id: events["event"][i]["id"],
-          eventMandatory: events["event"][i]["details"]["eventMandatory"],
-          audienceLevel: events["event"][i]["details"]["audienceLevel"],
-        };
-        eventResult.push(temp);
-      }
-    }
+    
+    // Get schedule and regular events from database
+    this.getEvents();
 
     // Getting recurring events from database
     // recurringEventList
+    const recurringEventResult = [];
+    const recurringEventOverwriteResult = [];
 
     onSnapshot(doc(db, "recurring_events", auth.currentUser.uid), (doc) => {
       let recurringEvents = doc.data();
@@ -347,7 +357,6 @@ export default class App extends Component {
       });
     });
 
-    this.checkList(eventResult); //Checks for events that go over multiple days and corrects it
     this.combineAllListsForCalendar(); // Combine list, calendarEventList, and athleticEventsList into one list "totalList"
 
     const userDocRef = doc(db, "users", auth.currentUser.uid);
@@ -482,6 +491,70 @@ export default class App extends Component {
     this.setState({ monthViewData: temp });
   };
 
+  changeColor = async (id, category) => {
+    if (category == EventCategory.SCHOOLCOURSE) {
+      console.log("school")
+      const userDocRef = doc(db, "schedule", auth.currentUser.uid);
+      const res = await userSchedule(auth.currentUser?.uid);
+      console.log(res)
+      for (let i = 0; i < res["classes"].length; i++) {
+        if (res["classes"][i]["id"] == id) {
+          let tempItem = res["classes"][i];
+          tempItem.class.color = this.state.eventColor;
+          tempItem.id = uuid.v4();
+          await this.handleEventCompletion(category, id, false);
+          await updateDoc(userDocRef, { classes: arrayUnion(tempItem) })
+            .then(() => {
+              console.log("Successfully updated class event color.");
+            })
+            .catch((error) => {
+              console.error("Error updating class event color", error);
+            });
+        
+        }
+      }
+    } else {
+      console.log("event")
+      const userDocRef = doc(db, "events", auth.currentUser.uid);
+      const res = await getUserEvents(auth.currentUser?.uid);
+      for (let i = 0; i < res["event"].length; i++) {
+        if (res["event"][i]["id"] == id) {
+          let tempItem = res["event"][i];
+          tempItem.details.color = this.state.eventColor;
+          tempItem.id = uuid.v4();
+          await this.handleEventCompletion(category, id, false);
+          await updateDoc(userDocRef, { event: arrayUnion(tempItem) })
+            .then(() => {
+              console.log("Successfully updated class event color.");
+            })
+            .catch((error) => {
+              console.error("Error updating class event color", error);
+            });
+        }
+      }
+    }
+  }
+
+  handleMultipleSelectedChange = async (option, newValue) => {
+    console.log(option)
+    switch(option) {
+      case "delete":
+        for (let i = 0; i < this.state.selectedList.length; i++) {
+          console.log("deleting")
+          await this.handleEventCompletion(this.state.selectedList[i][1], this.state.selectedList[i][0], false);
+        }
+        this.setState({selectedList: []})
+        this.getEvents();
+        break;
+      case "color":
+        this.setState({colorPicker: true})
+        break;
+      case "category":
+      case "privacy":
+      default:
+        alert("Invalid option")
+    }
+  }
   handleEventRepetitionCount = (value) => {
     if (value > 6) {
       alert("Need to be less than 7");
@@ -728,9 +801,19 @@ export default class App extends Component {
 
   openCompareScreen = () => {};
 
-  updateColor = (color) => {
+  updateColor = async (color) => {
     this.setState({ eventColor: color });
     this.setState({ colorPicker: false });
+
+    //will only run if multiple events are selected to change color
+    if (this.state.selectedList.length > 0) {
+      for (let i = 0; i < this.state.selectedList.length; i++) {
+        await this.changeColor(this.state.selectedList[i][0], this.state.selectedList[i][1]);
+      }
+      this.setState({selectedList: []});
+      this.getEvents(); //refresh calendar ui
+    }
+   
   };
 
   setHolidaySettings = () => {
@@ -1274,22 +1357,38 @@ export default class App extends Component {
     { useNativeDriver: false }
   );
 
-  handleEventCompletion = async (category, id) => {
-    console.log(category);
-    console.log(id);
+  handleMultipleSelected = (selected, id, category) => {
+    var newList = []; //must use new array otherwise calendar does not re-render because it doesn't recognize the state has changed
+    if (selected) {
+      this.state.selectedList.push([id, category]);
+      newList = this.state.selectedList;
+      this.setState({selectedList: newList})
+    }
+    else {
+      const removeIndex = this.state.selectedList.indexOf([id, category]);
+      this.state.selectedList.splice(removeIndex, 1);
+      newList = this.state.selectedList;
+      this.setState({selectedList: newList})
+    }
+    console.log(this.state.selectedList, this.state.selectedList.length)
+  }
+
+  handleEventCompletion = async (category, id, completePoints) => {
     if (category == EventCategory.SCHOOLCOURSE) {
       const userDocRef = doc(db, "schedule", auth.currentUser.uid);
       const res = await userSchedule(auth.currentUser?.uid);
       for (let i = 0; i < res["classes"].length; i++) {
         if (res["classes"][i]["id"] == id) {
-          updateDoc(userDocRef, { classes: arrayRemove(res["classes"][i]) })
+          await updateDoc(userDocRef, { classes: arrayRemove(res["classes"][i]) })
             .then(() => {
               console.log("Successfully removed class from schedule.");
             })
             .catch((error) => {
               console.error("Error removing class from schedule", error);
             });
-          addPoints(auth.currentUser?.uid, "school", 10);
+          if (completePoints) {
+            addPoints(auth.currentUser?.uid, "school", 10);
+          }
         }
       }
     } else {
@@ -1297,18 +1396,21 @@ export default class App extends Component {
       const res = await getUserEvents(auth.currentUser?.uid);
       for (let i = 0; i < res["event"].length; i++) {
         if (res["event"][i]["id"] == id) {
-          updateDoc(userDocRef, { event: arrayRemove(res["event"][i]) })
+          await updateDoc(userDocRef, { event: arrayRemove(res["event"][i]) })
             .then(() => {
               console.log("Successfully removed event from event list.");
             })
             .catch((error) => {
               console.error("Error removing event from event list", error);
             });
-          addPoints(
-            auth.currentUser?.uid,
-            "school",
-            parseInt(res["event"][i]["details"]["point_value"], 10)
-          );
+          if (completePoints) {
+            addPoints(
+              auth.currentUser?.uid,
+              "school",
+              parseInt(res["event"][i]["details"]["point_value"], 10)
+            );
+          }
+          
         }
       }
     }
@@ -2098,7 +2200,7 @@ export default class App extends Component {
                                   this.state.calendarUIVisibilityFilter
                                 ) ? (
                                   <EventItem
-                                    key={`EITEM-${1}-${event.title}-${
+                                    key={`EITEM-${1}-${event.id}-${
                                       event.startTime
                                     }`}
                                     navigation={this.props.navigation}
@@ -2117,6 +2219,9 @@ export default class App extends Component {
                                     clickable={true}
                                     handleEventCompletion={
                                       this.handleEventCompletion
+                                    }
+                                    handleMultipleSelected= {
+                                      this.handleMultipleSelected
                                     }
                                     eventMandatory={event.eventMandatory}
                                     audienceLevel={event.audienceLevel}
@@ -2141,7 +2246,7 @@ export default class App extends Component {
                                           daySelected.value
                                         ) ? (
                                         <EventItem
-                                          key={`EITEM-${1}-${event.title}-${
+                                          key={`EITEM-${1}-${event.id}-${
                                             event.startTime
                                           }-${this.state.weekViewStartDate}-${
                                             daySelected.value
@@ -2289,6 +2394,7 @@ export default class App extends Component {
                           Sat
                         </Text>
                       </View>
+                      
                       <FlatList
                         scrollEnabled={false}
                         data={this.state.monthViewData}
@@ -2372,7 +2478,9 @@ export default class App extends Component {
                     </View>
                   );
               }
-            })()}
+            })()} 
+          {
+            this.state.selectedList.length == 0 ? 
             <View style={{ flexDirection: "row", margin: 8 }}>
               <ScrollView horizontal={true}>
                 <BouncyCheckbox
@@ -2446,6 +2554,55 @@ export default class App extends Component {
                 />
               </TouchableOpacity>
             </View>
+            :
+            <View style={{ flexDirection: "row", margin: 8 }}>
+            <ScrollView horizontal={true}>
+
+              <Text style ={{fontSize:18, paddingRight:15, paddingTop:8, textAlign: "center", color: "blue"}}>
+                {this.state.selectedList.length} selected
+              </Text>
+              <View style={{ paddingTop:8, paddingLeft:5}}>
+                <Icon name="trash-o" size={20} />
+              </View>
+              <Button
+                onPress={() =>  {
+                  this.handleMultipleSelectedChange("delete");
+                }}
+                color="black"
+                title="Delete"
+              />
+              <View style={{ paddingTop: 8, paddingLeft:7 }}>
+                <Icon name="eye-slash" size={20} />
+              </View>
+              <Button
+                //onPress={() => this.setState({ colorPicker: true })}
+                color="black"
+                title="Private"
+              />
+              <View style={{ paddingTop: 8, paddingLeft:7 }}>
+                <Icon name="edit" size={20} />
+              </View>
+              <Button
+                //onPress={() => this.setState({ colorPicker: true })}
+                color="black"
+                title="Category"
+              />
+              <View style={{ paddingTop: 8, paddingLeft:7 }}>
+                <Icon name="square" size={20} />
+              </View>
+              <Button
+                onPress={() =>  {
+                  this.handleMultipleSelectedChange("color");
+                }}
+                color="black"
+                title="Color"
+              />
+              </ScrollView>
+              </View>
+
+          }
+
+
           </View>
         </View>
       </SafeAreaView>

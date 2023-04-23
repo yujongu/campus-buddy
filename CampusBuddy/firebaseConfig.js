@@ -173,6 +173,7 @@ export async function addSchedule(user_token, data) {
         location: element.location,
         startTime: element.startTime,
         endTime: element.endTime,
+        color: element.color //need to test
       };
       const data = {
         id: uuid.v4(),
