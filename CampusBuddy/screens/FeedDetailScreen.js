@@ -386,10 +386,14 @@ export default function FeedDetailScreen({ navigation, route }) {
   };
 
   useEffect(() => {
+    load_comment_profiles();
+  }, [numComments, numLike])
+
+  useEffect(() => {
     load_data();
     load_current_user_profile();
     load_comment_profiles();
-  }, [numComments, numLike]);
+  }, []);
 
   return (
     <SafeAreaView style={{ flex: 1 }}>
