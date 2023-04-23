@@ -30,6 +30,7 @@ import {
   where,
 } from "firebase/firestore";
 
+// Working on process
 
 export default function GroupScreen({ navigation, route }) {
 
