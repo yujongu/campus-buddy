@@ -563,7 +563,7 @@ export async function addPoints(user_token, category, points) {
       ["points." + category]: oldPoints + points,
     });
     console.log("Successfully updated points: ", docRef.id);
-    if (Math.floor((oldPoints / 100)) != (Math.floor((oldPoints + points) / 100)) && querySnapShot.data().points_privacy == true){ //They passed a multiple of 100 and their points are public
+    if (Math.floor((oldPoints / 100)) != (Math.floor((oldPoints + points) / 100)) && querySnapShot.data().points_privacy == false){ //They passed a multiple of 100 and their points are public
       recordLevelUp(user_token, category, oldPoints+points);
     }
   } catch (e) {
