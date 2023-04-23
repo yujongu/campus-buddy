@@ -19,7 +19,7 @@ export default class EventItem extends React.Component {
     this.setState({ showEvent: false });
     //console.log(this.props.id)
 
-    this.props.handleEventCompletion(this.props.category, this.props.id);
+    this.props.handleEventCompletion(this.props.category, this.props.id, true);
   };
 
   calculateEventHeight(startTime, endTime) {
@@ -46,9 +46,9 @@ export default class EventItem extends React.Component {
     return temp;
   };
 
-  multipleSelector = (id) => {
+  multipleSelector = (id, category) => {
     this.setState({multipleSelected: !this.state.multipleSelected});
-    this.props.handleMultipleSelected(this.state.multipleSelected, id);
+    this.props.handleMultipleSelected(this.state.multipleSelected, id, category);
   }
 
   showDetails(
@@ -151,7 +151,7 @@ export default class EventItem extends React.Component {
 
     return (
       <Pressable
-        onLongPress={() => this.multipleSelector(id)}
+        onLongPress={() => this.multipleSelector(id, category)}
         onPress={() =>
           this.showDetails(
             id,
