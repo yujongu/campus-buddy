@@ -1,6 +1,6 @@
 import { StyleSheet, Text, View } from "react-native";
-import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import FeedScreen from "./screens/FeedScreen";
+import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import SearchScreen from "./screens/SearchScreen";
 import CalendarScreen from "./screens/CalendarScreen";
 import CompareScreen from "./screens/CompareScreen";
@@ -12,6 +12,7 @@ import FontAwesome from "react-native-vector-icons/FontAwesome";
 import AntDesign from "react-native-vector-icons/AntDesign";
 import { Colors } from "./constants/colors";
 import { TouchableOpacity } from "react-native";
+import BoardScreen from "./screens/BoardScreen";
 
 const Tab = createBottomTabNavigator();
 
@@ -33,6 +34,20 @@ export default function HomeScreen() {
           tabBarActiveTintColor: Colors.primary,
           tabBarInactiveTintColor: Colors.darkGrey,
           headerShown: false,
+        }}
+      />
+      <Tab.Screen
+        name="Board"
+        component={BoardScreen}
+        options={{
+          tabBarLabel: "Board",
+          tabBarIcon: ({ focused, color, size }) => {
+            let iconName;
+            iconName = focused ? "user-circle" : "user-circle-o";
+            return <FontAwesome name={iconName} color={color} size={26} />;
+          },
+          tabBarActiveTintColor: Colors.primary,
+          tabBarInactiveTintColor: Colors.darkGrey,
         }}
       />
       <Tab.Screen

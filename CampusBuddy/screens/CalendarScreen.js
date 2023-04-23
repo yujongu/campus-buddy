@@ -70,6 +70,7 @@ import ThemeContext from "../components/ui/ThemeContext";
 import themeCon from "../components/ui/theme";
 import RadioButton from "../components/ui/RadioButton";
 import { AudienceLevelType } from "../constants/AudienceLevelType";
+import { addBoardData } from '../firebaseConfig';
 
 const leftHeaderWidth = 50;
 const topHeaderHeight = 60;
@@ -449,6 +450,8 @@ export default class App extends Component {
         eventMandatory: this.state.eventMandatory,
         audienceLevel: selectedAudienceLevel,
       });
+
+      addBoardData(auth.currentUser?.uid, this.points, EventCategory.EVENT);
 
       const message =
         EventCategory.EVENT +

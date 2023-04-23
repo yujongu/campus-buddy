@@ -32,10 +32,10 @@ export default function SettingsScreen({ navigation, route })  {
       });
   }
 
-  const togglePointsSwitch = () => {
+  const togglePointsSwitch = async () => {
     setPoints(previousState => !previousState);
     const userDocRef = doc(db, "users", auth.currentUser.uid);
-    updateDoc(userDocRef, { points_privacy: isPointsPublic })
+    await updateDoc(userDocRef, { points_privacy: isPointsPublic })
       .then(() => {
         console.log("Points privacy updated successfully.");
       })

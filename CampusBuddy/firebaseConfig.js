@@ -232,6 +232,35 @@ export async function addGoal(user_token, id, points, category, deadline) {
   }
 }
 
+export async function addBoardData(
+  user_token,
+  category,
+  point_value
+) {
+  const docRef = doc(db, "board", user_token);
+  const x = {
+    category: category,
+    point_value: point_value,
+  };
+  try {
+    const querySnapShot = await getDoc(doc(db, "board", user_token));
+    if (!querySnapShot.exists()) {
+      setDoc(docRef, {
+        data: [],
+      });
+    }
+    const data = {
+      category: category,
+      point_value: point_value,
+    };
+    updateDoc(docRef, { data: arrayUnion(data) });
+    console.log("Board doc written with ID: ", docRef.id);
+  } catch (e) {
+    console.error("Error adding board data: ", e);
+  }
+}
+
+
 export async function addEvent(
   user_token,
   title,
