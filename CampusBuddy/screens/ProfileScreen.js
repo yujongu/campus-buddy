@@ -13,6 +13,7 @@ import {
   TouchableOpacity,
   FlatList,
   ActivityIndicator,
+  ScrollView
 } from "react-native";
 import Setting from 'react-native-vector-icons/Feather';
 import Img_icon from 'react-native-vector-icons/Ionicons';
@@ -22,6 +23,7 @@ import Entypo from 'react-native-vector-icons/Entypo'
 import { auth, db, fetchProfilePicture, userSchedule } from "../firebaseConfig";
 import { EmailAuthProvider } from "firebase/auth";
 import { signInWithEmailAndPassword } from "firebase/auth";
+import Block from "react-native-vector-icons/Entypo";
 import { signOut } from "firebase/auth";
 import {
   updateDoc,
@@ -29,6 +31,7 @@ import {
   arrayRemove,
   onSnapshot,
   arrayUnion,
+  getDoc,
 } from "firebase/firestore";
 import React, { useState, useEffect, useContext } from "react";
 import { SHA256 } from "crypto-js";
@@ -38,8 +41,8 @@ import { EventRegister } from "react-native-event-listeners";
 import { PointsProgressBar } from "../components/ui/PointsProgressBar";
 import * as ImagePicker from "expo-image-picker";
 import { getDownloadURL, ref, uploadBytesResumable } from "firebase/storage";
-import { storage } from "../firebaseConfig";
-import { ScrollView } from "react-native-gesture-handler";
+import { storage, getUserId } from "../firebaseConfig";
+
 
 export default function ProfileScreen({ navigation, route }) {
   const [newId, setNewId] = useState("");
@@ -50,6 +53,8 @@ export default function ProfileScreen({ navigation, route }) {
   const [profilePicture, setProfilePicture] = useState(null);
   const [show, setShow] = useState(false);
   const [show_block, setShowblock] = useState(false);
+  const [blocked_list, setBlocked_list] = useState([]);
+  const [update, setUpdate] = useState(false)
 
   useEffect(() => {
     // const fetchProfilePicture = async () => {
@@ -163,7 +168,22 @@ export default function ProfileScreen({ navigation, route }) {
         console.log(hashedPassword);
       });
   };
+
+  const load_data = async () => {
+    const blockDocRef = doc(db, 'block', auth.currentUser.uid);
+    const res = await getDoc(blockDocRef);
+    var temp = []
+    res.data()["blocked_to"].forEach((user) => {
+      temp.push(user.split("/")[1])
+    })
+    setBlocked_list(temp)
+  }
+
   useEffect(() => {
+    load_data()
+  }, [show_block])
+
+  useEffect(() => {    
     const userDocRef = doc(db, "users", auth.currentUser.uid);
     const unsubscribe = onSnapshot(userDocRef, (doc) => {
       if (doc.exists()) {
@@ -180,6 +200,57 @@ export default function ProfileScreen({ navigation, route }) {
     };
   }, []);
 
+  const refresh_screen = () => {
+    setUpdate(true)
+    setTimeout(() => {
+      setUpdate(false)
+    }, 1000);
+  }
+
+  const handleUnblock = async (item) => {
+    const me = auth.currentUser?.uid+"/"+auth.currentUser?.email
+    const target_uid = await getUserId(item)
+    const target = target_uid[0] + "/" + item
+    
+    const Ref_me = doc(db, "block", auth.currentUser?.uid);
+    const Ref_target = doc(db, "block", target_uid[0]);
+
+
+
+    updateDoc(Ref_me, {
+      blocked_to: arrayRemove(target),
+    });
+
+    updateDoc(Ref_target, {
+      blocked_from: arrayRemove(me),
+    });
+
+    const index = blocked_list.indexOf(item)
+    blocked_list.splice(index, 1)
+
+    Alert.alert("Unblocked", "Successfully unblocked " + item)
+    console.log(blocked_list)
+    refresh_screen();
+  }
+
+  const renderItem = ({ item }) => {
+    return (
+      <View key={item} style={[styles.items, { borderBottomColor: mode ? 'white' : 'mode'}]}>
+        <Text style={{ color: mode ? "white" : 'black'}}>
+          {item}
+          {"\n"}
+        </Text>
+        <TouchableOpacity
+          activeOpacity={0.7}
+          onPress={() => handleUnblock(item)}
+          style={styles.touchableOpacityStyle}
+        >
+          <Block name={"block"} size={20} color={mode ? "white" : "black"} />
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
   return (
     <View style={[styles.container]}>
       <Modal
@@ -195,7 +266,17 @@ export default function ProfileScreen({ navigation, route }) {
           <View style={{backgroundColor: !mode ? 'white' : 'black', justifyContent: 'center', alignItems: 'center', width: '70%', height: '30%'}}>
             {
               show_block ? 
-              <Text>Blocked list</Text>
+                update ?
+                <ActivityIndicator />
+                :
+                <ScrollView>
+                  <Text style={{alignSelf: 'center', fontSize: 25, fontWeight: 'bold'}}>Blocked List</Text>
+                  {blocked_list.map((item) => {
+                    return (
+                      renderItem({item})
+                    )
+                  })}
+                </ScrollView>
               :
               <View style={{width: '100%', alignItems: 'center', justifyContent: 'center'}}>
                 <Text style={mode ? styles.text_w : styles.text_t}>Enter your password to delete account</Text>
@@ -384,5 +465,13 @@ const styles = StyleSheet.create({
     position: 'absolute', 
     right: "5%"
   },
-  
+  items: {
+    
+    borderBottomWidth: 1,
+    padding: 10,
+    marginVertical: 8,
+    marginHorizontal: 10,
+    flexDirection: "row",
+    justifyContent: "space-between",
+  },
 });
