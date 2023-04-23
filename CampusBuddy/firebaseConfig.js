@@ -31,7 +31,7 @@ import {
 import uuid from "react-native-uuid";
 import { FieldValue } from "firebase/firestore";
 import { AudienceLevelType } from "./constants/AudienceLevelType";
-import { JSGetDateClock } from "./helperFunctions/dateFunctions";
+import { JSGetDateClock, reverseJSGetDateClock } from "./helperFunctions/dateFunctions";
 
 // TODO: Add SDKs for Firebase products that you want to use
 // https://firebase.google.com/docs/web/setup#available-libraries
@@ -268,9 +268,7 @@ export async function addEvent(
     color: color,
     repetition: repetition,
     eventMandatory: eventMandatory,
-    audienceLevel: audienceLevel,
-    likes: [],
-    likes_count: 0
+    audienceLevel: audienceLevel
   };
   try {
     const querySnapShot = await getDoc(doc(db, "events", user_token));
@@ -827,10 +825,10 @@ export async function getFeed(user_token, user_email) {
   return eventList;
 }
 
-//Makes a new levelup entry and records it under the user document.
+//Makes a new levelup entry and records it under a document with the userid.
 export async function recordLevelUp(user_token, category, points){
   const docRef = doc(db, "levelups", user_token);
-  const level = Math.floor(points / 100);
+  const level = Math.floor(points / 100); 
   const time = new Date();
   try {
 
@@ -843,16 +841,23 @@ export async function recordLevelUp(user_token, category, points){
     };
     if (querySnapShot.exists()) {
       const oldLevelUps = querySnapShot.data();
-      let newLevelUps = [];
-      querySnapShot.data().forEach((element) => { //go through all of that user's levelups.
-        if (element.category === category){ //if the levelup has a matching category
-          newLevelUps.push(data);           //add the new levelup instead
+      let newCat = 0;                       //Tracks whether the category had a levelup already, 0 is false.
+      let newLevelUps = [];                 //make a new list of levelups, initially empty
+      querySnapShot.data().forEach((element) => { //go through all of that user's levelups. 
+        if (element.category === category){ //if the levelup has a matching category 
+          newLevelUps.push(data);           //add the new levelup instead 
+          newCat = 1;
         }
-        else{                               //otherwise,
-          newLevelUps.push(element);        //add the existing levelup.
+        else{                               //otherwise, 
+          newLevelUps.push(element);        //add the existing levelup. 
         }
       })
-      updateDoc(docRef, { levelup: newLevelUps });
+
+      if(newCat == 0){                      //If new levelup didn't replace an old levelup, 
+        newLevelUps.push(data);             //append it to the end.
+      }
+
+      updateDoc(docRef, { levelup: newLevelUps }); //replace the existing list of levelups with the new list.
     }
     else{
       setDoc(docRef, {
@@ -892,3 +897,17 @@ export async function getUserEmail(user_token){
     console.error("Error getting user's email: ", e);
   }
 }
+
+export async function updateEvent()
+
+/* Move this somewhere else
+export const sortEventsByDate = (events) => {
+  events.sort((a,b) => {
+    let eventA = new Date(reverseJSGetDateClock(a.startTime));
+    let eventB = new Date(reverseJSGetDateClock(b.startTime));
+    return eventA - eventB;
+  });
+
+  return events;
+}
+*/
