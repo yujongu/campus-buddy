@@ -293,6 +293,35 @@ export async function addEvent_maybe(
   }
 }
 
+export async function updateEventPrivacy (user_token, id, privacy) {
+  const userDocRef = doc(db, "events", user_token);
+  const res = await getUserEvents(user_token);
+  console.log(res)
+  for (let i = 0; i < res["event"].length; i++) {
+    console.log(res["event"][i]["id"], id)
+    if (res["event"][i]["id"] == id) {
+      console.log("match")
+      await updateDoc(userDocRef, { event: arrayRemove(res["event"][i]) })
+        .then(() => {
+          console.log("Successfully removed old event.");
+        })
+        .catch((error) => {
+          console.error("Error removing old event", error);
+        });
+      let tempItem = res["event"][i];
+      tempItem.details.audienceLevel = privacy;
+      tempItem.id = uuid.v4();
+      await updateDoc(userDocRef, { event: arrayUnion(tempItem) })
+        .then(() => {
+          console.log("Successfully updated event privacy.");
+        })
+        .catch((error) => {
+          console.error("Error updating event privacy", error);
+        });
+      break;
+    }
+  }
+}
 export async function addBoardData(
   user_token,
   point_value, 

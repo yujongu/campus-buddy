@@ -27,6 +27,7 @@ import ForgotPassword from "./screens/ForgotPassword";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import FeedDetailScreen from "./screens/FeedDetailScreen";
 import LeaderboardScreen from "./screens/LeaderboardScreen";
+import GroupDetailsScreen from "./screens/GroupDetailsScreen";
 
 const Stack = createNativeStackNavigator();
 
@@ -80,6 +81,11 @@ export default function App() {
               name="Friend"
               component={FriendScreen}
               options={{ headerShown: true }}
+            />
+            <Stack.Screen
+              name="GroupDetailsScreen"
+              component={GroupDetailsScreen}
+              options={{ headerShown: false }}
             />
             <Stack.Screen
               name="ForgotEmail"

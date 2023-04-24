@@ -38,7 +38,7 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 import AntDesign from "react-native-vector-icons/AntDesign";
 import { MultiSelect } from "react-native-element-dropdown";
 import { ScrollView } from "react-native-gesture-handler";
-import GroupScreen from "./GroupScreen";
+import { Colors } from "../constants/colors";
 
 var all = [];
 
@@ -470,6 +470,13 @@ export default class FriendScreen extends Component {
     );
   };
 
+  navigateToGroupDetailsScreen = (groupName) => {
+    this.props.navigation.navigate("GroupDetailsScreen", {
+      groupName: groupName,
+      groupMembers: this.state.data[groupName],
+    });
+  };
+
   floating_handler = (name) => {
     //if user clicked add_group button then show group modal
     if (name === "add_group") {
@@ -482,9 +489,31 @@ export default class FriendScreen extends Component {
     return (
       <View>
         <View>
-          <Text style={{ marginLeft: 10, fontSize: 20, marginTop: -30 }}>
-            {"\n\n" + group + ":"}
-          </Text>
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              marginTop: 20,
+              justifyContent: "space-between",
+              marginLeft: 10,
+              marginRight: 20,
+            }}
+          >
+            <Text numberOfLines={1} style={{ fontSize: 20 }}>
+              {group + ":"}
+            </Text>
+            <Pressable
+              style={{
+                padding: 10,
+                backgroundColor: Colors.grey,
+                borderRadius: "50%",
+              }}
+              onPress={() => this.navigateToGroupDetailsScreen(group)}
+            >
+              <AntDesign color="black" name="arrowright" size={20} />
+            </Pressable>
+          </View>
+
           {/* <FlatList 
               data = {this.state.data[group]}
               renderItem={({item}) => this.renderItem2(item, group)}
