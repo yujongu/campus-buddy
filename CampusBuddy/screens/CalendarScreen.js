@@ -97,6 +97,32 @@ const data = [
     value: EventRepetitionType.WEEKLY.value,
   },
 ];
+const category = [
+  {
+    label: EventCategory.SPORTS,
+    value: EventCategory.SPORTS
+  },
+  {
+    label: EventCategory.SCHOOLCOURSE,
+    value: EventCategory.SCHOOLCOURSE
+  },
+  {
+    label: EventCategory.ARTS,
+    value: EventCategory.ARTS
+  },
+  {
+    label: EventCategory.CAREER,
+    value: EventCategory.CAREER
+  },
+  {
+    label: EventCategory.SOCIAL,
+    value: EventCategory.SOCIAL
+  },
+  {
+    label: EventCategory.EVENT,
+    value: EventCategory.EVENT
+  }
+]
 const repetitionHasEndData = [
   {
     label: "Forever",
@@ -207,6 +233,7 @@ export default class App extends Component {
       monthViewData: [],
       calendarView: CalendarViewType.WEEK, //On click, go above a level. Once date is clicked, go into week view.
       eventMandatory: false,
+      selectedCategory: EventCategory.EVENT
     };
   }
   getEvents = async () => {
@@ -276,6 +303,7 @@ export default class App extends Component {
   }
 
   async componentDidMount() {
+    console.log(Object.values(EventCategory))
     //Get the athletic events
     this.getAthleticEvents();
     //Set the calendar UI start date
@@ -631,7 +659,7 @@ export default class App extends Component {
             eventETime,
             this.location,
             this.description,
-            EventCategory.EVENT,
+            this.state.selectedCategory,
             this.points,
             eventColor,
             0,
@@ -1841,6 +1869,40 @@ export default class App extends Component {
                         value={this.state.eventRepetition}
                         onChange={(item) => {
                           this.setState({ eventRepetition: item.value });
+                        }}
+                      />
+                    </View>
+                  </View>
+                  <View
+                    style={{
+                      flex: 1,
+                      flexDirection: "row",
+                      alignItems: "center",
+                      marginHorizontal: 25,
+                      marginVertical: 8,
+                    }}
+                  >
+                    <View>
+                      <Text>Category</Text>
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Dropdown
+                        style={{
+                          paddingLeft: 10,
+                          marginHorizontal: 10,
+                          height: 50,
+                          borderBottomColor: "grey",
+                          borderBottomWidth: 0.5,
+                        }}
+                        maxHeight={200}
+                        placeholderStyle={{ fontSize: 16 }}
+                        placeholder="Select a Category"
+                        labelField="label"
+                        valueField="value"
+                        data={category}
+                        value={this.state.selectedCategory}
+                        onChange={(item) => {
+                          this.setState({selectedCategory: item.label})
                         }}
                       />
                     </View>
