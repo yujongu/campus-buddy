@@ -11,7 +11,7 @@ import {
   StatusBar,
   ScrollView,
 } from "react-native";
-import { StyleSheet, Image, FlatList, View, Pressable } from "react-native";
+
 import ThemeContext from "../components/ui/ThemeContext";
 import { SafeAreaView } from "react-native-safe-area-context";
 import LogoBanner from "../assets/LogoBanner.png";
@@ -24,10 +24,8 @@ import { Colors } from "../constants/colors";
 import { ActivityIndicator } from "react-native";
 import { RadioButton } from "react-native-paper";
 import { doc, onSnapshot } from "firebase/firestore";
-
-import { auth, getFeed } from "../firebaseConfig";
 import AntDesignicons from "react-native-vector-icons/AntDesign";
-import { Colors } from "../constants/colors";
+
 export default function FeedScreen({ navigation, route }) {
   const theme = useContext(ThemeContext);
   const [modal, setModal] = useState(false);
@@ -86,6 +84,7 @@ export default function FeedScreen({ navigation, route }) {
         <Text style={{ fontSize: 15 }}>{item.category}</Text>
       </View>
     );
+  }
   const navigateToLeaderboardPage = () => {
     navigation.navigate("LeaderboardScreen");
     // navigation.navigate("FeedDetails", {
@@ -314,6 +313,7 @@ export default function FeedScreen({ navigation, route }) {
     </SafeAreaView>
   );
 }
+
 
 const styles = StyleSheet.create({
   container: {
