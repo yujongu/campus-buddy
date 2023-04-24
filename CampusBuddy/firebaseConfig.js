@@ -890,7 +890,7 @@ export async function getLevelUps(user_token){
 
 //gets all the levelups that ought to be displayed on the feed (Friend's levelups from the past week.) 
 //Structurally similar to joey's getFeed function.
-export async function feedLevelUps(user_token, user_email){
+export async function feedLevelUps(user_token, user_email) {
   //fetch all friends' tokens and email addresses
   const friendsSnapshot = await getDoc(doc(db, "friend_list", user_email));
 
@@ -926,17 +926,27 @@ export async function feedLevelUps(user_token, user_email){
         for (levelupItem of doc.data()){
           const levelupDetail = levelupItem.details;
           const expiry = levelupDetail.time.getDate() + 7;
-          if(curr.getDate <= expiry.getDate){
-             const x = {
-              
-             }
+          if(curr.getDate <= expiry.getDate){ //If the levelup is less than one week old.
+            const x = {
+              id: levelupDetail.id,
+              category: levelupDetail.category,
+              level: levelupDetail.level,
+              time: JSGetDateClock(
+                new Date(levelupDetail.time.seconds * 1000),
+                false
+              ),
+            };
+            levelupList.push(x);
           }
 
         }
-      });
+      })();
+      levelupPromises.push(promise);
     }
-  }
+  });
+  await Promise.all(levelupPromises);
 
+  return levelupList;
 }
 
 export async function getUserEmail(user_token){
