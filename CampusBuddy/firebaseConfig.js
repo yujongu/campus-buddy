@@ -612,6 +612,35 @@ export async function addPoints(user_token, category, points) {
   }
 }
 
+export async function getLeaderboard() {
+  const boardsnapshot = await getDocs(collection(db, "board"));
+  const eventPromises = []; // Create an array to hold all the promises
+
+  let fList = new Map();
+
+  const usersSnapshot = await getDocs(collection(db, "users"));
+  usersSnapshot.forEach((doc) => {
+    fList.set(doc.id, doc.data().id);
+  });
+  const result = [];
+  boardsnapshot.forEach((doc) => {
+    const promise = (async () => {
+      const data = await fetchProfilePicture(doc.id);
+      const x = {
+        userToken: doc.id,
+        userId: fList.get(doc.id),
+        profilePic: data,
+        point: doc.data().point,
+      };
+      result.push(x);
+    })();
+    eventPromises.push(promise); // Add the promise to the array
+  });
+
+  await Promise.all(eventPromises); // Wait for all promises to resolve
+  return result;
+}
+
 export async function getFeed(user_token, user_email) {
   //Fetch all friends' token and email address
   const friendsSnapshot = await getDoc(doc(db, "friend_list", user_email));

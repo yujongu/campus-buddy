@@ -1,12 +1,13 @@
 import { useEffect, useState, useContext } from "react";
-import { StyleSheet, Image, FlatList } from "react-native";
+import { StyleSheet, Image, FlatList, View, Pressable } from "react-native";
 import ThemeContext from "../components/ui/ThemeContext";
 import { SafeAreaView } from "react-native-safe-area-context";
 import LogoBanner from "../assets/LogoBanner.png";
 import LogoBannerWhite from "../assets/LogoBannerWhite.png";
 import FeedItem from "../components/FeedItem";
 import { auth, getFeed } from "../firebaseConfig";
-
+import AntDesignicons from "react-native-vector-icons/AntDesign";
+import { Colors } from "../constants/colors";
 export default function FeedScreen({ navigation, route }) {
   const theme = useContext(ThemeContext);
 
@@ -23,6 +24,25 @@ export default function FeedScreen({ navigation, route }) {
     getFeedData(auth.currentUser?.uid, auth.currentUser?.email);
   }, []);
 
+  const navigateToLeaderboardPage = () => {
+    navigation.navigate("LeaderboardScreen");
+    // navigation.navigate("FeedDetails", {
+    //   navigation,
+    //   eventId,
+    //   userId,
+    //   profilePic,
+    //   title,
+    //   description,
+    //   location,
+    //   startTime,
+    //   endTime,
+    //   color,
+    //   pointValue,
+    //   category,
+    //   eventMandatory,
+    // });
+  };
+
   return (
     <SafeAreaView style={[{ flex: 1, backgroundColor: theme.background }]}>
       {/* <StatusBar style={theme.statusBarColor} /> */}
@@ -33,8 +53,26 @@ export default function FeedScreen({ navigation, route }) {
           resizeMode: "contain",
           height: 30,
           marginBottom: 10,
+          width: 250,
+          alignSelf: "center",
         }}
       />
+      <Pressable
+        style={{
+          position: "absolute",
+          right: 20,
+          top: 40,
+          backgroundColor: Colors.grey,
+          padding: 10,
+          borderRadius: "50%",
+        }}
+        onPress={() => {
+          navigateToLeaderboardPage();
+        }}
+      >
+        <AntDesignicons name="Trophy" size={30} />
+      </Pressable>
+
       <FlatList
         data={feedData}
         renderItem={({ item }) => (
