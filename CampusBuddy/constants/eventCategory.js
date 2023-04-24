@@ -4,6 +4,9 @@ export const EventCategory = {
   SCHOOLCOURSE: "School Course",
   EVENT: "Event",
   SPORTS: "Sports Event",
+  ARTS: "Arts",
+  SOCIAL: "Social",
+  CAREER: "Career"
 };
 
 export const EventCategoryColors = {
