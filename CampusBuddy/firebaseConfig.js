@@ -928,6 +928,7 @@ export async function feedLevelUps(user_token, user_email) {
           const expiry = levelupDetail.time.getDate() + 7;
           if(curr.getDate <= expiry.getDate){ //If the levelup is less than one week old.
             const x = {
+              profilePic: data,
               id: levelupDetail.id,
               category: levelupDetail.category,
               level: levelupDetail.level,
