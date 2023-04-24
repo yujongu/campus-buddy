@@ -888,6 +888,57 @@ export async function getLevelUps(user_token){
   }
 }
 
+//gets all the levelups that ought to be displayed on the feed (Friend's levelups from the past week.) 
+//Structurally similar to joey's getFeed function.
+export async function feedLevelUps(user_token, user_email){
+  //fetch all friends' tokens and email addresses
+  const friendsSnapshot = await getDoc(doc(db, "friend_list", user_email));
+
+  let fList = new Map();
+  
+  let friendList = [];
+  if(friendsSnapshot.exists()) {
+    friendsSnapshot.data().favorite.forEach((fav) => {
+      friendList.push(fav.user);
+    });
+    friendsSnapshot.data().friends.forEach((friend) => {
+      friendList.push(friend.user);
+    });
+  }
+
+  const userSnapshot = await getDocs(collection(db, "users"));
+  usersSnapshot.forEach((doc) => {
+    if (friendList.indexOf(doc.data().email) != -1){
+      fList.set(doc.id, doc.data().email);
+    }
+  });
+
+  let levelupList = [];
+  const levelupSnapshot = await getDocs(collection(db, "level_ups"));
+  const levelupPromises = []; //Create an array to hold all the promises.
+
+  const curr = new Date;      //the time as of now.
+  levelupSnapshot.forEach((doc) => {
+    if(doc.data().points_privacy != false){
+      const promise = (async () => {
+        const data = await fetchProfilePicture(doc.id);
+        
+        for (levelupItem of doc.data()){
+          const levelupDetail = levelupItem.details;
+          const expiry = levelupDetail.time.getDate() + 7;
+          if(curr.getDate <= expiry.getDate){
+             const x = {
+              
+             }
+          }
+
+        }
+      });
+    }
+  }
+
+}
+
 export async function getUserEmail(user_token){
   var res = [];
   try {
@@ -895,7 +946,7 @@ export async function getUserEmail(user_token){
     res.push(querySnapShot.email);
     return res;
   } catch(e) {
-    console.error("Error getting user's email: ", e);
+    console.error("Error getting user's email: ", e); 
   }
 }
 
