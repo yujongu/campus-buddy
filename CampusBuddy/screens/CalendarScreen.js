@@ -159,6 +159,7 @@ export default class App extends Component {
         listEvents: true,
         athleticEvents: false,
         calendarEvents: true,
+        groupEvents: false,
       },
       list: [],
       calendarEventList: [],
@@ -2639,7 +2640,7 @@ export default class App extends Component {
                   }}
                 />
                 {/* Group Events*/}
-                <BouncyCheckbox
+                {/* <BouncyCheckbox
                   size={35}
                   fillColor="#66cc00"
                   unfillColor="#FFFFFF"
@@ -2649,16 +2650,16 @@ export default class App extends Component {
                   textStyle={{ textDecorationLine: "none" }}
                   style={{ marginRight: 25 }}
                   isChecked={
-                    this.state.calendarUIVisibilityFilter.calendarEvents
+                    this.state.calendarUIVisibilityFilter.groupEvents
                   }
                   onPress={(isChecked) => {
                     var filterState = {
                       ...this.state.calendarUIVisibilityFilter,
                     };
-                    filterState.calendarEvents = isChecked;
+                    filterState.groupEvents = isChecked;
                     this.setState({ calendarUIVisibilityFilter: filterState });
                   }}
-                />
+                /> */}
               </ScrollView>
               <TouchableOpacity
                 activeOpacity={0.7}
