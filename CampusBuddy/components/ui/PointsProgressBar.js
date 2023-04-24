@@ -11,7 +11,8 @@ import {
 } from "react-native";
 import { auth, db } from "../../firebaseConfig";
 import { doc, onSnapshot } from "firebase/firestore";
-
+import Ant from "react-native-vector-icons/AntDesign";
+import { TouchableOpacity } from "react-native";
 import ThemeContext from "./ThemeContext";
 import themeCon from "./theme";
 
@@ -24,6 +25,9 @@ export class PointsProgressBar extends React.Component {
       //categories are not implemented yet, just using two dummy categories for now
       schoolPoints: 0,
       fitnessPoints: 0,
+      likes: 0,
+      liked: false,
+      numLike: 30,
     };
   }
 
@@ -46,11 +50,30 @@ export class PointsProgressBar extends React.Component {
     );
   };
 
+  incrementLike = () => {
+    this.setState((prevState) => ({
+      liked: !prevState.liked,
+      numLike: prevState.liked ? prevState.numLike - 1 : prevState.numLike + 1,
+    }));
+  };
+
+
   render() {
     const { theme } = this.context;
 
     return (
       <View style={[styles.container]}>
+        <Text style={{ fontSize: 20 }}>{this.state.numLike}</Text>
+        <TouchableOpacity
+          style={{ marginLeft: 5 }}
+          onPress={() => this.incrementLike()}
+        >
+          {this.state.liked ? (
+            <Ant name="like1" size={25} color={"black"} />
+          ) : (
+            <Ant name="like2" size={25} color={"black"} />
+          )}
+        </TouchableOpacity>
         <Text
           style={{
             fontSize: 20,
@@ -68,6 +91,7 @@ export class PointsProgressBar extends React.Component {
           School Courses
         </Text>
         <View style={[styles.row]}>
+
           <Text
             style={[styles.categoryText, { color: themeCon[theme].fontColor }]}
           >
@@ -152,5 +176,16 @@ const styles = StyleSheet.create({
   },
   row: {
     flexDirection: "row",
+  },
+  likeButton: {
+    backgroundColor: '#007AFF',
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 5,
+    marginTop: 10,
+  },
+  likeButtonText: {
+    fontSize: 16,
+    color: 'white',
   },
 });

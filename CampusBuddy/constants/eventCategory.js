@@ -8,5 +8,5 @@ export const EventCategory = {
 
 export const EventCategoryColors = {
   SCHOOLCOURSE: "#D1FF96",
-  SPORTS: Colors.grey,
+  SPORTS: Colors.primary,
 };

@@ -1,162 +1,348 @@
-import { StatusBar } from "expo-status-bar";
 import { useEffect, useState, useContext } from "react";
-import { Button, StyleSheet, Text, View, Image, FlatList } from "react-native";
-import { Switch } from "react-native-gesture-handler";
+import {
+  StyleSheet,
+  Image,
+  FlatList,
+  Modal,
+  Pressable,
+  TouchableOpacity,
+  View,
+  Text,
+  StatusBar,
+  ScrollView,
+} from "react-native";
+
 import ThemeContext from "../components/ui/ThemeContext";
-import theme from "../components/ui/theme";
 import { SafeAreaView } from "react-native-safe-area-context";
 import LogoBanner from "../assets/LogoBanner.png";
 import LogoBannerWhite from "../assets/LogoBannerWhite.png";
 import FeedItem from "../components/FeedItem";
-import { EventCategory } from "../constants/eventCategory";
-import { JSGetDateClock } from "../helperFunctions/dateFunctions";
+import { auth, db, getFeed, getMaybe } from "../firebaseConfig";
+import Feather from "react-native-vector-icons/Feather";
+import Material from "react-native-vector-icons/MaterialIcons";
+import { Colors } from "../constants/colors";
+import { ActivityIndicator } from "react-native";
+import { RadioButton } from "react-native-paper";
+import { doc, onSnapshot } from "firebase/firestore";
+import AntDesignicons from "react-native-vector-icons/AntDesign";
 
 export default function FeedScreen({ navigation, route }) {
   const theme = useContext(ThemeContext);
+  const [modal, setModal] = useState(false);
+  const [filter, setFilter] = useState(false);
+  const [category, setCategory] = useState(null);
+  const [maybe, setMaybe] = useState([]);
 
   const LogoImg = theme.theme == "light" ? LogoBanner : LogoBannerWhite;
 
-  const FEEDDATA = [
-    {
-      id: "bd7acbea-c1b1-46c2-aed5-3aad53abb28ba",
-      userId: "NAALKSDJFLSDJFKLS",
-      profilePic: null,
-      title:
-        "Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged. It was popularised in the 1960s with the release of Letraset sheets containing Lorem Ipsum passages, and more recently with desktop publishing software like Aldus PageMaker including versions of Lorem Ipsum.",
-      description: "This is a description",
-      location: "At school",
-      startTime: JSGetDateClock(new Date(), false),
-      endTime: JSGetDateClock(new Date(), false),
-      color: "#74b9ff",
-      pointValue: "100",
-      category: EventCategory.EVENT,
-      eventMandatory: false,
-    },
-    {
-      id: "bd7acbea-c1b1-46c2-aed5-3ad5s3abb28ba",
-      userId: "NAALKSDJFLSDJFKLS",
-      profilePic: "https://picsum.photos/200",
-      // profilePic: null,
-      title: "This is title",
-      description: "This is a description",
-      location: "At home",
-      startTime: JSGetDateClock(new Date(), false),
-      endTime: JSGetDateClock(new Date(), false),
-      color: "#74b9ff",
-      pointValue: "100",
-      category: EventCategory.EVENT,
-      eventMandatory: false,
-    },
-    {
-      id: "bd7acbea-c1b1-46c2-aed5d-3ad53abb28ba",
-      userId: "NAALKSDJFLSDJFKLS",
-      profilePic: null,
-      title:
-        "Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged. It was popularised in the 1960s with the release of Letraset sheets containing Lorem Ipsum passages, and more recently with desktop publishing software like Aldus PageMaker including versions of Lorem Ipsum.",
-      description: "This is a description",
-      location: "At school",
-      startTime: JSGetDateClock(new Date(), false),
-      endTime: JSGetDateClock(new Date(), false),
-      color: "#74b9ff",
-      pointValue: "100",
-      category: EventCategory.EVENT,
-      eventMandatory: false,
-    },
-    {
-      id: "bd7acbea-c1b1-46c2-aed5-f3ad53abb28ba",
-      userId: "NAALKSDJFLSDJFKLS",
-      profilePic: null,
-      title: "This is the title",
-      description:
-        "Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged. It was popularised in the 1960s with the release of Letraset sheets containing Lorem Ipsum passages, and more recently with desktop publishing software like Aldus PageMaker including versions of Lorem Ipsum.",
-      location: "My house",
-      startTime: JSGetDateClock(new Date(), false),
-      endTime: JSGetDateClock(new Date(), false),
-      color: "#74b9ff",
-      pointValue: "100",
-      category: EventCategory.EVENT,
-      eventMandatory: false,
-    },
-    {
-      id: "bd7acbea-c1b1-46gc2-aed5-3ad53abb28ba",
-      userId: "NAALKSDJFLSDJFKLS",
-      profilePic: "https://picsum.photos/200",
-      title: "This is the title",
-      description: "This is a description",
-      location: "At school",
-      startTime: JSGetDateClock(new Date(), false),
-      endTime: JSGetDateClock(new Date(), false),
-      color: "#74b9ff",
-      pointValue: "100",
-      category: EventCategory.EVENT,
-      eventMandatory: false,
-    },
-    {
-      id: "bd7acbea-c1b1-46c2-aed5-3ad153abb28ba",
-      userId: "NAALKSDJFLSDJFKLS",
-      profilePic: "https://picsum.photos/200",
-      title:
-        "Lorem Ipsum is simply dummy tsrambled it to make a type specimen book. It has survived not only five cctronicset sheets containing Lorem Ipsum passages, and more recently with desktop publishing software like Aldus PageMaker including versions of Lorem Ipsum.",
-      description: "This is a description",
-      location: "At home",
-      startTime: JSGetDateClock(new Date(), false),
-      endTime: JSGetDateClock(new Date(), false),
-      color: "#74b9ff",
-      pointValue: "100",
-      category: EventCategory.EVENT,
-      eventMandatory: false,
-    },
-    {
-      id: "bd7acbea-c1b1-46c2-aed5-36ad53abb28ba",
-      userId: "NAALKSDJFLSDJFKLS",
-      profilePic: "https://picsum.photos/200",
-      title: "This is the title",
-      description: "This is a description",
-      location: "At school",
-      startTime: JSGetDateClock(new Date(), false),
-      endTime: JSGetDateClock(new Date(), false),
-      color: "#74b9ff",
-      pointValue: "100",
-      category: EventCategory.EVENT,
-      eventMandatory: false,
-    },
-  ];
+
+  const [feedData, setFeedData] = useState([]);
+
+  
+  
+  useEffect(() => {
+    const docRef = doc(db, "events_maybe", auth.currentUser?.uid);
+    const getFeedData = async (currUserUid, currUserEmail) => {
+      const fData = await getFeed(currUserUid, currUserEmail);
+      setFeedData(fData);
+      return fData;
+    };
+    const snap = onSnapshot(docRef, (doc) => console.log(doc.data()))
+    const getMaybeData = async (currUserUid, currUserEmail) => {
+      const fData = await getMaybe(currUserUid, currUserEmail);
+      setMaybe(fData);
+
+      return fData;
+    };
+
+    getMaybeData(auth.currentUser?.uid, auth.currentUser?.email);
+    getFeedData(auth.currentUser?.uid, auth.currentUser?.email);
+    
+  }, []);
+
+  const renderItem = ({ item }) => {
+    return (
+      <View
+        key={item.category}
+        style={{
+          flexDirection: "row",
+          justifyContent: "center",
+          alignItems: "center",
+        }}
+      >
+        <RadioButton
+          value={item.category}
+          status={category === item.category ? "checked" : "unchecked"}
+          onPress={() => {
+            if (category === item.category) {
+              setCategory(null);
+            } else {
+              setCategory(item.category);
+            }
+          }}
+        />
+        <Text style={{ fontSize: 15 }}>{item.category}</Text>
+      </View>
+    );
+  }
+  const navigateToLeaderboardPage = () => {
+    navigation.navigate("LeaderboardScreen");
+    // navigation.navigate("FeedDetails", {
+    //   navigation,
+    //   eventId,
+    //   userId,
+    //   profilePic,
+    //   title,
+    //   description,
+    //   location,
+    //   startTime,
+    //   endTime,
+    //   color,
+    //   pointValue,
+    //   category,
+    //   eventMandatory,
+    // });
+  };
+
   return (
     <SafeAreaView style={[{ flex: 1, backgroundColor: theme.background }]}>
       {/* <StatusBar style={theme.statusBarColor} /> */}
-      <Image
-        source={LogoImg}
+      <Modal
+        transparent={true}
+        visible={modal}
+        // onRequestClose={() => {
+        //   setModal(!modal);
+        // }}
+      >
+        <View
+          style={{
+            flex: 1,
+            justifyContent: "center",
+            alignItems: "center",
+            marginTop: 22,
+          }}
+        >
+          <View
+            style={{
+              margin: 20,
+              backgroundColor: "white",
+              borderRadius: 20,
+              alignItems: "center",
+              shadowColor: "#000",
+              shadowOffset: {
+                width: 0,
+                height: 2,
+              },
+              shadowOpacity: 0.25,
+              shadowRadius: 4,
+              elevation: 5,
+              width: "80%",
+              height: "80%",
+            }}
+          >
+            <Text style={{ fontWeight: "bold", fontSize: 20 }}>
+              Pending Event
+            </Text>
+            <FlatList
+              style={{width: '80%', height: '100%'}}
+              data={maybe.filter(
+                (id, index, self) =>
+                  index ===
+                  self.findIndex((p) => p.id === id.id)
+              )}
+              renderItem={({ item }) => (
+                <FeedItem
+                navigation={navigation}
+                eventId={item.id}
+                userId={item.userId}
+                profilePic={item.profilePic}
+                title={item.title}
+                description={item.description}
+                location={item.location}
+                startTime={item.startTime}
+                endTime={item.endTime}
+                color={item.color}
+                pointValue={item.pointValue}
+                category={item.category}
+                eventMandatory={item.eventMandatory}
+              />
+              )}
+              keyExtractor={(item) => item.id}
+            />
+            <Pressable
+              style={{
+                marginHorizontal: 5,
+                backgroundColor: Colors.fourth,
+                padding: 10,
+                borderRadius: 12,
+                position: "absolute",
+                bottom: 0,
+              }}
+              onPress={() => setModal(!modal)}
+            >
+              <Text style={{ fontSize: 18, color: "white" }}>Close</Text>
+            </Pressable>
+          </View>
+        </View>
+      </Modal>
+      <View style={{flexDirection: 'row', justifyContent: 'space-between'}}>
+        <Image
+          source={LogoImg}
+          style={{
+            width: null,
+            resizeMode: "contain",
+            height: 30,
+            marginBottom: 10,
+            width: 250,
+            alignSelf: "center",
+          }}
+        />
+        <View style={{flexDirection: 'row'}}>
+          <TouchableOpacity
+            onPress={() => {
+              setFilter(!filter);
+            }}
+          >
+            <Feather name="filter" size={30} />
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={{ marginHorizontal: 3 }}
+            onPress={() => {
+              setModal(!modal);
+              setFilter(false);
+            }}
+          >
+            <Material name="pending-actions" size={30} />
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={{ marginHorizontal: 3 }}
+            onPress={() => {
+              navigateToLeaderboardPage();
+            }}
+          >
+            <AntDesignicons name="Trophy" size={30} />
+          </TouchableOpacity>
+        </View>
+      </View>
+      {filter ? (
+        <View
+          style={{
+            margin: 20,
+            backgroundColor: "white",
+            borderRadius: 20,
+            shadowColor: "#000",
+            shadowOffset: {
+              width: 0,
+              height: 2,
+            },
+            shadowOpacity: 0.25,
+            shadowRadius: 4,
+            elevation: 5,
+            flexDirection: "row",
+            alignItems: "center",
+          }}
+        >
+          <Text style={{ fontWeight: "bold", fontSize: 15 }}>
+            Choose category:
+          </Text>
+          {feedData.length > 0 ? (
+            <FlatList
+              data={feedData.filter(
+                (category, index, self) =>
+                  index ===
+                  self.findIndex((p) => p.category === category.category)
+              )}
+              renderItem={(item) => renderItem(item)}
+              showsHorizontalScrollIndicator={true}
+              horizontal
+            />
+          ) : (
+            <ActivityIndicator />
+          )}
+        </View>
+      ) : null}
+      <View
         style={{
-          width: null,
-          resizeMode: "contain",
-          height: 30,
-          marginBottom: 10,
+          flexDirection: "row",
+          position: "absolute",
+          right: "2%",
+          top: StatusBar.currentHeight,
         }}
-      />
+      >
+        {/* <TouchableOpacity
+          onPress={() => {
+            setFilter(!filter);
+          }}
+        >
+          <Feather name="filter" size={30} />
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={{ marginHorizontal: 3 }}
+          onPress={() => {
+            setModal(!modal);
+            setFilter(false);
+          }}
+        >
+          <Material name="pending-actions" size={30} />
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={{ marginHorizontal: 3 }}
+          onPress={() => {
+            navigateToLeaderboardPage();
+          }}
+        >
+          <AntDesignicons name="Trophy" size={30} />
+        </TouchableOpacity> */}
+      </View>
+
       <FlatList
-        data={FEEDDATA}
-        renderItem={({ item }) => (
-          <FeedItem
-            navigation={navigation}
-            eventId={item.id}
-            userId={item.userId}
-            profilePic={item.profilePic}
-            title={item.title}
-            description={item.description}
-            location={item.location}
-            startTime={item.startTime}
-            endTime={item.endTime}
-            color={item.color}
-            pointValue={item.pointValue}
-            category={item.category}
-            eventMandatory={item.eventMandatory}
-          />
-        )}
+        data={feedData}
+        renderItem={({ item }) =>
+          category !== null ? (
+            category === item.category ? (
+              
+                <FeedItem
+                  navigation={navigation}
+                  eventId={item.id}
+                  userId={item.userId}
+                  profilePic={item.profilePic}
+                  title={item.title}
+                  description={item.description}
+                  location={item.location}
+                  startTime={item.startTime}
+                  endTime={item.endTime}
+                  color={item.color}
+                  pointValue={item.pointValue}
+                  category={item.category}
+                  eventMandatory={item.eventMandatory}
+                />
+            ) : null
+          ) : (
+            <FeedItem
+              navigation={navigation}
+              eventId={item.id}
+              userId={item.userId}
+              profilePic={item.profilePic}
+              title={item.title}
+              description={item.description}
+              location={item.location}
+              startTime={item.startTime}
+              endTime={item.endTime}
+              color={item.color}
+              pointValue={item.pointValue}
+              category={item.category}
+              eventMandatory={item.eventMandatory}
+            />
+          )
+        }
         keyExtractor={(item) => item.id}
       />
     </SafeAreaView>
   );
 }
+
 
 const styles = StyleSheet.create({
   container: {

@@ -1,6 +1,6 @@
 import { StyleSheet, Text, View } from "react-native";
-import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import FeedScreen from "./screens/FeedScreen";
+import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import SearchScreen from "./screens/SearchScreen";
 import CalendarScreen from "./screens/CalendarScreen";
 import CompareScreen from './screens/CompareScreen';
@@ -25,6 +25,7 @@ export default function HomeScreen() {
         name="Feed"
         component={FeedScreen}
         options={{
+          unmountOnBlur: true,
           tabBarLabel: "Feed",
           tabBarIcon: ({ focused, color, size }) => {
             let iconName;
@@ -42,6 +43,7 @@ export default function HomeScreen() {
         name="Search"
         component={SearchScreen}
         options={{
+          unmountOnBlur: true,
           tabBarLabel: "Search",
           tabBarIcon: ({ focused, color, size }) => {
             let iconName;
