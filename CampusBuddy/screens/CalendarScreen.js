@@ -10,6 +10,7 @@ import {
   Alert,
   Linking,
   TouchableOpacity,
+  TouchableWithoutFeedback,
   Dimensions,
   Modal,
   Animated,
@@ -35,7 +36,7 @@ import {
   getUserRecurringEvents,
   addBoardData,
 } from "../firebaseConfig";
-import { auth, db, userSchedule, getUserEvents } from "../firebaseConfig";
+import { auth, db, userSchedule, getUserEvents, updateEventPrivacy } from "../firebaseConfig";
 import EventItem from "../components/ui/EventItem";
 import { even, IconButton } from "@react-native-material/core";
 import TopHeaderDays from "../components/ui/TopHeaderDays";
@@ -168,6 +169,7 @@ export default class App extends Component {
           selected: false,
         },
       ],
+      selectPrivacy: false,
       colorPicker: false,
       eventColor: "#8b9cb5",
       value: null,
@@ -536,6 +538,7 @@ export default class App extends Component {
     }
   }
 
+
   handleMultipleSelectedChange = async (option, newValue) => {
     console.log(option)
     switch(option) {
@@ -552,6 +555,11 @@ export default class App extends Component {
         break;
       case "category":
       case "privacy":
+        for (let i = 0; i < this.state.selectedList.length; i++) {
+          await updateEventPrivacy(auth.currentUser.uid,this.state.selectedList[i][0],newValue);
+        }
+        this.setState({selectedList: []})
+        break;
       default:
         alert("Invalid option")
     }
@@ -2578,7 +2586,7 @@ export default class App extends Component {
                 <Icon name="eye-slash" size={20} />
               </View>
               <Button
-                //onPress={() => this.setState({ colorPicker: true })}
+                onPress={() => this.setState({ selectPrivacy: true })}
                 color="black"
                 title="Private"
               />
@@ -2602,9 +2610,53 @@ export default class App extends Component {
               />
               </ScrollView>
               </View>
-
           }
+          <Modal
+            animationType="slide"
+            transparent={true}
+            visible={this.state.selectPrivacy}
+          >
+             <TouchableOpacity 
+              style={styles.container2} 
+              activeOpacity={1}
+              onPressOut={() => {this.setState({selectPrivacy: false})}}
+            >
+               <TouchableWithoutFeedback>
+            <View
+              style={{
+                position: "absolute",
+                right: 80,
+                bottom: 130,
+                backgroundColor: "white",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <TouchableOpacity
+                onPress={() =>
+                  this.handleMultipleSelectedChange("privacy", AudienceLevelType.PRIVATE.value)
+                }
+              >
+              <Text style={styles.privacyOption}>My eyes only</Text> 
+              </TouchableOpacity> 
+              <TouchableOpacity
+              onPress={() =>
+                this.handleMultipleSelectedChange("privacy", AudienceLevelType.FRIENDS.value)
+              }
+              >
+              <Text style={styles.privacyOption}>Friends only</Text> 
+              </TouchableOpacity>
+              <TouchableOpacity
+              onPress={() =>
+                this.handleMultipleSelectedChange("privacy", AudienceLevelType.PUBLIC.value)
+              }>
+              <Text style={styles.privacyOption}>Public</Text> 
+              </TouchableOpacity> 
 
+            </View>
+            </TouchableWithoutFeedback>
+            </TouchableOpacity>
+          </Modal>
 
           </View>
         </View>
@@ -2761,11 +2813,17 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
+  container2: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+  },
   daysWithDate: {
     width: dailyWidth,
     flexDirection: "column",
     alignItems: "center",
   },
+  
   days: {
     textAlign: "center",
     fontSize: 16,
@@ -2785,6 +2843,13 @@ const styles = StyleSheet.create({
     right: 30,
     bottom: 30,
     zIndex: 1,
+  },
+  privacyOption: {
+    fontSize:15,
+    color:"black",
+    borderBottomColor: "gray",
+    borderBottomWidth:1,
+    padding:8
   },
   modalView: {
     position: "absolute",
