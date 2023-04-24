@@ -33,6 +33,7 @@ import {
   addPoints,
   addRepeatingEvent,
   getUserRecurringEvents,
+  addBoardData,
 } from "../firebaseConfig";
 import { auth, db, userSchedule, getUserEvents } from "../firebaseConfig";
 import EventItem from "../components/ui/EventItem";
@@ -655,6 +656,8 @@ export default class App extends Component {
             eventMandatory: this.state.eventMandatory,
             audienceLevel: selectedAudienceLevel,
           });
+          
+          addBoardData(auth.currentUser?.uid, this.points, EventCategory.EVENT);
 
           const message =
             EventCategory.EVENT +

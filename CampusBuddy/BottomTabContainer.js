@@ -1,6 +1,6 @@
 import { StyleSheet, Text, View } from "react-native";
-import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import FeedScreen from "./screens/FeedScreen";
+import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import SearchScreen from "./screens/SearchScreen";
 import CalendarScreen from "./screens/CalendarScreen";
 import CompareScreen from "./screens/CompareScreen";

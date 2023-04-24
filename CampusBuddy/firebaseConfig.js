@@ -12,6 +12,7 @@ import {
   Timestamp,
   arrayRemove,
   deleteDoc,
+  increment,
   onSnapshot,
   query,
   runTransaction,
@@ -291,6 +292,36 @@ export async function addEvent_maybe(
     console.error("Error adding event: ", e);
   }
 }
+
+export async function addBoardData(
+  user_token,
+  point_value, 
+  category,
+) {
+  const docRef = doc(db, "board", user_token);
+  const x = {
+    category: category,
+    point_value: point_value,
+  };
+  try {
+    const querySnapShot = await getDoc(doc(db, "board", user_token));
+    if (!querySnapShot.exists()) {
+      setDoc(docRef, {
+        data: [],
+        point: point_value
+      });
+    }
+    const data = {
+      category: category,
+      point_value: point_value,
+    };
+    updateDoc(docRef, { data: arrayUnion(data), point: increment(point_value) });
+    console.log("Board doc written with ID: ", docRef.id);
+  } catch (e) {
+    console.error("Error adding board data: ", e);
+  }
+}
+
 
 export async function addEvent(
   user_token,
@@ -661,6 +692,35 @@ export async function addPoints(user_token, category, points) {
   } catch (e) {
     console.error("Error updating points: ", e);
   }
+}
+
+export async function getLeaderboard() {
+  const boardsnapshot = await getDocs(collection(db, "board"));
+  const eventPromises = []; // Create an array to hold all the promises
+
+  let fList = new Map();
+
+  const usersSnapshot = await getDocs(collection(db, "users"));
+  usersSnapshot.forEach((doc) => {
+    fList.set(doc.id, doc.data().id);
+  });
+  const result = [];
+  boardsnapshot.forEach((doc) => {
+    const promise = (async () => {
+      const data = await fetchProfilePicture(doc.id);
+      const x = {
+        userToken: doc.id,
+        userId: fList.get(doc.id),
+        profilePic: data,
+        point: doc.data().point,
+      };
+      result.push(x);
+    })();
+    eventPromises.push(promise); // Add the promise to the array
+  });
+
+  await Promise.all(eventPromises); // Wait for all promises to resolve
+  return result;
 }
 
 export async function getFeed(user_token, user_email) {

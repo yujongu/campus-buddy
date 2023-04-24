@@ -11,6 +11,7 @@ import {
   StatusBar,
   ScrollView,
 } from "react-native";
+import { StyleSheet, Image, FlatList, View, Pressable } from "react-native";
 import ThemeContext from "../components/ui/ThemeContext";
 import { SafeAreaView } from "react-native-safe-area-context";
 import LogoBanner from "../assets/LogoBanner.png";
@@ -24,6 +25,9 @@ import { ActivityIndicator } from "react-native";
 import { RadioButton } from "react-native-paper";
 import { doc, onSnapshot } from "firebase/firestore";
 
+import { auth, getFeed } from "../firebaseConfig";
+import AntDesignicons from "react-native-vector-icons/AntDesign";
+import { Colors } from "../constants/colors";
 export default function FeedScreen({ navigation, route }) {
   const theme = useContext(ThemeContext);
   const [modal, setModal] = useState(false);
@@ -82,6 +86,23 @@ export default function FeedScreen({ navigation, route }) {
         <Text style={{ fontSize: 15 }}>{item.category}</Text>
       </View>
     );
+  const navigateToLeaderboardPage = () => {
+    navigation.navigate("LeaderboardScreen");
+    // navigation.navigate("FeedDetails", {
+    //   navigation,
+    //   eventId,
+    //   userId,
+    //   profilePic,
+    //   title,
+    //   description,
+    //   location,
+    //   startTime,
+    //   endTime,
+    //   color,
+    //   pointValue,
+    //   category,
+    //   eventMandatory,
+    // });
   };
 
   return (
@@ -172,6 +193,8 @@ export default function FeedScreen({ navigation, route }) {
           resizeMode: "contain",
           height: 30,
           marginBottom: 10,
+          width: 250,
+          alignSelf: "center",
         }}
       />
       {filter ? (
@@ -236,7 +259,16 @@ export default function FeedScreen({ navigation, route }) {
         >
           <Material name="pending-actions" size={30} />
         </TouchableOpacity>
+        <TouchableOpacity
+          style={{ marginHorizontal: 3 }}
+          onPress={() => {
+            navigateToLeaderboardPage();
+          }}
+        >
+          <AntDesignicons name="Trophy" size={30} />
+        </TouchableOpacity>
       </View>
+
       <FlatList
         data={feedData}
         renderItem={({ item }) =>
