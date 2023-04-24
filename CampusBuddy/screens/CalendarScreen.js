@@ -2507,6 +2507,7 @@ export default class App extends Component {
             this.state.selectedList.length == 0 ? 
             <View style={{ flexDirection: "row", margin: 8 }}>
               <ScrollView horizontal={true}>
+                {/* School Course */}
                 <BouncyCheckbox
                   size={35}
                   fillColor="#ff7675"
@@ -2525,6 +2526,7 @@ export default class App extends Component {
                     this.setState({ calendarUIVisibilityFilter: filterState });
                   }}
                 />
+                {/** Sports **/}
                 <BouncyCheckbox
                   size={35}
                   fillColor="#0984e3"
@@ -2545,11 +2547,33 @@ export default class App extends Component {
                     this.setState({ calendarUIVisibilityFilter: filterState });
                   }}
                 />
+                {/* Event */}
                 <BouncyCheckbox
                   size={35}
                   fillColor="#6c5ce7"
                   unfillColor="#FFFFFF"
                   text={EventCategory.EVENT}
+                  iconStyle={{ margin: 2 }}
+                  innerIconStyle={{ borderWidth: 2 }}
+                  textStyle={{ textDecorationLine: "none" }}
+                  style={{ marginRight: 25 }}
+                  isChecked={
+                    this.state.calendarUIVisibilityFilter.calendarEvents
+                  }
+                  onPress={(isChecked) => {
+                    var filterState = {
+                      ...this.state.calendarUIVisibilityFilter,
+                    };
+                    filterState.calendarEvents = isChecked;
+                    this.setState({ calendarUIVisibilityFilter: filterState });
+                  }}
+                />
+                {/* Group Events*/}
+                <BouncyCheckbox
+                  size={35}
+                  fillColor="#66cc00"
+                  unfillColor="#FFFFFF"
+                  text={EventCategory.GROUP}
                   iconStyle={{ margin: 2 }}
                   innerIconStyle={{ borderWidth: 2 }}
                   textStyle={{ textDecorationLine: "none" }}

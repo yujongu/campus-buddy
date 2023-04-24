@@ -549,6 +549,7 @@ export async function addGroup(groupName, groupAuthor) {
       const docRef = await addDoc(collection(db, "groups"), {
         groupName,
         memberList: [groupAuthor],
+        privacy: true
       });
       // console.log("Group created with docref id: ", docRef.id);
       return docRef.id;
