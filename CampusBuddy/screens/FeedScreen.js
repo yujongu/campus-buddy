@@ -185,17 +185,46 @@ export default function FeedScreen({ navigation, route }) {
           </View>
         </View>
       </Modal>
-      <Image
-        source={LogoImg}
-        style={{
-          width: null,
-          resizeMode: "contain",
-          height: 30,
-          marginBottom: 10,
-          width: 250,
-          alignSelf: "center",
-        }}
-      />
+      <View style={{flexDirection: 'row', justifyContent: 'space-between'}}>
+        <Image
+          source={LogoImg}
+          style={{
+            width: null,
+            resizeMode: "contain",
+            height: 30,
+            marginBottom: 10,
+            width: 250,
+            alignSelf: "center",
+          }}
+        />
+        <View style={{flexDirection: 'row'}}>
+          <TouchableOpacity
+            onPress={() => {
+              setFilter(!filter);
+            }}
+          >
+            <Feather name="filter" size={30} />
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={{ marginHorizontal: 3 }}
+            onPress={() => {
+              setModal(!modal);
+              setFilter(false);
+            }}
+          >
+            <Material name="pending-actions" size={30} />
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={{ marginHorizontal: 3 }}
+            onPress={() => {
+              navigateToLeaderboardPage();
+            }}
+          >
+            <AntDesignicons name="Trophy" size={30} />
+          </TouchableOpacity>
+        </View>
+      </View>
       {filter ? (
         <View
           style={{
@@ -241,7 +270,7 @@ export default function FeedScreen({ navigation, route }) {
           top: StatusBar.currentHeight,
         }}
       >
-        <TouchableOpacity
+        {/* <TouchableOpacity
           onPress={() => {
             setFilter(!filter);
           }}
@@ -265,7 +294,7 @@ export default function FeedScreen({ navigation, route }) {
           }}
         >
           <AntDesignicons name="Trophy" size={30} />
-        </TouchableOpacity>
+        </TouchableOpacity> */}
       </View>
 
       <FlatList
