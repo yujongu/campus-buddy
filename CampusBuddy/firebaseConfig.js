@@ -8,7 +8,15 @@ import {
 } from "firebase/auth";
 import { getDownloadURL, getStorage, ref } from "firebase/storage";
 import { EmailAuthProvider, credential } from "firebase/auth";
-import { arrayRemove, deleteDoc, query, where } from "firebase/firestore";
+import {
+  arrayRemove,
+  deleteDoc,
+  increment,
+  onSnapshot,
+  query,
+  runTransaction,
+  where,
+} from "firebase/firestore";
 import {
   getFirestore,
   collection,
@@ -23,6 +31,8 @@ import {
 } from "firebase/firestore";
 import uuid from "react-native-uuid";
 import { FieldValue } from "firebase/firestore";
+import { AudienceLevelType } from "./constants/AudienceLevelType";
+import { JSGetDateClock } from "./helperFunctions/dateFunctions";
 
 // TODO: Add SDKs for Firebase products that you want to use
 // https://firebase.google.com/docs/web/setup#available-libraries
@@ -164,6 +174,7 @@ export async function addSchedule(user_token, data) {
         location: element.location,
         startTime: element.startTime,
         endTime: element.endTime,
+        color: element.color //need to test
       };
       const data = {
         id: uuid.v4(),
@@ -234,8 +245,8 @@ export async function addGoal(user_token, id, points, category, deadline) {
 
 export async function addBoardData(
   user_token,
+  point_value, 
   category,
-  point_value
 ) {
   const docRef = doc(db, "board", user_token);
   const x = {
@@ -247,13 +258,14 @@ export async function addBoardData(
     if (!querySnapShot.exists()) {
       setDoc(docRef, {
         data: [],
+        point: point
       });
     }
     const data = {
       category: category,
       point_value: point_value,
     };
-    updateDoc(docRef, { data: arrayUnion(data) });
+    updateDoc(docRef, { data: arrayUnion(data), point: increment(point_value) });
     console.log("Board doc written with ID: ", docRef.id);
   } catch (e) {
     console.error("Error adding board data: ", e);
@@ -277,18 +289,6 @@ export async function addEvent(
   audienceLevel
 ) {
   const docRef = doc(db, "events", user_token);
-  // const data={
-  //   title: title,
-  //   startDate: startDate,
-  //   startTime: startTime,
-  //   endDate: endDate,
-  //   endTime: endTime,
-  //   location: location,
-  //   category: category,
-  //   point_value: point_value,
-  //   color: color,
-  //   repetition: repetition
-  // }
   const x = {
     title: title,
     startTime: startTime,
@@ -320,6 +320,61 @@ export async function addEvent(
   }
 }
 
+export async function addRepeatingEvent(
+  user_token,
+  title,
+  startTime,
+  endTime,
+  location,
+  description,
+  category,
+  point_value,
+  color,
+  repetitionPattern,
+  repetitionValue,
+  repetitionHasEndDateValue,
+  repetitionEndDate,
+  repetitionDays,
+  id,
+  eventMandatory,
+  audienceLevel
+) {
+  const docRef = doc(db, "recurring_events", user_token);
+  const x = {
+    title: title,
+    startTime: startTime,
+    endTime: endTime,
+    location: location,
+    description: description,
+    category: category,
+    point_value: point_value,
+    color: color,
+    repetitionPattern: repetitionPattern,
+    repetitionValue: repetitionValue,
+    repetitionHasEndDateValue: repetitionHasEndDateValue,
+    repetitionEndDate: repetitionEndDate,
+    repetitionDays: repetitionDays,
+    eventMandatory: eventMandatory,
+    audienceLevel: audienceLevel,
+  };
+  try {
+    const querySnapShot = await getDoc(doc(db, "recurring_events", user_token));
+    if (!querySnapShot.exists()) {
+      setDoc(docRef, {
+        event: [],
+      });
+    }
+    const data = {
+      id: id,
+      details: x,
+    };
+    updateDoc(docRef, { event: arrayUnion(data) });
+    console.log("Event doc written with ID: ", docRef.id);
+  } catch (e) {
+    console.error("Error adding event: ", e);
+  }
+}
+
 export async function getUserEvents(user_token) {
   try {
     const querySnapShot = await getDoc(doc(db, "events", user_token));
@@ -331,6 +386,77 @@ export async function getUserEvents(user_token) {
     }
   } catch (error) {
     alert("Error getting user events: " + error);
+  }
+}
+
+export async function getUserRecurringEvents(user_token) {
+  try {
+    const querySnapShot = await getDoc(doc(db, "recurring_events", user_token));
+    if (querySnapShot.exists()) {
+      const result = querySnapShot.data();
+      return result;
+    } else {
+      return null;
+    }
+  } catch (error) {
+    alert("Error getting user events: " + error);
+  }
+}
+export async function removeRecurringEvents(user_token, eventId, newEndDate) {
+  const docRef = doc(db, "recurring_events", user_token);
+  try {
+    const querySnapShot = await getDoc(doc(db, "recurring_events", user_token));
+    if (!querySnapShot.exists()) {
+      console.error("Something went wrong overwriteRecurringEvents");
+      return;
+    }
+
+    for (let i = 0; i < querySnapShot.data().event.length; i++) {
+      let item = querySnapShot.data().event[i];
+
+      if (item.id == eventId) {
+        console.log(item.details);
+        let tempItem = querySnapShot.data().event[i];
+        tempItem.details.repetitionHasEndDateValue = 1;
+        tempItem.details.repetitionEndDate = newEndDate;
+        await runTransaction(db, async (transaction) => {
+          transaction.update(docRef, { event: arrayRemove(item) });
+          transaction.update(docRef, { event: arrayUnion(tempItem) });
+        });
+      }
+    }
+    console.log("Overwrite event doc written with ID: ", docRef.id);
+  } catch (error) {
+    console.error(error);
+  }
+}
+
+export async function overwriteRecurringEvents(
+  user_token,
+  eventId,
+  overwriteDate,
+  removeFromArray
+) {
+  const docRef = doc(db, "recurring_events", user_token);
+  try {
+    const querySnapShot = await getDoc(doc(db, "recurring_events", user_token));
+    if (!querySnapShot.exists()) {
+      console.error("Something went wrong overwriteRecurringEvents");
+      return;
+    }
+    if (removeFromArray) {
+      updateDoc(docRef, {
+        cancelRecurringEvent: arrayRemove({ eventId, overwriteDate }),
+      });
+    } else {
+      updateDoc(docRef, {
+        cancelRecurringEvent: arrayUnion({ eventId, overwriteDate }),
+      });
+    }
+
+    console.log("Overwrite event doc written with ID: ", docRef.id);
+  } catch (error) {
+    console.error(error);
   }
 }
 
@@ -418,6 +544,42 @@ export async function removeMemberFromGroup(groupName, memberInfo) {
   }
 }
 
+export async function addNicknameInGroup(
+  groupName,
+  email,
+  prevNickname,
+  newNickname
+) {
+  const q = query(
+    collection(db, "groups"),
+    where("groupName", "==", groupName)
+  );
+
+  const querySnapshot = await getDocs(q);
+
+  if (querySnapshot.size == 1) {
+    const groupDocRef = doc(db, "groups", querySnapshot.docs[0].id);
+
+    try {
+      await runTransaction(db, async (transaction) => {
+        const docRef = await transaction.get(groupDocRef);
+        if (!docRef.exists()) {
+          throw "Document does not exist!";
+        }
+
+        transaction.update(groupDocRef, {
+          nicknames: arrayRemove({ nickname: prevNickname, user: email }),
+        });
+        transaction.update(groupDocRef, {
+          nicknames: arrayUnion({ nickname: newNickname, user: email }),
+        });
+      });
+    } catch (e) {
+      console.error(e);
+    }
+  }
+}
+
 export async function getUserId(email) {
   var res = [];
   try {
@@ -480,4 +642,102 @@ export async function addPoints(user_token, category, points) {
   } catch (e) {
     console.error("Error updating points: ", e);
   }
+}
+
+export async function getFeed(user_token, user_email) {
+  //Fetch all friends' token and email address
+  const friendsSnapshot = await getDoc(doc(db, "friend_list", user_email));
+
+  let fList = new Map();
+
+  //Include myself
+  let friendList = [user_email];
+  if (friendsSnapshot.exists()) {
+    friendsSnapshot.data().favorite.forEach((fav) => {
+      friendList.push(fav.user);
+    });
+    friendsSnapshot.data().friends.forEach((friend) => {
+      friendList.push(friend.user);
+    });
+  }
+
+  const usersSnapshot = await getDocs(collection(db, "users"));
+  usersSnapshot.forEach((doc) => {
+    if (friendList.indexOf(doc.data().email) != -1) {
+      fList.set(doc.id, doc.data().email);
+    }
+  });
+
+  let eventList = [];
+  const eventsSnapshot = await getDocs(collection(db, "events"));
+  const eventPromises = []; // Create an array to hold all the promises
+
+  eventsSnapshot.forEach((doc) => {
+    const promise = (async () => {
+      const data = await fetchProfilePicture(doc.id);
+
+      for (eventItem of doc.data().event) {
+        switch (eventItem.details.audienceLevel) {
+          case AudienceLevelType.PUBLIC.value:
+            const eventItemDetail = eventItem.details;
+            const x = {
+              id: eventItem.id,
+              userId: doc.id,
+              profilePic: data,
+              title: eventItemDetail.title,
+              description: eventItemDetail.description,
+              location: eventItemDetail.location,
+              startTime: JSGetDateClock(
+                new Date(eventItemDetail.startTime.seconds * 1000),
+                false
+              ),
+              endTime: JSGetDateClock(
+                new Date(eventItemDetail.endTime.seconds * 1000),
+                false
+              ),
+              color: eventItemDetail.color,
+              pointValue: eventItemDetail.point_value,
+              category: eventItemDetail.category,
+              eventMandatory: eventItemDetail.eventMandatory,
+            };
+            eventList.push(x);
+            break;
+          case AudienceLevelType.PRIVATE.value:
+            //Don't fetch private events
+            break;
+          case AudienceLevelType.FRIENDS.value:
+            if (fList.get(doc.id) != undefined) {
+              const eventItemDetail = eventItem.details;
+              const x = {
+                id: eventItem.id,
+                userId: doc.id,
+                profilePic: data,
+                title: eventItemDetail.title,
+                description: eventItemDetail.description,
+                location: eventItemDetail.location,
+                startTime: JSGetDateClock(
+                  new Date(eventItemDetail.startTime.seconds * 1000),
+                  false
+                ),
+                endTime: JSGetDateClock(
+                  new Date(eventItemDetail.endTime.seconds * 1000),
+                  false
+                ),
+                color: eventItemDetail.color,
+                pointValue: eventItemDetail.point_value,
+                category: eventItemDetail.category,
+                eventMandatory: eventItemDetail.eventMandatory,
+              };
+              eventList.push(x);
+            }
+            break;
+        }
+      }
+    })();
+    eventPromises.push(promise); // Add the promise to the array
+  });
+
+  await Promise.all(eventPromises); // Wait for all promises to resolve
+
+  return eventList;
 }

@@ -26,6 +26,7 @@ import ForgotEmail from "./screens/ForgotEmail";
 import ForgotPassword from "./screens/ForgotPassword";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import BoardScreen from "./screens/BoardScreen";
+import FeedDetailScreen from "./screens/FeedDetailScreen";
 
 const Stack = createNativeStackNavigator();
 
@@ -108,6 +109,11 @@ export default function App() {
             <Stack.Screen
               name="LeaderBoard"
               component={BoardScreen}
+              options={{ headerShown: false }}
+            ></Stack.Screen>
+            <Stack.Screen
+              name="FeedDetails"
+              component={FeedDetailScreen}
               options={{ headerShown: false }}
             ></Stack.Screen>
           </Stack.Navigator>

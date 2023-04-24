@@ -54,6 +54,7 @@ export default function HomeScreen() {
         name="Search"
         component={SearchScreen}
         options={{
+          unmountOnBlur: true,
           tabBarLabel: "Search",
           tabBarIcon: ({ focused, color, size }) => {
             let iconName;
