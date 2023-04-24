@@ -9,6 +9,7 @@ import {
 import { getDownloadURL, getStorage, ref } from "firebase/storage";
 import { EmailAuthProvider, credential } from "firebase/auth";
 import {
+  Timestamp,
   arrayRemove,
   deleteDoc,
   onSnapshot,
@@ -173,7 +174,7 @@ export async function addSchedule(user_token, data) {
         location: element.location,
         startTime: element.startTime,
         endTime: element.endTime,
-        color: element.color //need to test
+        color: element.color, //need to test
       };
       const data = {
         id: uuid.v4(),
@@ -239,6 +240,55 @@ export async function addGoal(user_token, id, points, category, deadline) {
     console.log("Goal written with ID: ", docRef.id);
   } catch (e) {
     console.error("Error adding goal: ", e);
+  }
+}
+
+export async function addEvent_maybe(
+  user_token,
+  title,
+  startTime,
+  endTime,
+  location,
+  description,
+  category,
+  point_value,
+  color,
+  repetition,
+  id,
+  eventMandatory,
+  audienceLevel,
+  profilePic
+) {
+  const docRef = doc(db, "events_maybe", user_token);
+  const x = {
+    title: title,
+    startTime: new Date(startTime),
+    endTime: new Date(endTime),
+    location: location,
+    description: description,
+    category: category,
+    point_value: point_value,
+    color: color,
+    repetition: repetition,
+    eventMandatory: eventMandatory,
+    audienceLevel: audienceLevel,
+    profilePic: profilePic
+  };
+  try {
+    const querySnapShot = await getDoc(doc(db, "events_maybe", user_token));
+    if (!querySnapShot.exists()) {
+      setDoc(docRef, {
+        event: [],
+      });
+    }
+    const data = {
+      id: id,
+      details: x,
+    };
+    updateDoc(docRef, { event: arrayUnion(data) });
+    console.log("Maybe doc written with ID: ", docRef.id);
+  } catch (e) {
+    console.error("Error adding event: ", e);
   }
 }
 
@@ -705,6 +755,75 @@ export async function getFeed(user_token, user_email) {
     })();
     eventPromises.push(promise); // Add the promise to the array
   });
+
+  await Promise.all(eventPromises); // Wait for all promises to resolve
+
+  return eventList;
+}
+
+export async function getMaybe(user_token, user_email) {
+  //Fetch all friends' token and email address
+  const friendsSnapshot = await getDoc(doc(db, "friend_list", user_email));
+
+  let fList = new Map();
+
+  //Include myself
+  let friendList = [user_email];
+  if (friendsSnapshot.exists()) {
+    friendsSnapshot.data().favorite.forEach((fav) => {
+      friendList.push(fav.user);
+    });
+    friendsSnapshot.data().friends.forEach((friend) => {
+      friendList.push(friend.user);
+    });
+  }
+
+  const usersSnapshot = await getDocs(collection(db, "users"));
+  usersSnapshot.forEach((doc) => {
+    if (friendList.indexOf(doc.data().email) != -1) {
+      fList.set(doc.id, doc.data().email);
+    }
+  });
+
+  let eventList = [];
+  const eventsSnapshot = await onSnapshot(doc(db, "events_maybe", auth.currentUser?.uid), (doc) => {
+    const promise = (async () => {
+      const data = await fetchProfilePicture(doc.id);
+
+      for (eventItem of doc.data().event) {
+
+            const eventItemDetail = eventItem.details;
+            const x = {
+              id: eventItem.id,
+              userId: doc.id,
+              profilePic: eventItemDetail.profilePic,
+              title: eventItemDetail.title,
+              description: eventItemDetail.description,
+              location: eventItemDetail.location,
+              startTime: JSGetDateClock(
+                new Date(eventItemDetail.startTime.seconds * 1000),
+                false
+              ),
+              endTime: JSGetDateClock(
+                new Date(eventItemDetail.endTime.seconds * 1000),
+                false
+              ),
+              color: eventItemDetail.color,
+              pointValue: eventItemDetail.point_value,
+              category: eventItemDetail.category,
+              eventMandatory: eventItemDetail.eventMandatory,
+            };
+            eventList.push(x);
+        }
+      }
+    )();
+    eventPromises.push(promise); // Add the promise to the array
+  });
+  const eventPromises = []; // Create an array to hold all the promises
+
+  // eventsSnapshot.forEach((doc) => {
+    
+  // });
 
   await Promise.all(eventPromises); // Wait for all promises to resolve
 

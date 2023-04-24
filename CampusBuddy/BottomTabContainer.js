@@ -22,6 +22,7 @@ export default function HomeScreen() {
         name="Feed"
         component={FeedScreen}
         options={{
+          unmountOnBlur: true,
           tabBarLabel: "Feed",
           tabBarIcon: ({ focused, color, size }) => {
             let iconName;

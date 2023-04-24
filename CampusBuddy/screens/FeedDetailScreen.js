@@ -12,7 +12,7 @@ import {
   TextInput,
 } from "react-native";
 import ThemeContext from "../components/ui/ThemeContext";
-import { SafeAreaView, useSafeAreaFrame } from "react-native-safe-area-context";
+import { SafeAreaView,} from "react-native-safe-area-context";
 import BackIcon from "react-native-vector-icons/Feather";
 import { Colors } from "../constants/colors";
 import defaultProfile from "../assets/defaultProfile.png";
@@ -31,9 +31,11 @@ import {
   db,
   fetchProfilePicture,
   getUserId,
-  getUsername,
+  addEvent,
+  addEvent_maybe
 } from "../firebaseConfig";
 import {
+  Timestamp,
   arrayRemove,
   arrayUnion,
   doc,
@@ -305,12 +307,9 @@ export default function FeedDetailScreen({ navigation, route }) {
   };
 
   const load_comment_profiles = async () => {
-    // console.log(comments)
     var temp = {};
     if (comments.length > 0) {
-      // console.log(comments);
       comments.forEach((com) => {
-        // console.log(com.user);
         temp[com.user] = null;
         if (com.coc != []) {
           com.coc.forEach((comm) => {
@@ -330,7 +329,6 @@ export default function FeedDetailScreen({ navigation, route }) {
   };
 
   const submit_comment = async () => {
-    // console.log(text)
     const docRef = doc(db, "like_comment", eventId);
     const data = {
       coc: [],
@@ -347,7 +345,6 @@ export default function FeedDetailScreen({ navigation, route }) {
   };
 
   const submit_comment2 = async (_id) => {
-    // console.log(_id)
     const docRef = doc(db, "like_comment", eventId);
     if(text2 != ""){
       const data = {
@@ -356,18 +353,8 @@ export default function FeedDetailScreen({ navigation, route }) {
       };
       temp = {}
       const docdata = await getDoc(docRef)
-      // for (const i in docdata.data()["comments"]){
-      //   console.log(docdata.data()["comments"][i])
-      // }
-      // docdata.data()["comments"][_id].coc
       let t = docdata.data()["comments"]
       t[_id].coc.push(data)
-      // const data2 = docdata.data()["comments"].map((comment) => {
-      //   if(comment._id == _id){
-      //     comment.coc.push(data)
-      //   }
-      // })
-      // console.log(data2)
       await updateDoc(docRef, {
         total_comments: increment(1),
         comments: t
@@ -394,6 +381,45 @@ export default function FeedDetailScreen({ navigation, route }) {
     load_current_user_profile();
     load_comment_profiles();
   }, []);
+
+  const attend = async () => {
+
+    await addEvent(
+      auth.currentUser?.uid,
+      title,
+      new Date(sTimeObj),
+      new Date(eTimeObj),
+      location,
+      description,
+      category,
+      pointValue,
+      color,
+      0,
+      eventId,
+      eventMandatory,
+      "Private"
+    )
+  }
+
+  const maybe = async () => {
+      await addEvent_maybe(
+        auth.currentUser?.uid,
+        title,
+        sTimeObj,
+        eTimeObj,
+        location,
+        description,
+        category,
+        pointValue,
+        color,
+        0,
+        eventId,
+        eventMandatory,
+        "Private",
+        profilePic,
+      )
+
+  }
 
   return (
     <SafeAreaView style={{ flex: 1 }}>
@@ -480,16 +506,30 @@ export default function FeedDetailScreen({ navigation, route }) {
           <Pressable onPress={() => navigation.goBack()}>
             <BackIcon name="chevron-left" size={40} color="grey"></BackIcon>
           </Pressable>
-          <Pressable
-            style={{
-              marginHorizontal: 16,
-              backgroundColor: Colors.fourth,
-              padding: 10,
-              borderRadius: 12,
-            }}
-          >
-            <Text style={{ fontSize: 18, color: "white" }}>Attend!</Text>
-          </Pressable>
+          <View style={{flexDirection: 'row'}}>
+            <Pressable
+              style={{
+                marginHorizontal: 5,
+                backgroundColor: Colors.fourth,
+                padding: 10,
+                borderRadius: 12,
+              }}
+              onPress={() => attend()}
+            >
+              <Text style={{ fontSize: 18, color: "white" }}>Attend!</Text>
+            </Pressable>
+            <Pressable
+              style={{
+                marginHorizontal: 5,
+                backgroundColor: Colors.fourth,
+                padding: 10,
+                borderRadius: 12,
+              }}
+              onPress={() => maybe()}
+            >
+              <Text style={{ fontSize: 18, color: "white" }}>Maybe?</Text>
+            </Pressable>
+          </View>
         </View>
         <View style={{ flexDirection: "column", marginTop: 10, padding: 10 }}>
           <View
