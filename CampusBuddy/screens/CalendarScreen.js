@@ -48,7 +48,7 @@ import {
   arrayRemove,
   arrayUnion
 } from "firebase/firestore";
-import { EventCategory, EventCategoryColors } from "../constants/eventCategory";
+import { EventCategory, EventCategoryColors, defaultLocation, defaultTitle } from "../constants/eventCategory";
 import { CalendarViewType } from "../constants/calendarViewType";
 import HolidaySettingModal from "../components/ui/HolidaySettingModal";
 import CalendarColorModal from "../components/ui/CalendarColorModal";
@@ -1920,6 +1920,48 @@ export default class App extends Component {
                         value={this.state.selectedCategory}
                         onChange={(item) => {
                           this.setState({selectedCategory: item.label})
+                          if(this.title == "" || this.title == undefined){
+                            switch(item.label){
+                              case("School Course"):
+                                this.setTitle(defaultTitle.SCHOOLCOURSE);
+                                break;
+                              case("Sports Event"):
+                                this.setTitle(defaultTitle.SPORTS);
+                                break;
+                              case("Arts"):
+                                this.setTitle(defaultTitle.ARTS);
+                                break;
+                              case("Social"):
+                                this.setTitle(defaultTitle.SOCIAL);
+                                break;
+                              case("Career"):
+                                this.setTitle(defaultTitle.CAREER);
+                                break;
+                              default:
+                                break; 
+                            }
+                          }
+                          if(this.location == "" || this.location == undefined){
+                            switch(item.label){
+                              case("School Course"):
+                                this.setLocation(defaultLocation.SCHOOLCOURSE);
+                                break;
+                              case("Sports Event"):
+                                this.setLocation(defaultLocation.SPORTS);
+                                break;
+                              case("Arts"):
+                                this.setLocation(defaultLocation.ARTS);
+                                break;
+                              case("Social"):
+                                this.setLocation(defaultLocation.SOCIAL);
+                                break;
+                              case("Career"):
+                                this.setLocation(defaultLocation.CAREER);
+                                break;
+                              default:
+                                break; 
+                            }
+                          }
                         }}
                       />
                     </View>
