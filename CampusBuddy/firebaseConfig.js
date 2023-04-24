@@ -258,7 +258,7 @@ export async function addBoardData(
     if (!querySnapShot.exists()) {
       setDoc(docRef, {
         data: [],
-        point: point
+        point: point_value
       });
     }
     const data = {

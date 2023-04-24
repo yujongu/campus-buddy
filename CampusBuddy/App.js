@@ -25,7 +25,6 @@ import theme from "./components/ui/theme";
 import ForgotEmail from "./screens/ForgotEmail";
 import ForgotPassword from "./screens/ForgotPassword";
 import { SafeAreaProvider } from "react-native-safe-area-context";
-import BoardScreen from "./screens/BoardScreen";
 import FeedDetailScreen from "./screens/FeedDetailScreen";
 import LeaderboardScreen from "./screens/LeaderboardScreen";
 
@@ -105,11 +104,6 @@ export default function App() {
             <Stack.Screen
               name="Goals"
               component={GoalsScreen}
-              options={{ headerShown: false }}
-            ></Stack.Screen>
-            <Stack.Screen
-              name="LeaderBoard"
-              component={BoardScreen}
               options={{ headerShown: false }}
             ></Stack.Screen>
             <Stack.Screen
