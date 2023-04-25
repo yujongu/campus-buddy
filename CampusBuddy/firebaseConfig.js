@@ -244,6 +244,23 @@ export async function addGoal(user_token, id, points, category, deadline) {
   }
 }
 
+export async function removeGoal(user_token, id) {
+  const userDocRef = doc(db, "goals", user_token);
+  const res = await getGoals(user_token);
+  for (let i = 0; i < res["goal_list"].length; i++) {
+    if (res["goal_list"][i]["id"] == id) {
+      console.log("match")
+      await updateDoc(userDocRef, { goal_list: arrayRemove(res["goal_list"][i]) })
+        .then(() => {
+          console.log("Successfully removed goal.");
+        })
+        .catch((error) => {
+          console.error("Error removing goal", error);
+        });
+      break;
+    }
+  }
+}
 export async function addEvent_maybe(
   user_token,
   title,
