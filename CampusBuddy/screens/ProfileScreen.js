@@ -311,10 +311,10 @@ export default function ProfileScreen({ navigation, route }) {
           )}
           
           <View style={{flexDirection: 'row'}}>
-            <Text style={{fontFamily: 'Roboto', fontWeight: 'bold', fontSize: 20, textDecorationLine: 'underline', color: mode ? "white" : "black"}}>
+            <Text style={{fontWeight: 'bold', fontSize: 20, textDecorationLine: 'underline', color: mode ? "white" : "black"}}>
               {id}
             </Text>
-            <Text style={{fontFamily: 'Roboto', fontSize: 20, color: mode ? "white" : "black"}}>
+            <Text style={{fontSize: 20, color: mode ? "white" : "black"}}>
             's profile page
             </Text>
           </View>
@@ -323,11 +323,11 @@ export default function ProfileScreen({ navigation, route }) {
       <ScrollView style={{flex: 4, width: '100%'}} contentContainerStyle={{alignItems: 'center', justifyContent: 'center'}}>
         <TouchableOpacity style={[styles.menu, {borderBottomColor: mode ? "white" : '#D3D3D3'}]} onPress={pickImage}>
           <Img_icon name = {"images"} size={30} color={mode ? 'white' : 'black'} style={styles.icon_left}/>
-          <Text style={[mode ? styles.text_w : styles.text_b, {fontFamily: 'Roboto'} ]}>Change Profile</Text>
+          <Text style={[mode ? styles.text_w : styles.text_b,]}>Change Profile</Text>
         </TouchableOpacity>
         <View style={[styles.menu, {borderBottomColor: mode ? "white" : '#D3D3D3'}]}>
           <Img_icon name = {'color-palette-outline'} size={30} color={mode ? 'white' : 'black'} style={styles.icon_left}/>
-          <Text style={[mode ? styles.text_w : styles.text_b, {fontFamily: 'Roboto'} ]}>Dark Mode</Text>
+          <Text style={[mode ? styles.text_w : styles.text_b ]}>Dark Mode</Text>
           <View style={styles.icon_right}>
             <Switch
               value={mode}
@@ -340,11 +340,11 @@ export default function ProfileScreen({ navigation, route }) {
         </View>
         <TouchableOpacity style={[styles.menu, {borderBottomColor: mode ? "white" : '#D3D3D3'}]} onPress={() => navigation.navigate("Settings")}>
           <Setting name = {"settings"} size={30} style={styles.icon_left} color={mode ? "white": "black"}/>
-          <Text style={[mode ? styles.text_w : styles.text_b, {fontFamily: 'Roboto'} ]}>Settings</Text>
+          <Text style={[mode ? styles.text_w : styles.text_b ]}>Settings</Text>
         </TouchableOpacity>
         <TouchableOpacity style={[styles.menu, {borderBottomColor: mode ? "white" : '#D3D3D3'}]} onPress={() => navigation.navigate("Friend")}>
           <Fri_icon name = {"user-friends"} size={30} style={styles.icon_left} color={mode ? "white": "black"}/>
-          <Text style={[mode ? styles.text_w : styles.text_b, {fontFamily: 'Roboto'} ]}>
+          <Text style={[mode ? styles.text_w : styles.text_b ]}>
               Friends page
           </Text>
         </TouchableOpacity>
@@ -353,21 +353,21 @@ export default function ProfileScreen({ navigation, route }) {
           setShowblock(true)
         }}>
           <Ant name = {"deleteuser"} size={30} style={styles.icon_left} color={mode ? "white": "black"}/>
-          <Text style={[mode ? styles.text_w : styles.text_b, {fontFamily: 'Roboto'} ]}>
+          <Text style={[mode ? styles.text_w : styles.text_b ]}>
               Blocked accounts
           </Text>
         </TouchableOpacity>
         <TouchableOpacity style={[styles.menu, {borderBottomColor: mode ? "white" : '#D3D3D3'}]} onPress={() => navigation.navigate("Goals")}>
           <Setting name = {"target"} size={30} style={styles.icon_left} color={mode ? "white": "black"}/>
-          <Text style={[mode ? styles.text_w : styles.text_b, {fontFamily: 'Roboto'} ]}>Goals</Text>
+          <Text style={[mode ? styles.text_w : styles.text_b ]}>Goals</Text>
         </TouchableOpacity>
         <TouchableOpacity style={[styles.menu, {borderBottomColor: mode ? "white" : '#D3D3D3'}]} onPress={() => setShow(!show)}>
           <Ant name = {"delete"} size={30} style={styles.icon_left} color={mode ? "white": "black"}/>
-          <Text style={[mode ? styles.text_w : styles.text_b, {fontFamily: 'Roboto'} ]}>Delete account</Text>
+          <Text style={[mode ? styles.text_w : styles.text_b ]}>Delete account</Text>
         </TouchableOpacity>
         <TouchableOpacity onPress={handleSignOut} style={[styles.menu, {borderBottomColor: mode ? "white" : '#D3D3D3'}]}>
           <Entypo name={'log-out'} size={30} style={styles.icon_left} color={mode ? "white": "black"}/>
-          <Text style={[mode ? styles.text_w : styles.text_b, {fontFamily: 'Roboto'} ]}>Sign Out</Text>
+          <Text style={[mode ? styles.text_w : styles.text_b]}>Sign Out</Text>
         </TouchableOpacity>
         <PointsProgressBar id={auth.currentUser?.uid} />
       </ScrollView>

@@ -506,7 +506,7 @@ export default class FriendScreen extends Component {
               style={{
                 padding: 10,
                 backgroundColor: Colors.grey,
-                borderRadius: "50%",
+                borderRadius: 10,
               }}
               onPress={() => this.navigateToGroupDetailsScreen(group)}
             >
