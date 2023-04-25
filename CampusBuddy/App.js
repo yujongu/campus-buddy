@@ -9,12 +9,12 @@ import {
 } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import CalendarScreen from "./screens/CalendarScreen";
-import CompareScreen from "./screens/CompareScreen";
 import HomeScreen from "./BottomTabContainer";
 import SignInScreen from "./screens/SignInScreen";
 import SignUpScreen from "./screens/SignUpScreen";
 import User_profile from "./screens/User_profileScreen";
 import SettingsScreen from "./screens/SettingsScreen";
+import CompareScreen from "./screens/CompareScreen";
 import GoalsScreen from "./screens/GoalsScreen";
 import EventDetailsScreen from "./screens/EventDetailsScreen";
 import { auth } from "./firebaseConfig";
@@ -137,3 +137,4 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
 });
+

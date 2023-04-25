@@ -1,61 +1,92 @@
 import React, { useState } from 'react';
-import { View, Text, Button, TextInput, TouchableOpacity } from 'react-native';
-//import firebase from 'firebase/app';
-//import 'firebase/database';
+import { Component } from 'react';
+import { View, Text, Button, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
+import { ListItem, SearchBar } from "react-native-elements";
+import { userList, to_request } from "../firebaseConfig";
+import { auth } from "../firebaseConfig";
 
-export default function CompareScreen({navigation}) {
-  const [schedule1, setSchedule1] = useState('');
-  const [schedule2, setSchedule2] = useState('');
+
+const renderItem = ({ item, color }) => <Item title={[item.email, item.first, item.id, item.last]} color={color} />;
+
+// Item
+const Item = ({ title, color }) => {
+  return (
+    <View style={stylses.item}>
+      <Text style={{color: color}}>
+        {title[1] + " " + title[3] + " (" + title[2] + ")"}
+        {'\n'}
+        {title[0]}
+      </Text>
+    <TouchableOpacity
+          activeOpacity={0.7}
+          onPress={() => handleRequest(title[0], title[2])}
+          style={styles.touchableOpacityStyle}>
+          <Icon name="user-plus" size={25} />
+      </TouchableOpacity>
+    </View>
+  );
+};
+
+export default function CompareScreen({props, navigation}) {
+
+  const [state, setState] = useState('');
+  const [arrayholder, setArrayHolder] = useState('');
   const [compareResult, setCompareResult] = useState('');
-  //const { navigate } = this.props.navigation;
 
   const compareSchedules = (props) => {
-    // Retrieve schedules from Firebase Realtime Database
-    // firebase
-    //   .database()
-    //   .ref('schedules')
-    //   .once('value')
-    //   .then((snapshot) => {
-    //     const schedules = snapshot.val();
-
-    //     // Here you can write your logic to compare the two schedules
-    //     // and set the result using the setCompareResult function
-    //   })
-    //   .catch((error) => {
-    //     console.error(error);
-    //   });
-    
+   
   };
 
-  //helloworld() {}
-
+  const handleRequest = (email, user_ID) => {
+  }
   
+
+  // Awaiting user list
+  const componentDidMount = async () => {
+    const res = await userList();
+    this.setState({data: res, arrayholder: res});
+  }
+
+  const searchFunction = (text) => {
+    const updatedData = arrayholder.filter((item) => {
+      const item_data = `${item.id.toUpperCase()})`;
+      const text_data = text.toUpperCase();
+      return item_data.indexOf(text_data) > -1;
+    });
+    setState({ data: updatedData, searchValue: text });
+  };
+
   return (
-    <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+    <View style={{ flex: 1, paddingTop: 50}}>
       <Button
         title = "Go Back"
         onPress = {() => navigation.navigate("Calendar")}
-        >
-        </Button>
-      <Text>Enter schedule 1:</Text>
-      <TextInput
-        style={{ borderWidth: 1, padding: 5, margin: 10 }}
-        onChangeText={setSchedule1}
-        value={schedule1}
+        />
+      <Text style={styles.enter}>Search a user to compare schedule:</Text>
+      <SearchBar 
+          placeholder="Choose a user..."
+          lightTheme
+          round
+          style={styles.searchBar}
+          onChangeText={(text) => searchFunction(text)}
+          autoCorrect={false}
       />
   
-      <Text>Enter schedule 2:</Text>
-      <TextInput
-        style={{ borderWidth: 1, padding: 5, margin: 10 }}
-        onChangeText={setSchedule2}
-        value={schedule2}
+      <Text style={styles.enter}>Search a user to compare schedule:</Text>
+      <SearchBar 
+          placeholder="Choose a user..."
+          lightTheme
+          round
+          style={styles.SearchBar}
+          onChangeText={(text) => searchFunction(text)}
+          autoCorrect={false}
       />
   
       <TouchableOpacity
-        style={{ backgroundColor: 'blue', padding: 10, margin: 10 }}
+        style={{ backgroundColor: '#CEB888', padding: 10, margin: 10 }}
         onPress={compareSchedules}
       >
-      <Text style={{ color: 'white', fontWeight: 'bold' }}>Compare Schedules</Text>
+      <Text style={styles.compareButton}>Compare Schedules</Text>
       </TouchableOpacity>
   
       {compareResult !== '' && (
@@ -68,5 +99,26 @@ export default function CompareScreen({navigation}) {
   );
 }
   
+const styles = StyleSheet.create({
+  container: {
+    padding: 2,
+  },
+  enter: {
+    fontSize: 16,
+    marginTop: 25,
+    alignSelf: "center",
+    paddingTop: 1,
+  },
+  compareButton: {
+    alignSelf: "center",
+    padding: 1,
+    color: 'white',
+    fontWeight: 'bold' 
+  },
+  searchBar: {
+    padding: 5, 
+    color: '#000'
+  }
 
+});
 

@@ -48,10 +48,12 @@ import {
   arrayRemove,
   arrayUnion
 } from "firebase/firestore";
-import { EventCategory, EventCategoryColors } from "../constants/eventCategory";
+import { EventCategory, EventCategoryColors, defaultLocation, defaultTitle } from "../constants/eventCategory";
 import { CalendarViewType } from "../constants/calendarViewType";
 import HolidaySettingModal from "../components/ui/HolidaySettingModal";
-import { SafeAreaView } from "react-native-safe-area-context";
+import CalendarColorModal from "../components/ui/CalendarColorModal";
+import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
+import { SafeAreaView, useSafeAreaFrame } from "react-native-safe-area-context";
 import MonthViewItem from "../components/MonthViewItem";
 import { Dropdown, MultiSelect } from "react-native-element-dropdown";
 import AntDesign from "react-native-vector-icons/AntDesign";
@@ -97,6 +99,32 @@ const data = [
     value: EventRepetitionType.WEEKLY.value,
   },
 ];
+const category = [
+  {
+    label: EventCategory.SPORTS,
+    value: EventCategory.SPORTS
+  },
+  {
+    label: EventCategory.SCHOOLCOURSE,
+    value: EventCategory.SCHOOLCOURSE
+  },
+  {
+    label: EventCategory.ARTS,
+    value: EventCategory.ARTS
+  },
+  {
+    label: EventCategory.CAREER,
+    value: EventCategory.CAREER
+  },
+  {
+    label: EventCategory.SOCIAL,
+    value: EventCategory.SOCIAL
+  },
+  {
+    label: EventCategory.EVENT,
+    value: EventCategory.EVENT
+  }
+]
 const repetitionHasEndData = [
   {
     label: "Forever",
@@ -131,6 +159,7 @@ export default class App extends Component {
         listEvents: true,
         athleticEvents: false,
         calendarEvents: true,
+        groupEvents: false,
       },
       list: [],
       calendarEventList: [],
@@ -146,6 +175,8 @@ export default class App extends Component {
       selectedCountryCode: "",
       createEventVisible: false,
       holidaySettingVisible: false,
+      compareScheduleVisible : false,
+      calendarColorVisible :  false,
       title: "",
       location: "",
       description: "",
@@ -207,6 +238,7 @@ export default class App extends Component {
       monthViewData: [],
       calendarView: CalendarViewType.WEEK, //On click, go above a level. Once date is clicked, go into week view.
       eventMandatory: false,
+      selectedCategory: EventCategory.EVENT
     };
   }
   getEvents = async () => {
@@ -276,6 +308,7 @@ export default class App extends Component {
   }
 
   async componentDidMount() {
+    console.log(Object.values(EventCategory))
     //Get the athletic events
     this.getAthleticEvents();
     //Set the calendar UI start date
@@ -631,7 +664,7 @@ export default class App extends Component {
             eventETime,
             this.location,
             this.description,
-            EventCategory.EVENT,
+            this.state.selectedCategory,
             this.points,
             eventColor,
             0,
@@ -810,7 +843,14 @@ export default class App extends Component {
     this.setState({ createEventVisible: true });
   };
 
-  openCompareScreen = () => {};
+  openCompareScreen = () => {
+    this.setState({ visible: false});
+    this.setState({ compareScheduleVisible: true});
+  };
+
+  setCalendarColor = () => {
+    this.setState({ calendarColorVisible: true})
+  }
 
   updateColor = async (color) => {
     this.setState({ eventColor: color });
@@ -1506,10 +1546,10 @@ export default class App extends Component {
                   )
                 }
               />
-              {/* //               <Button
-//                 title="Export schedule"
-//                 onPress={() => this.exportDocumentFile()}
-//               ></Button> */}
+              <Button
+                title="Export schedule"
+                onPress={() => this.exportDocumentFile()}>
+                </Button>
               <Button
                 title="Import schedule"
                 onPress={() => this.openDocumentFile()}
@@ -1520,12 +1560,17 @@ export default class App extends Component {
                 onPress={this.setHolidaySettings}
               />
               <Button
+                title="Calendar theme"
+                onPress={this.openCalendarColorModal}
+              >
+              </Button>
+              <Button
                 title="Compare schedule"
-                onPress={() => {
-                  navigate("Compare Screen");
+                onPress = {() => {
+                  navigate('CompareScreen')
                   this.setState({ visible: !this.state.visible });
                 }}
-              ></Button>
+                ></Button>
               <Button
                 title="Close modal"
                 onPress={() => {
@@ -1845,6 +1890,82 @@ export default class App extends Component {
                       />
                     </View>
                   </View>
+                  <View
+                    style={{
+                      flex: 1,
+                      flexDirection: "row",
+                      alignItems: "center",
+                      marginHorizontal: 25,
+                      marginVertical: 8,
+                    }}
+                  >
+                    <View>
+                      <Text>Category</Text>
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Dropdown
+                        style={{
+                          paddingLeft: 10,
+                          marginHorizontal: 10,
+                          height: 50,
+                          borderBottomColor: "grey",
+                          borderBottomWidth: 0.5,
+                        }}
+                        maxHeight={200}
+                        placeholderStyle={{ fontSize: 16 }}
+                        placeholder="Select a Category"
+                        labelField="label"
+                        valueField="value"
+                        data={category}
+                        value={this.state.selectedCategory}
+                        onChange={(item) => {
+                          this.setState({selectedCategory: item.label})
+                          if(this.title == "" || this.title == undefined){
+                            switch(item.label){
+                              case("School Course"):
+                                this.setTitle(defaultTitle.SCHOOLCOURSE);
+                                break;
+                              case("Sports Event"):
+                                this.setTitle(defaultTitle.SPORTS);
+                                break;
+                              case("Arts"):
+                                this.setTitle(defaultTitle.ARTS);
+                                break;
+                              case("Social"):
+                                this.setTitle(defaultTitle.SOCIAL);
+                                break;
+                              case("Career"):
+                                this.setTitle(defaultTitle.CAREER);
+                                break;
+                              default:
+                                break; 
+                            }
+                          }
+                          if(this.location == "" || this.location == undefined){
+                            switch(item.label){
+                              case("School Course"):
+                                this.setLocation(defaultLocation.SCHOOLCOURSE);
+                                break;
+                              case("Sports Event"):
+                                this.setLocation(defaultLocation.SPORTS);
+                                break;
+                              case("Arts"):
+                                this.setLocation(defaultLocation.ARTS);
+                                break;
+                              case("Social"):
+                                this.setLocation(defaultLocation.SOCIAL);
+                                break;
+                              case("Career"):
+                                this.setLocation(defaultLocation.CAREER);
+                                break;
+                              default:
+                                break; 
+                            }
+                          }
+                        }}
+                      />
+                    </View>
+                  </View>
                   {(() => {
                     switch (this.state.eventRepetition) {
                       case EventRepetitionType.NEVER.value:
@@ -2003,6 +2124,11 @@ export default class App extends Component {
           storeData={this.storeData}
           removeData={this.removeData}
         />
+
+          <CalendarColorModal
+            calendarColorVisible={this.state.calendarColorVisible}
+            closeCalendarColorModal={this.closeCalendarColorModal}
+          />
 
         {/* Bottom tab bar hides calendar screen. TODO Need to fix this.*/}
         <View style={{ flex: 1, marginBottom: 15 }}>
@@ -2494,6 +2620,7 @@ export default class App extends Component {
             this.state.selectedList.length == 0 ? 
             <View style={{ flexDirection: "row", margin: 8 }}>
               <ScrollView horizontal={true}>
+                {/* School Course */}
                 <BouncyCheckbox
                   size={35}
                   fillColor="#ff7675"
@@ -2512,6 +2639,7 @@ export default class App extends Component {
                     this.setState({ calendarUIVisibilityFilter: filterState });
                   }}
                 />
+                {/** Sports **/}
                 <BouncyCheckbox
                   size={35}
                   fillColor="#0984e3"
@@ -2532,6 +2660,7 @@ export default class App extends Component {
                     this.setState({ calendarUIVisibilityFilter: filterState });
                   }}
                 />
+                {/* Event */}
                 <BouncyCheckbox
                   size={35}
                   fillColor="#6c5ce7"
@@ -2552,6 +2681,27 @@ export default class App extends Component {
                     this.setState({ calendarUIVisibilityFilter: filterState });
                   }}
                 />
+                {/* Group Events*/}
+                {/* <BouncyCheckbox
+                  size={35}
+                  fillColor="#66cc00"
+                  unfillColor="#FFFFFF"
+                  text={EventCategory.GROUP}
+                  iconStyle={{ margin: 2 }}
+                  innerIconStyle={{ borderWidth: 2 }}
+                  textStyle={{ textDecorationLine: "none" }}
+                  style={{ marginRight: 25 }}
+                  isChecked={
+                    this.state.calendarUIVisibilityFilter.groupEvents
+                  }
+                  onPress={(isChecked) => {
+                    var filterState = {
+                      ...this.state.calendarUIVisibilityFilter,
+                    };
+                    filterState.groupEvents = isChecked;
+                    this.setState({ calendarUIVisibilityFilter: filterState });
+                  }}
+                /> */}
               </ScrollView>
               <TouchableOpacity
                 activeOpacity={0.7}

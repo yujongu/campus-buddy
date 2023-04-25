@@ -414,6 +414,7 @@ export default class FriendScreen extends Component {
               </Text>
             )}
           </TouchableOpacity>
+          
         </View>
         {item.user == auth.currentUser.email ? (
           <View style={{ flexDirection: "column" }}>
@@ -483,6 +484,7 @@ export default class FriendScreen extends Component {
       this.setState({ group_visible: !this.state.group_visible });
     }
   };
+
   renderGroups = (group) => {
     return (
       <View>

@@ -12,7 +12,17 @@ import {
   ScrollView,
   Button,
 } from 'react-native';
-import { updateDoc, doc, arrayRemove, collection, where, getDoc,getDocs,query, onSnapshot, arrayUnion } from "firebase/firestore";
+import {
+  updateDoc,
+  doc,
+  arrayRemove,
+  collection,
+  where,
+  getDoc,
+  getDocs,
+  query,
+  onSnapshot,
+  arrayUnion } from "firebase/firestore";
 
 export default function SettingsScreen({ navigation, route })  {
   const [newId, setNewId] = useState("");
@@ -20,12 +30,17 @@ export default function SettingsScreen({ navigation, route })  {
   const [id, setId] = useState("");
   const [isCalendarPublic, setCalendar] = useState(null);
   const [isPointsPublic, setPoints] = useState(null);
+  const [isGroupPublic, setGroup] = useState(null);
   const toggleCalendarSwitch = () => {
     setCalendar(current => !current);
   }
 
   const togglePointsSwitch = () => {
     setPoints(current => !current);
+  }
+
+  const toggleGroupSwitch = () => {
+    setGroup(current => !current);
   }
 
 
@@ -64,7 +79,7 @@ export default function SettingsScreen({ navigation, route })  {
 
   const handleGoBack = () => {
     const userDocRef = doc(db, "users", auth.currentUser.uid);
-    updateDoc(userDocRef, { points_privacy: isPointsPublic, calendar_privacy: isCalendarPublic })
+    updateDoc(userDocRef, { points_privacy: isPointsPublic, calendar_privacy: isCalendarPublic, group_privacy: isGroupPublic })
       .then(() => {
         console.log("Points privacy updated successfully to", isPointsPublic);
       })
@@ -81,6 +96,7 @@ export default function SettingsScreen({ navigation, route })  {
         setId(res.data().id);
         setCalendar(res.data().calendar_privacy);
         setPoints(res.data().points_privacy);
+        setGroup(res.data().group_privacy)
       } else {
         console.log("No such document!");
       }
@@ -196,6 +212,31 @@ export default function SettingsScreen({ navigation, route })  {
             ios_backgroundColor="#3e3e3e"
             onValueChange={togglePointsSwitch}
             value={isPointsPublic}
+            style={{
+              marginTop:20,
+            }}
+          />
+        </View>
+        <View style={{
+          flexDirection: "row",
+          alignItems: "center",
+          paddingLeft: 30
+          }}>
+          <Text style={{
+            paddingTop:30,
+            paddingBottom:5,
+            paddingLeft:40,
+            paddingRight: 10,
+            fontSize: 12}}
+            >
+            Groups Public:
+          </Text>
+          <Switch
+            trackColor={{false: '#767577', true: '#477A74'}}
+            thumbColor={isGroupPublic ? '#DFE0DF' : '#f4f3f4'}
+            ios_backgroundColor="#3e3e3e"
+            onValueChange={toggleGroupSwitch}
+            value={isGroupPublic}
             style={{
               marginTop:20,
             }}

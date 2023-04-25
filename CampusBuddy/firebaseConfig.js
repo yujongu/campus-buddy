@@ -578,6 +578,7 @@ export async function addGroup(groupName, groupAuthor) {
       const docRef = await addDoc(collection(db, "groups"), {
         groupName,
         memberList: [groupAuthor],
+        privacy: true
       });
       // console.log("Group created with docref id: ", docRef.id);
       return docRef.id;
@@ -656,6 +657,22 @@ export async function addNicknameInGroup(
     } catch (e) {
       console.error(e);
     }
+  }
+}
+
+export async function getGroupSchedule(groupName) {
+  try {
+    const q = query(collection(db, "groups"), where("groupName", "==", groupName));
+    const querySnapshot = await getDocs(q);
+    if (querySnapshot.size == 1) {
+      const data = querySnapshot.docs[0].data();
+      return data.schedule || [];
+    } else {
+      return [];
+    }
+  } catch (e) {
+    console.log(e);
+    return [];
   }
 }
 
