@@ -1,21 +1,12 @@
 import {
   StyleSheet,
   Text,
-  TextInput,
   View,
   Modal,
-  Alert,
   TouchableOpacity,
-  Pressable,
   useState
 } from "react-native";
 import {
-  addGroup,
-  addMembersToGroup,
-  addNicknameInGroup,
-  auth,
-  db,
-  removeMemberFromGroup,
   getGroupSchedule
 } from "../firebaseConfig";
 import { FloatingAction } from "react-native-floating-action";
