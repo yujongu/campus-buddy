@@ -36,7 +36,13 @@ import {
   getUserRecurringEvents,
   addBoardData,
 } from "../firebaseConfig";
-import { auth, db, userSchedule, getUserEvents, updateEventPrivacy } from "../firebaseConfig";
+import {
+  auth,
+  db,
+  userSchedule,
+  getUserEvents,
+  updateEventPrivacy,
+} from "../firebaseConfig";
 import EventItem from "../components/ui/EventItem";
 import { even, IconButton } from "@react-native-material/core";
 import TopHeaderDays from "../components/ui/TopHeaderDays";
@@ -46,9 +52,14 @@ import {
   updateDoc,
   getDoc,
   arrayRemove,
-  arrayUnion
+  arrayUnion,
 } from "firebase/firestore";
-import { EventCategory, EventCategoryColors, defaultLocation, defaultTitle } from "../constants/eventCategory";
+import {
+  EventCategory,
+  EventCategoryColors,
+  defaultLocation,
+  defaultTitle,
+} from "../constants/eventCategory";
 import { CalendarViewType } from "../constants/calendarViewType";
 import HolidaySettingModal from "../components/ui/HolidaySettingModal";
 import CalendarColorModal from "../components/ui/CalendarColorModal";
@@ -102,29 +113,29 @@ const data = [
 const category = [
   {
     label: EventCategory.SPORTS,
-    value: EventCategory.SPORTS
+    value: EventCategory.SPORTS,
   },
   {
     label: EventCategory.SCHOOLCOURSE,
-    value: EventCategory.SCHOOLCOURSE
+    value: EventCategory.SCHOOLCOURSE,
   },
   {
     label: EventCategory.ARTS,
-    value: EventCategory.ARTS
+    value: EventCategory.ARTS,
   },
   {
     label: EventCategory.CAREER,
-    value: EventCategory.CAREER
+    value: EventCategory.CAREER,
   },
   {
     label: EventCategory.SOCIAL,
-    value: EventCategory.SOCIAL
+    value: EventCategory.SOCIAL,
   },
   {
     label: EventCategory.EVENT,
-    value: EventCategory.EVENT
-  }
-]
+    value: EventCategory.EVENT,
+  },
+];
 const repetitionHasEndData = [
   {
     label: "Forever",
@@ -175,8 +186,8 @@ export default class App extends Component {
       selectedCountryCode: "",
       createEventVisible: false,
       holidaySettingVisible: false,
-      compareScheduleVisible : false,
-      calendarColorVisible :  false,
+      compareScheduleVisible: false,
+      calendarColorVisible: false,
       title: "",
       location: "",
       description: "",
@@ -238,18 +249,17 @@ export default class App extends Component {
       monthViewData: [],
       calendarView: CalendarViewType.WEEK, //On click, go above a level. Once date is clicked, go into week view.
       eventMandatory: false,
-      selectedCategory: EventCategory.EVENT
+      selectedCategory: EventCategory.EVENT,
     };
   }
   getEvents = async () => {
-     // Getting schedules from database
-     const res = await userSchedule(auth.currentUser?.uid);
-     const result = [];
-     const eventResult = [];
+    // Getting schedules from database
+    const res = await userSchedule(auth.currentUser?.uid);
+    const result = [];
+    const eventResult = [];
 
- 
-     if (res != null) {
-       /*res["things"].map((element) => {
+    if (res != null) {
+      /*res["things"].map((element) => {
          const sp = element.data.split(",");
          const temp = {
            category: EventCategory.SCHOOLCOURSE,
@@ -260,55 +270,58 @@ export default class App extends Component {
          };
          result.push(temp);
        });*/
-       for (let i = 0; i < res["classes"].length; i++) {
-         const temp = {
-           category: EventCategory.SCHOOLCOURSE,
-           title: res["classes"][i]["class"]["title"],
-           startTime: new Date(
-             res["classes"][i]["class"]["startTime"].seconds * 1000
-           ), //multiply 1000 since Javascript uses milliseconds. Timestamp to date.
-           endTime: new Date(
-             res["classes"][i]["class"]["endTime"].seconds * 1000
-           ),
-           location: res["classes"][i]["class"]["location"],
-           color: res["classes"][i]["class"]["color"] == null ? "#D1FF96" : res["classes"][i]["class"]["color"],
-           id: res["classes"][i]["id"],
-         };
-         result.push(temp);
-       }
-     }
- 
-     this.setState({ list: result });
- 
-     // Getting events from database
-     const events = await getUserEvents(auth.currentUser?.uid);
-     if (events != null && events["event"] != undefined) {
-       for (let i = 0; i < events["event"].length; i++) {
-         const temp = {
-           category: EventCategory.EVENT,
-           title: events["event"][i]["details"]["title"],
-           startTime: new Date(
-             events["event"][i]["details"]["startTime"].seconds * 1000
-           ), //multiply 1000 since Javascript uses milliseconds. Timestamp to date.
-           endTime: new Date(
-             events["event"][i]["details"]["endTime"].seconds * 1000
-           ),
-           location: events["event"][i]["details"]["location"],
-           description: events["event"][i]["details"]["description"],
-           color: events["event"][i]["details"]["color"],
-           id: events["event"][i]["id"],
-           eventMandatory: events["event"][i]["details"]["eventMandatory"],
-           audienceLevel: events["event"][i]["details"]["audienceLevel"],
-         };
-         eventResult.push(temp);
-       }
-     }
-     this.checkList(eventResult); //Checks for events that go over multiple days and corrects it
-     this.combineAllListsForCalendar();
-  }
+      for (let i = 0; i < res["classes"].length; i++) {
+        const temp = {
+          category: EventCategory.SCHOOLCOURSE,
+          title: res["classes"][i]["class"]["title"],
+          startTime: new Date(
+            res["classes"][i]["class"]["startTime"].seconds * 1000
+          ), //multiply 1000 since Javascript uses milliseconds. Timestamp to date.
+          endTime: new Date(
+            res["classes"][i]["class"]["endTime"].seconds * 1000
+          ),
+          location: res["classes"][i]["class"]["location"],
+          color:
+            res["classes"][i]["class"]["color"] == null
+              ? "#D1FF96"
+              : res["classes"][i]["class"]["color"],
+          id: res["classes"][i]["id"],
+        };
+        result.push(temp);
+      }
+    }
+
+    this.setState({ list: result });
+
+    // Getting events from database
+    const events = await getUserEvents(auth.currentUser?.uid);
+    if (events != null && events["event"] != undefined) {
+      for (let i = 0; i < events["event"].length; i++) {
+        const temp = {
+          category: EventCategory.EVENT,
+          title: events["event"][i]["details"]["title"],
+          startTime: new Date(
+            events["event"][i]["details"]["startTime"].seconds * 1000
+          ), //multiply 1000 since Javascript uses milliseconds. Timestamp to date.
+          endTime: new Date(
+            events["event"][i]["details"]["endTime"].seconds * 1000
+          ),
+          location: events["event"][i]["details"]["location"],
+          description: events["event"][i]["details"]["description"],
+          color: events["event"][i]["details"]["color"],
+          id: events["event"][i]["id"],
+          eventMandatory: events["event"][i]["details"]["eventMandatory"],
+          audienceLevel: events["event"][i]["details"]["audienceLevel"],
+        };
+        eventResult.push(temp);
+      }
+    }
+    this.checkList(eventResult); //Checks for events that go over multiple days and corrects it
+    this.combineAllListsForCalendar();
+  };
 
   async componentDidMount() {
-    console.log(Object.values(EventCategory))
+    console.log(Object.values(EventCategory));
     //Get the athletic events
     this.getAthleticEvents();
     //Set the calendar UI start date
@@ -318,7 +331,7 @@ export default class App extends Component {
 
     //Set month view calendar UI with the start date and store in monthViewData
     this.createMonthViewData(tempDate);
-    
+
     // Get schedule and regular events from database
     this.getEvents();
 
@@ -529,10 +542,10 @@ export default class App extends Component {
 
   changeColor = async (id, category) => {
     if (category == EventCategory.SCHOOLCOURSE) {
-      console.log("school")
+      console.log("school");
       const userDocRef = doc(db, "schedule", auth.currentUser.uid);
       const res = await userSchedule(auth.currentUser?.uid);
-      console.log(res)
+      console.log(res);
       for (let i = 0; i < res["classes"].length; i++) {
         if (res["classes"][i]["id"] == id) {
           let tempItem = res["classes"][i];
@@ -546,11 +559,10 @@ export default class App extends Component {
             .catch((error) => {
               console.error("Error updating class event color", error);
             });
-        
         }
       }
     } else {
-      console.log("event")
+      console.log("event");
       const userDocRef = doc(db, "events", auth.currentUser.uid);
       const res = await getUserEvents(auth.currentUser?.uid);
       for (let i = 0; i < res["event"].length; i++) {
@@ -569,34 +581,41 @@ export default class App extends Component {
         }
       }
     }
-  }
-
+  };
 
   handleMultipleSelectedChange = async (option, newValue) => {
-    console.log(option)
-    switch(option) {
+    console.log(option);
+    switch (option) {
       case "delete":
         for (let i = 0; i < this.state.selectedList.length; i++) {
-          console.log("deleting")
-          await this.handleEventCompletion(this.state.selectedList[i][1], this.state.selectedList[i][0], false);
+          console.log("deleting");
+          await this.handleEventCompletion(
+            this.state.selectedList[i][1],
+            this.state.selectedList[i][0],
+            false
+          );
         }
-        this.setState({selectedList: []})
+        this.setState({ selectedList: [] });
         this.getEvents();
         break;
       case "color":
-        this.setState({colorPicker: true})
+        this.setState({ colorPicker: true });
         break;
       case "category":
       case "privacy":
         for (let i = 0; i < this.state.selectedList.length; i++) {
-          await updateEventPrivacy(auth.currentUser.uid,this.state.selectedList[i][0],newValue);
+          await updateEventPrivacy(
+            auth.currentUser.uid,
+            this.state.selectedList[i][0],
+            newValue
+          );
         }
-        this.setState({selectedList: []})
+        this.setState({ selectedList: [] });
         break;
       default:
-        alert("Invalid option")
+        alert("Invalid option");
     }
-  }
+  };
   handleEventRepetitionCount = (value) => {
     if (value > 6) {
       alert("Need to be less than 7");
@@ -697,7 +716,7 @@ export default class App extends Component {
             eventMandatory: this.state.eventMandatory,
             audienceLevel: selectedAudienceLevel,
           });
-          
+
           addBoardData(auth.currentUser?.uid, this.points, EventCategory.EVENT);
 
           const message =
@@ -844,13 +863,13 @@ export default class App extends Component {
   };
 
   openCompareScreen = () => {
-    this.setState({ visible: false});
-    this.setState({ compareScheduleVisible: true});
+    this.setState({ visible: false });
+    this.setState({ compareScheduleVisible: true });
   };
 
   setCalendarColor = () => {
-    this.setState({ calendarColorVisible: true})
-  }
+    this.setState({ calendarColorVisible: true });
+  };
 
   updateColor = async (color) => {
     this.setState({ eventColor: color });
@@ -859,12 +878,14 @@ export default class App extends Component {
     //will only run if multiple events are selected to change color
     if (this.state.selectedList.length > 0) {
       for (let i = 0; i < this.state.selectedList.length; i++) {
-        await this.changeColor(this.state.selectedList[i][0], this.state.selectedList[i][1]);
+        await this.changeColor(
+          this.state.selectedList[i][0],
+          this.state.selectedList[i][1]
+        );
       }
-      this.setState({selectedList: []});
+      this.setState({ selectedList: [] });
       this.getEvents(); //refresh calendar ui
     }
-   
   };
 
   setHolidaySettings = () => {
@@ -1413,16 +1434,15 @@ export default class App extends Component {
     if (selected) {
       this.state.selectedList.push([id, category]);
       newList = this.state.selectedList;
-      this.setState({selectedList: newList})
-    }
-    else {
+      this.setState({ selectedList: newList });
+    } else {
       const removeIndex = this.state.selectedList.indexOf([id, category]);
       this.state.selectedList.splice(removeIndex, 1);
       newList = this.state.selectedList;
-      this.setState({selectedList: newList})
+      this.setState({ selectedList: newList });
     }
-    console.log(this.state.selectedList, this.state.selectedList.length)
-  }
+    console.log(this.state.selectedList, this.state.selectedList.length);
+  };
 
   handleEventCompletion = async (category, id, completePoints) => {
     if (category == EventCategory.SCHOOLCOURSE) {
@@ -1430,7 +1450,9 @@ export default class App extends Component {
       const res = await userSchedule(auth.currentUser?.uid);
       for (let i = 0; i < res["classes"].length; i++) {
         if (res["classes"][i]["id"] == id) {
-          await updateDoc(userDocRef, { classes: arrayRemove(res["classes"][i]) })
+          await updateDoc(userDocRef, {
+            classes: arrayRemove(res["classes"][i]),
+          })
             .then(() => {
               console.log("Successfully removed class from schedule.");
             })
@@ -1461,7 +1483,6 @@ export default class App extends Component {
               parseInt(res["event"][i]["details"]["point_value"], 10)
             );
           }
-          
         }
       }
     }
@@ -1548,8 +1569,8 @@ export default class App extends Component {
               />
               <Button
                 title="Export schedule"
-                onPress={() => this.exportDocumentFile()}>
-                </Button>
+                onPress={() => this.exportDocumentFile()}
+              ></Button>
               <Button
                 title="Import schedule"
                 onPress={() => this.openDocumentFile()}
@@ -1562,15 +1583,14 @@ export default class App extends Component {
               <Button
                 title="Calendar theme"
                 onPress={this.openCalendarColorModal}
-              >
-              </Button>
+              ></Button>
               <Button
                 title="Compare schedule"
-                onPress = {() => {
-                  navigate('CompareScreen')
+                onPress={() => {
+                  navigate("CompareScreen");
                   this.setState({ visible: !this.state.visible });
                 }}
-                ></Button>
+              ></Button>
               <Button
                 title="Close modal"
                 onPress={() => {
@@ -1919,47 +1939,50 @@ export default class App extends Component {
                         data={category}
                         value={this.state.selectedCategory}
                         onChange={(item) => {
-                          this.setState({selectedCategory: item.label})
-                          if(this.title == "" || this.title == undefined){
-                            switch(item.label){
-                              case("School Course"):
+                          this.setState({ selectedCategory: item.label });
+                          if (this.title == "" || this.title == undefined) {
+                            switch (item.label) {
+                              case "School Course":
                                 this.setTitle(defaultTitle.SCHOOLCOURSE);
                                 break;
-                              case("Sports Event"):
+                              case "Sports Event":
                                 this.setTitle(defaultTitle.SPORTS);
                                 break;
-                              case("Arts"):
+                              case "Arts":
                                 this.setTitle(defaultTitle.ARTS);
                                 break;
-                              case("Social"):
+                              case "Social":
                                 this.setTitle(defaultTitle.SOCIAL);
                                 break;
-                              case("Career"):
+                              case "Career":
                                 this.setTitle(defaultTitle.CAREER);
                                 break;
                               default:
-                                break; 
+                                break;
                             }
                           }
-                          if(this.location == "" || this.location == undefined){
-                            switch(item.label){
-                              case("School Course"):
+                          if (
+                            this.location == "" ||
+                            this.location == undefined
+                          ) {
+                            switch (item.label) {
+                              case "School Course":
                                 this.setLocation(defaultLocation.SCHOOLCOURSE);
                                 break;
-                              case("Sports Event"):
+                              case "Sports Event":
                                 this.setLocation(defaultLocation.SPORTS);
                                 break;
-                              case("Arts"):
+                              case "Arts":
                                 this.setLocation(defaultLocation.ARTS);
                                 break;
-                              case("Social"):
+                              case "Social":
                                 this.setLocation(defaultLocation.SOCIAL);
                                 break;
-                              case("Career"):
+                              case "Career":
                                 this.setLocation(defaultLocation.CAREER);
                                 break;
                               default:
-                                break; 
+                                break;
                             }
                           }
                         }}
@@ -2125,10 +2148,10 @@ export default class App extends Component {
           removeData={this.removeData}
         />
 
-          <CalendarColorModal
-            calendarColorVisible={this.state.calendarColorVisible}
-            closeCalendarColorModal={this.closeCalendarColorModal}
-          />
+        <CalendarColorModal
+          calendarColorVisible={this.state.calendarColorVisible}
+          closeCalendarColorModal={this.closeCalendarColorModal}
+        />
 
         {/* Bottom tab bar hides calendar screen. TODO Need to fix this.*/}
         <View style={{ flex: 1, marginBottom: 15 }}>
@@ -2357,7 +2380,7 @@ export default class App extends Component {
                                     handleEventCompletion={
                                       this.handleEventCompletion
                                     }
-                                    handleMultipleSelected= {
+                                    handleMultipleSelected={
                                       this.handleMultipleSelected
                                     }
                                     eventMandatory={event.eventMandatory}
@@ -2531,7 +2554,7 @@ export default class App extends Component {
                           Sat
                         </Text>
                       </View>
-                      
+
                       <FlatList
                         scrollEnabled={false}
                         data={this.state.monthViewData}
@@ -2615,74 +2638,79 @@ export default class App extends Component {
                     </View>
                   );
               }
-            })()} 
-          {
-            this.state.selectedList.length == 0 ? 
-            <View style={{ flexDirection: "row", margin: 8 }}>
-              <ScrollView horizontal={true}>
-                {/* School Course */}
-                <BouncyCheckbox
-                  size={35}
-                  fillColor="#ff7675"
-                  unfillColor="#FFFFFF"
-                  text={EventCategory.SCHOOLCOURSE}
-                  iconStyle={{ margin: 2 }}
-                  innerIconStyle={{ borderWidth: 2 }}
-                  textStyle={{ textDecorationLine: "none" }}
-                  style={{ marginRight: 25 }}
-                  isChecked={this.state.calendarUIVisibilityFilter.listEvents}
-                  onPress={(isChecked) => {
-                    var filterState = {
-                      ...this.state.calendarUIVisibilityFilter,
-                    };
-                    filterState.listEvents = isChecked;
-                    this.setState({ calendarUIVisibilityFilter: filterState });
-                  }}
-                />
-                {/** Sports **/}
-                <BouncyCheckbox
-                  size={35}
-                  fillColor="#0984e3"
-                  unfillColor="#FFFFFF"
-                  text={EventCategory.SPORTS}
-                  iconStyle={{ margin: 2 }}
-                  innerIconStyle={{ borderWidth: 2 }}
-                  textStyle={{ textDecorationLine: "none" }}
-                  style={{ marginRight: 25 }}
-                  isChecked={
-                    this.state.calendarUIVisibilityFilter.athleticEvents
-                  }
-                  onPress={(isChecked) => {
-                    var filterState = {
-                      ...this.state.calendarUIVisibilityFilter,
-                    };
-                    filterState.athleticEvents = isChecked;
-                    this.setState({ calendarUIVisibilityFilter: filterState });
-                  }}
-                />
-                {/* Event */}
-                <BouncyCheckbox
-                  size={35}
-                  fillColor="#6c5ce7"
-                  unfillColor="#FFFFFF"
-                  text={EventCategory.EVENT}
-                  iconStyle={{ margin: 2 }}
-                  innerIconStyle={{ borderWidth: 2 }}
-                  textStyle={{ textDecorationLine: "none" }}
-                  style={{ marginRight: 25 }}
-                  isChecked={
-                    this.state.calendarUIVisibilityFilter.calendarEvents
-                  }
-                  onPress={(isChecked) => {
-                    var filterState = {
-                      ...this.state.calendarUIVisibilityFilter,
-                    };
-                    filterState.calendarEvents = isChecked;
-                    this.setState({ calendarUIVisibilityFilter: filterState });
-                  }}
-                />
-                {/* Group Events*/}
-                {/* <BouncyCheckbox
+            })()}
+            {this.state.selectedList.length == 0 ? (
+              <View style={{ flexDirection: "row", margin: 8 }}>
+                <ScrollView horizontal={true}>
+                  {/* School Course */}
+                  <BouncyCheckbox
+                    size={35}
+                    fillColor="#ff7675"
+                    unfillColor="#FFFFFF"
+                    text={EventCategory.SCHOOLCOURSE}
+                    iconStyle={{ margin: 2 }}
+                    innerIconStyle={{ borderWidth: 2 }}
+                    textStyle={{ textDecorationLine: "none" }}
+                    style={{ marginRight: 25 }}
+                    isChecked={this.state.calendarUIVisibilityFilter.listEvents}
+                    onPress={(isChecked) => {
+                      var filterState = {
+                        ...this.state.calendarUIVisibilityFilter,
+                      };
+                      filterState.listEvents = isChecked;
+                      this.setState({
+                        calendarUIVisibilityFilter: filterState,
+                      });
+                    }}
+                  />
+                  {/** Sports **/}
+                  <BouncyCheckbox
+                    size={35}
+                    fillColor="#0984e3"
+                    unfillColor="#FFFFFF"
+                    text={EventCategory.SPORTS}
+                    iconStyle={{ margin: 2 }}
+                    innerIconStyle={{ borderWidth: 2 }}
+                    textStyle={{ textDecorationLine: "none" }}
+                    style={{ marginRight: 25 }}
+                    isChecked={
+                      this.state.calendarUIVisibilityFilter.athleticEvents
+                    }
+                    onPress={(isChecked) => {
+                      var filterState = {
+                        ...this.state.calendarUIVisibilityFilter,
+                      };
+                      filterState.athleticEvents = isChecked;
+                      this.setState({
+                        calendarUIVisibilityFilter: filterState,
+                      });
+                    }}
+                  />
+                  {/* Event */}
+                  <BouncyCheckbox
+                    size={35}
+                    fillColor="#6c5ce7"
+                    unfillColor="#FFFFFF"
+                    text={EventCategory.EVENT}
+                    iconStyle={{ margin: 2 }}
+                    innerIconStyle={{ borderWidth: 2 }}
+                    textStyle={{ textDecorationLine: "none" }}
+                    style={{ marginRight: 25 }}
+                    isChecked={
+                      this.state.calendarUIVisibilityFilter.calendarEvents
+                    }
+                    onPress={(isChecked) => {
+                      var filterState = {
+                        ...this.state.calendarUIVisibilityFilter,
+                      };
+                      filterState.calendarEvents = isChecked;
+                      this.setState({
+                        calendarUIVisibilityFilter: filterState,
+                      });
+                    }}
+                  />
+                  {/* Group Events*/}
+                  {/* <BouncyCheckbox
                   size={35}
                   fillColor="#66cc00"
                   unfillColor="#FFFFFF"
@@ -2702,112 +2730,129 @@ export default class App extends Component {
                     this.setState({ calendarUIVisibilityFilter: filterState });
                   }}
                 /> */}
-              </ScrollView>
-              <TouchableOpacity
-                activeOpacity={0.7}
-                onPress={this.clickHandler}
-                style={{ padding: 4, marginLeft: 8 }}
-              >
-                <Icon
-                  name="plus-circle"
-                  size={40}
-                  color={themeCon[theme].plusModalColor}
-                />
-              </TouchableOpacity>
-            </View>
-            :
-            <View style={{ flexDirection: "row", margin: 8 }}>
-            <ScrollView horizontal={true}>
-
-              <Text style ={{fontSize:18, paddingRight:15, paddingTop:8, textAlign: "center", color: "blue"}}>
-                {this.state.selectedList.length} selected
-              </Text>
-              <View style={{ paddingTop:8, paddingLeft:5}}>
-                <Icon name="trash-o" size={20} />
+                </ScrollView>
+                <TouchableOpacity
+                  activeOpacity={0.7}
+                  onPress={this.clickHandler}
+                  style={{ padding: 4, marginLeft: 8 }}
+                >
+                  <Icon
+                    name="plus-circle"
+                    size={40}
+                    color={themeCon[theme].plusModalColor}
+                  />
+                </TouchableOpacity>
               </View>
-              <Button
-                onPress={() =>  {
-                  this.handleMultipleSelectedChange("delete");
-                }}
-                color="black"
-                title="Delete"
-              />
-              <View style={{ paddingTop: 8, paddingLeft:7 }}>
-                <Icon name="eye-slash" size={20} />
+            ) : (
+              <View style={{ flexDirection: "row", margin: 8 }}>
+                <ScrollView horizontal={true}>
+                  <Text
+                    style={{
+                      fontSize: 18,
+                      paddingRight: 15,
+                      paddingTop: 8,
+                      textAlign: "center",
+                      color: "blue",
+                    }}
+                  >
+                    {this.state.selectedList.length} selected
+                  </Text>
+                  <View style={{ paddingTop: 8, paddingLeft: 5 }}>
+                    <Icon name="trash-o" size={20} />
+                  </View>
+                  <Button
+                    onPress={() => {
+                      this.handleMultipleSelectedChange("delete");
+                    }}
+                    color="black"
+                    title="Delete"
+                  />
+                  <View style={{ paddingTop: 8, paddingLeft: 7 }}>
+                    <Icon name="eye-slash" size={20} />
+                  </View>
+                  <Button
+                    onPress={() => this.setState({ selectPrivacy: true })}
+                    color="black"
+                    title="Private"
+                  />
+                  <View style={{ paddingTop: 8, paddingLeft: 7 }}>
+                    <Icon name="edit" size={20} />
+                  </View>
+                  <Button
+                    //onPress={() => this.setState({ colorPicker: true })}
+                    color="black"
+                    title="Category"
+                  />
+                  <View style={{ paddingTop: 8, paddingLeft: 7 }}>
+                    <Icon name="square" size={20} />
+                  </View>
+                  <Button
+                    onPress={() => {
+                      this.handleMultipleSelectedChange("color");
+                    }}
+                    color="black"
+                    title="Color"
+                  />
+                </ScrollView>
               </View>
-              <Button
-                onPress={() => this.setState({ selectPrivacy: true })}
-                color="black"
-                title="Private"
-              />
-              <View style={{ paddingTop: 8, paddingLeft:7 }}>
-                <Icon name="edit" size={20} />
-              </View>
-              <Button
-                //onPress={() => this.setState({ colorPicker: true })}
-                color="black"
-                title="Category"
-              />
-              <View style={{ paddingTop: 8, paddingLeft:7 }}>
-                <Icon name="square" size={20} />
-              </View>
-              <Button
-                onPress={() =>  {
-                  this.handleMultipleSelectedChange("color");
-                }}
-                color="black"
-                title="Color"
-              />
-              </ScrollView>
-              </View>
-          }
-          <Modal
-            animationType="slide"
-            transparent={true}
-            visible={this.state.selectPrivacy}
-          >
-             <TouchableOpacity 
-              style={styles.container2} 
-              activeOpacity={1}
-              onPressOut={() => {this.setState({selectPrivacy: false})}}
-            >
-               <TouchableWithoutFeedback>
-            <View
-              style={{
-                position: "absolute",
-                right: 80,
-                bottom: 130,
-                backgroundColor: "white",
-                alignItems: "center",
-                justifyContent: "center",
-              }}
+            )}
+            <Modal
+              animationType="slide"
+              transparent={true}
+              visible={this.state.selectPrivacy}
             >
               <TouchableOpacity
-                onPress={() =>
-                  this.handleMultipleSelectedChange("privacy", AudienceLevelType.PRIVATE.value)
-                }
+                style={styles.container2}
+                activeOpacity={1}
+                onPressOut={() => {
+                  this.setState({ selectPrivacy: false });
+                }}
               >
-              <Text style={styles.privacyOption}>My eyes only</Text> 
-              </TouchableOpacity> 
-              <TouchableOpacity
-              onPress={() =>
-                this.handleMultipleSelectedChange("privacy", AudienceLevelType.FRIENDS.value)
-              }
-              >
-              <Text style={styles.privacyOption}>Friends only</Text> 
+                <TouchableWithoutFeedback>
+                  <View
+                    style={{
+                      position: "absolute",
+                      right: 80,
+                      bottom: 130,
+                      backgroundColor: "white",
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
+                    <TouchableOpacity
+                      onPress={() =>
+                        this.handleMultipleSelectedChange(
+                          "privacy",
+                          AudienceLevelType.PRIVATE.value
+                        )
+                      }
+                    >
+                      <Text style={styles.privacyOption}>My eyes only</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      onPress={() =>
+                        this.handleMultipleSelectedChange(
+                          "privacy",
+                          AudienceLevelType.FRIENDS.value
+                        )
+                      }
+                    >
+                      <Text style={styles.privacyOption}>Friends only</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      onPress={() =>
+                        this.handleMultipleSelectedChange(
+                          "privacy",
+                          AudienceLevelType.PUBLIC.value
+                        )
+                      }
+                    >
+                      <Text style={styles.privacyOption}>Public</Text>
+                    </TouchableOpacity>
+                  </View>
+                </TouchableWithoutFeedback>
               </TouchableOpacity>
-              <TouchableOpacity
-              onPress={() =>
-                this.handleMultipleSelectedChange("privacy", AudienceLevelType.PUBLIC.value)
-              }>
-              <Text style={styles.privacyOption}>Public</Text> 
-              </TouchableOpacity> 
-
-            </View>
-            </TouchableWithoutFeedback>
-            </TouchableOpacity>
-          </Modal>
-
+            </Modal>
           </View>
         </View>
       </SafeAreaView>
@@ -2973,7 +3018,7 @@ const styles = StyleSheet.create({
     flexDirection: "column",
     alignItems: "center",
   },
-  
+
   days: {
     textAlign: "center",
     fontSize: 16,
@@ -2995,11 +3040,11 @@ const styles = StyleSheet.create({
     zIndex: 1,
   },
   privacyOption: {
-    fontSize:15,
-    color:"black",
+    fontSize: 15,
+    color: "black",
     borderBottomColor: "gray",
-    borderBottomWidth:1,
-    padding:8
+    borderBottomWidth: 1,
+    padding: 8,
   },
   modalView: {
     position: "absolute",
