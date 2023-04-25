@@ -41,7 +41,7 @@ import {
   db,
   userSchedule,
   getUserEvents,
-  updateEventPrivacy,
+  updateEventField,
 } from "../firebaseConfig";
 import EventItem from "../components/ui/EventItem";
 import { even, IconButton } from "@react-native-material/core";
@@ -211,7 +211,8 @@ export default class App extends Component {
           selected: false,
         },
       ],
-      selectPrivacy: false,
+      selectPrivacy: false, //for multiple selection modal
+      selectCategory: false, //for multiple selection modal
       colorPicker: false,
       eventColor: "#8b9cb5",
       value: null,
@@ -602,15 +603,27 @@ export default class App extends Component {
         this.setState({ colorPicker: true });
         break;
       case "category":
-      case "privacy":
         for (let i = 0; i < this.state.selectedList.length; i++) {
-          await updateEventPrivacy(
+          await updateEventField(
             auth.currentUser.uid,
+            "category",
             this.state.selectedList[i][0],
             newValue
           );
         }
         this.setState({ selectedList: [] });
+        this.getEvents();
+      case "privacy":
+        for (let i = 0; i < this.state.selectedList.length; i++) {
+          await updateEventField(
+            auth.currentUser.uid,
+            "privacy",
+            this.state.selectedList[i][0],
+            newValue
+          );
+        }
+        this.setState({ selectedList: [] });
+        this.getEvents();
         break;
       default:
         alert("Invalid option");
@@ -2779,7 +2792,7 @@ export default class App extends Component {
                     <Icon name="edit" size={20} />
                   </View>
                   <Button
-                    //onPress={() => this.setState({ colorPicker: true })}
+                    onPress={() => this.setState({ selectCategory: true })}
                     color="black"
                     title="Category"
                   />
@@ -2811,43 +2824,172 @@ export default class App extends Component {
                 <TouchableWithoutFeedback>
                   <View
                     style={{
-                      position: "absolute",
-                      right: 80,
-                      bottom: 130,
                       backgroundColor: "white",
                       alignItems: "center",
                       justifyContent: "center",
+                      borderRadius: 10,
                     }}
                   >
+                    <View style={{borderBottomWidth:1}}>
+                    <Text style={{fontSize:18, padding:10}}>Choose new privacy</Text>
+                    </View>
                     <TouchableOpacity
                       onPress={() =>
-                        this.handleMultipleSelectedChange(
-                          "privacy",
-                          AudienceLevelType.PRIVATE.value
-                        )
+                        {
+                          this.handleMultipleSelectedChange(
+                            "privacy",
+                            AudienceLevelType.PRIVATE.value
+                          )
+                          this.setState({selectPrivacy: false})
+                        }
                       }
                     >
-                      <Text style={styles.privacyOption}>My eyes only</Text>
+                      <Text style={[styles.privacyOption, borderWidth=1]}>My eyes only</Text>
                     </TouchableOpacity>
                     <TouchableOpacity
                       onPress={() =>
+                      {
                         this.handleMultipleSelectedChange(
                           "privacy",
                           AudienceLevelType.FRIENDS.value
                         )
+                        this.setState({selectPrivacy: false})
+                      }
                       }
                     >
                       <Text style={styles.privacyOption}>Friends only</Text>
                     </TouchableOpacity>
                     <TouchableOpacity
                       onPress={() =>
+                       { 
                         this.handleMultipleSelectedChange(
                           "privacy",
                           AudienceLevelType.PUBLIC.value
                         )
+                        this.setState({selectPrivacy: false})
+                        } 
                       }
                     >
                       <Text style={styles.privacyOption}>Public</Text>
+                    </TouchableOpacity>
+                  </View>
+                </TouchableWithoutFeedback>
+              </TouchableOpacity>
+            </Modal>
+            <Modal
+              animationType="slide"
+              transparent={true}
+              visible={this.state.selectCategory}
+            >
+              <TouchableOpacity
+                style={styles.container2}
+                activeOpacity={1}
+                onPressOut={() => {
+                  this.setState({ selectCategory: false });
+                }}
+              >
+                <TouchableWithoutFeedback>
+                  <View
+                    style={{
+                      backgroundColor: "white",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      borderRadius: 10,
+                    }}
+                  >
+                    <View style={{borderBottomWidth:1}}>
+                    <Text style={{fontSize:18, padding:10}}>Choose new category</Text>
+                    </View>
+                    <TouchableOpacity
+                      onPress={() =>
+                       { 
+                        this.handleMultipleSelectedChange(
+                          "category",
+                          EventCategory.SCHOOLCOURSE
+                        )
+                        this.setState({selectCategory: false})
+                      } 
+                      }
+                    >
+                      <Text style={[styles.privacyOption, borderWidth=1]}>{EventCategory.SCHOOLCOURSE}</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      onPress={() =>
+                      {
+                        this.handleMultipleSelectedChange(
+                          "category",
+                          EventCategory.EVENT
+                        )
+                        this.setState({selectCategory: false})
+                      }
+                      }
+                    >
+                      <Text style={styles.privacyOption}>{EventCategory.EVENT}</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      onPress={() =>
+                      {  
+                        this.handleMultipleSelectedChange(
+                          "category",
+                          EventCategory.SPORTS
+                        )
+                        this.setState({selectCategory: false})
+                      }
+                      }
+                    >
+                      <Text style={styles.privacyOption}>{EventCategory.SPORTS}</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      onPress={() =>
+                      {  
+                        this.handleMultipleSelectedChange(
+                          "category",
+                          EventCategory.GROUP
+                        )
+                        this.setState({selectCategory: false})
+                      }
+                      }
+                    >
+                      <Text style={styles.privacyOption}>{EventCategory.GROUP}</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      onPress={() =>
+                       { 
+                        this.handleMultipleSelectedChange(
+                          "category",
+                          EventCategory.ARTS
+                        )
+                        this.setState({selectCategory: false})
+                      }
+                      }
+                    >
+                      <Text style={styles.privacyOption}>{EventCategory.ARTS}</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      onPress={() =>
+                      {  
+                        this.handleMultipleSelectedChange(
+                          "category",
+                          EventCategory.SOCIAL
+                        )
+                        this.setState({selectCategory: false})
+                      }
+                      }
+                    >
+                      <Text style={styles.privacyOption}>{EventCategory.SOCIAL}</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      onPress={() =>
+                      {  
+                        this.handleMultipleSelectedChange(
+                          "category",
+                          EventCategory.CAREER
+                        )
+                        this.setState({selectCategory: false})
+                      }
+                      }
+                    >
+                      <Text style={styles.privacyOption}>{EventCategory.CAREER}</Text>
                     </TouchableOpacity>
                   </View>
                 </TouchableWithoutFeedback>
@@ -3042,8 +3184,6 @@ const styles = StyleSheet.create({
   privacyOption: {
     fontSize: 15,
     color: "black",
-    borderBottomColor: "gray",
-    borderBottomWidth: 1,
     padding: 8,
   },
   modalView: {

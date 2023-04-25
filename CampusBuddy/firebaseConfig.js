@@ -293,7 +293,7 @@ export async function addEvent_maybe(
   }
 }
 
-export async function updateEventPrivacy (user_token, id, privacy) {
+export async function updateEventField (user_token, field, id, newValue) {
   const userDocRef = doc(db, "events", user_token);
   const res = await getUserEvents(user_token);
   console.log(res)
@@ -309,14 +309,19 @@ export async function updateEventPrivacy (user_token, id, privacy) {
           console.error("Error removing old event", error);
         });
       let tempItem = res["event"][i];
-      tempItem.details.audienceLevel = privacy;
+      if (field == "privacy") {
+        tempItem.details.audienceLevel = newValue;
+      }
+      else if (field == "category") {
+        tempItem.details.category = newValue;
+      }
       tempItem.id = uuid.v4();
       await updateDoc(userDocRef, { event: arrayUnion(tempItem) })
         .then(() => {
-          console.log("Successfully updated event privacy.");
+          console.log("Successfully updated event",field);
         })
         .catch((error) => {
-          console.error("Error updating event privacy", error);
+          console.error("Error updating event",field,error);
         });
       break;
     }
