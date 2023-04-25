@@ -8,7 +8,7 @@ import {
   updateDoc,
   arrayUnion,
 } from "@firebase/firestore";
-import { auth, db } from "../firebaseConfig";
+import { auth, db, to_request } from "../firebaseConfig";
 import { StatusBar } from "expo-status-bar";
 import { Component, useEffect, useState } from "react";
 import {
@@ -25,7 +25,7 @@ import Icon from "react-native-vector-icons/AntDesign";
 import AntDesign from "react-native-vector-icons/AntDesign";
 import { Modal } from "react-native";
 import uuid from "react-native-uuid";
-import { addEvent } from "../firebaseConfig";
+import { addEvent, addGoal } from "../firebaseConfig";
 
 export default class NotificationScreen extends Component {
   constructor() {
@@ -103,7 +103,7 @@ export default class NotificationScreen extends Component {
             this.setState({
               friend_requests: [...this.state.friend_requests, request],
             });
-          } else if (sp[sp.length - 1] == "event") {
+          } else if (sp[sp.length - 1] == "event" || sp[sp.length - 1] == "goal" || sp[sp.length - 1] == "message") {
             this.setState({ requests: [...this.state.requests, request] });
           }
         });
@@ -173,7 +173,6 @@ export default class NotificationScreen extends Component {
 
   async confirm_event(event_data, from) {
     const temp = event_data.split("/")[1].split(";");
-    console.log(temp);
     const docRef = doc(db, "events", auth.currentUser?.uid);
     const querySnapShot = await getDoc(docRef);
     if (!querySnapShot.exists()) {
@@ -242,9 +241,70 @@ export default class NotificationScreen extends Component {
     this.refresh_screen();
   }
 
+  async confirm_goal(goal_data, from) {
+    const temp = goal_data.split("/")[1].split(";");
+    console.log("hello", temp);
+    const docRef = doc(db, "goals", auth.currentUser?.uid);
+    const querySnapShot = await getDoc(docRef);
+    if (!querySnapShot.exists()) {
+      setDoc(docRef, {
+        goal_list: [],
+      });
+    }
+    const goalId = uuid.v4();
+    var deadlineData = new Date(temp[2]);
+
+    var deadline = new Date(
+      deadlineData.getFullYear(),
+      deadlineData.getMonth(),
+      deadlineData.getDate(),
+      deadlineData.getHours(),
+      deadlineData.getMinutes()
+    );
+    addGoal(
+        auth.currentUser?.uid,
+        goalId,
+        temp[0],
+        temp[1],
+        deadline
+    );
+
+    const reqRef = doc(db, "requests", auth.currentUser?.email);
+    const reqRef_f = doc(db, "requests", from);
+
+    updateDoc(reqRef, {
+      from_request: arrayRemove(goal_data),
+    });
+    const remove = goal_data.replace(from, auth.currentUser?.email);
+    updateDoc(reqRef_f, {
+      to_request: arrayRemove(remove),
+    });
+    
+    var message =  auth.currentUser?.email + " has accepted your goal invite!";
+    to_request(auth.currentUser?.email, from, "message", message)
+
+    this.refresh_screen();
+    console.log("Goal written with ID: ", docRef.id);
+  }
+
+  remove_message(message_data, from) {
+    const reqRef = doc(db, "requests", auth.currentUser?.email);
+    const reqRef_f = doc(db, "requests", from);
+
+    updateDoc(reqRef, {
+      from_request: arrayRemove(message_data),
+    });
+    const remove = message_data.replace(from, auth.currentUser?.email);
+    updateDoc(reqRef_f, {
+      to_request: arrayRemove(remove),
+    });
+    this.refresh_screen();
+  }
+
   renderItem = (item) => {
     const words = item.split("/");
     const type = words[words.length - 1];
+    console.log(type)
     if (type == "friend") {
       const str = '"' + words[0] + '" sent you a friend request';
       return (
@@ -323,7 +383,54 @@ export default class NotificationScreen extends Component {
           <Text>{words[0]}</Text>
         </View>
       );
+    } else if (type == "goal") {
+      const from = words[0];
+      const contents = words[1].split(";");
+      var pointGoal = contents[0],
+        category = contents[1],
+        deadline = contents[2];
+
+      const str = from + " invited you to join their point goal!";
+      const info =
+        "Category: " +
+        category +
+        "\n\n" +
+        "Point Goal: " +
+        pointGoal +
+        "\n\n" +
+        "Deadline: " +
+        deadline +
+        "\n";
+        return (
+          <TouchableOpacity
+            style={styles.item2}
+            onPress={() => Alert.alert("Information", info)}
+          >
+            <Text style={{ fontSize: 14 }}>{str}</Text>
+            <View style={{ flexDirection: "row", marginLeft: 5 }}>
+              <TouchableOpacity onPress={() => this.confirm_goal(item, from)}>
+                <Icon name="checkcircleo" size={20} />
+              </TouchableOpacity>
+              <TouchableOpacity onPress={() => this.cancel_event(item, from)}>
+                <Icon name="closecircleo" size={20} style={{ marginLeft: 5 }} />
+              </TouchableOpacity>
+            </View>
+          </TouchableOpacity>
+        );
+      } 
+      else if (type == "message") {
+      const from = words[0];
+      return (
+        <View style={[styles.item2, { justifyContent: "flex-start" }]}>
+          <Text>{words[1]}</Text>
+              <TouchableOpacity onPress={() => this.remove_message(item, from)}>
+                <Icon name="closecircleo" size={20} style={{ marginLeft: 18 }} />
+              </TouchableOpacity>
+        </View>
+
+      );
     }
+
   };
 
   render() {

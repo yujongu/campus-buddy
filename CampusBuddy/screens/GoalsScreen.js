@@ -9,8 +9,10 @@ import {
   FlatList
 } from "react-native";
 import Icon from "react-native-vector-icons/FontAwesome";
-import { auth, db, addGoal, getGoals } from "../firebaseConfig";
+import { auth, db, addGoal, getGoals, to_request } from "../firebaseConfig";
 import DateTimePicker from "@react-native-community/datetimepicker";
+import { MultiSelect } from "react-native-element-dropdown";
+import AntDesign from "react-native-vector-icons/AntDesign";
 import uuid from "react-native-uuid";
 import {
   updateDoc,
@@ -32,9 +34,18 @@ export default function ProfileScreen({ navigation, route }) {
   const [deadlineTime, setDeadlineTime] = useState(new Date());
   const [selectTime, setSelectTime] = useState(false);
   const [goalList, setGoalList] = useState([]);
+  const [searched, setSearched] = useState([]);
+  const [selected, setSelected] = useState([]);
+  const [friend_list, setFriendList] = useState([]);
 
   useEffect(() => {
     const fetchData = async () => {
+      const friends = doc(db, "friend_list", auth.currentUser?.email);
+      console.log(friends)
+      onSnapshot(friends, (doc) => {
+        setFriendList([...doc.data()["favorite"], ...doc.data()["friends"]])
+        setSearched([...doc.data()["favorite"], ...doc.data()["friends"]])
+      });
       result = []
       const res = await getGoals(auth.currentUser?.uid);
       if (res != null) {
@@ -51,7 +62,7 @@ export default function ProfileScreen({ navigation, route }) {
           result.push(temp);
         }
         setGoalList(result);
-        console.log(goalList)
+        
       } else {
         console.log("No such document!");
       }
@@ -92,11 +103,42 @@ export default function ProfileScreen({ navigation, route }) {
             category,
             deadline
         );
+        const message =
+          pointGoal +
+          ";" +
+          category +
+          ";" +
+          deadline;
+        selected.map((email) => {
+          to_request(auth.currentUser?.email, email, "goal", message);
+        });
         setVisible(false);
-
     }
 
   }
+  //search function for Mutiselect Box, taken from CalendarScreen.js
+  filter_friends = (text) => {
+    const updatedData = friend_list.filter((item) => {
+      return item.user.includes(text);
+    });
+    if (updatedData.length > 0) {
+      setSearched(updatedData);
+    }
+  };
+
+  //render method for MutiselectBox, taken from CalendarScreen.js
+  renderDataItem = (item) => {
+    return (
+      <View style={styles.item2}>
+        <Text style={styles.selectedTextStyle}>{item.user}</Text>
+        {selected.indexOf(item.user) > -1 ? (
+          <AntDesign style={styles.icon} color="black" name="check" size={20} />
+        ) : (
+          <AntDesign style={styles.icon} color="black" name="plus" size={20} />
+        )}
+      </View>
+    );
+  };
 
   return (
     <View style={[styles.container]}>
@@ -310,7 +352,42 @@ export default function ProfileScreen({ navigation, route }) {
                     </View>
                   </View>
                     </View>
-
+                    <View style={styles.row}>
+                    <View style={[{ width: 300, margin: 10 }]}>
+                    <MultiSelect
+                      style={styles.dropdown}
+                      placeholderStyle={styles.placeholderStyle}
+                      selectedTextStyle={styles.selectedTextStyle}
+                      inputSearchStyle={styles.inputSearchStyle}
+                      iconStyle={styles.iconStyle}
+                      data={searched}
+                      valueField="user"
+                      placeholder="Invite friends"
+                      value={selected}
+                      search
+                      searchQuery={(text) => {
+                        filter_friends(text);
+                      }}
+                      searchPlaceholder="Search..."
+                      onChange={(item) => {
+                        setSelected(item);
+                      }}
+                      renderItem={renderDataItem}
+                      renderSelectedItem={(item, unSelect) => (
+                        <TouchableOpacity
+                          onPress={() => unSelect && unSelect(item)}
+                        >
+                          <View style={styles.selectedStyle}>
+                            <Text style={styles.textSelectedStyle}>
+                              {item.user}
+                            </Text>
+                            <AntDesign color="black" name="delete" size={17} />
+                          </View>
+                        </TouchableOpacity>
+                      )}
+                    />
+                  </View>
+                  </View>
                   <Button
                     title="Set Goal"
                     onPress={() => {
@@ -344,5 +421,63 @@ const styles = StyleSheet.create({
     fontSize: 20,
     textAlign: "center",
     paddingBottom:10
+  },
+  dropdown: {
+    height: 50,
+    backgroundColor: "white",
+    borderRadius: 12,
+    padding: 12,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 1,
+    },
+    shadowOpacity: 0.2,
+    shadowRadius: 1.41,
+    elevation: 2,
+  },
+  placeholderStyle: {
+    fontSize: 16,
+  },
+  selectedTextStyle: {
+    fontSize: 14,
+  },
+  iconStyle: {
+    width: 20,
+    height: 20,
+  },
+  inputSearchStyle: {
+    height: 40,
+    fontSize: 16,
+  },
+  selectedStyle: {
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    borderRadius: "14px",
+    backgroundColor: "white",
+    shadowColor: "#000",
+    marginTop: 8,
+    marginRight: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    shadowOffset: {
+      width: 0,
+      height: 1,
+    },
+    shadowOpacity: 0.2,
+    shadowRadius: 1.41,
+
+    elevation: 2,
+  },
+  textSelectedStyle: {
+    marginRight: 5,
+    fontSize: 16,
+  },
+  item2: {
+    padding: 17,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
   },
 });
