@@ -723,6 +723,32 @@ export async function to_request(own, to_user, type, message) {
       console.error("Error adding doc: ", e);
     }
   }
+  else if (type == "goal") {
+    try {
+      updateDoc(docRef, {
+        to_request: arrayUnion(to_user + "/" + message + "/" + type),
+      });
+      updateDoc(docRef_to, {
+        from_request: arrayUnion(own + "/" + message + "/" + type),
+      });
+      console.log("Successfully sent goal request: ", docRef.id);
+    } catch (e) {
+      console.error("Error adding doc: ", e);
+    }
+  }
+  else if (type == "message") {
+    try {
+      updateDoc(docRef, {
+        to_request: arrayUnion(to_user + "/" + message + "/" + type),
+      });
+      updateDoc(docRef_to, {
+        from_request: arrayUnion(own + "/" + message + "/" + type),
+      });
+      console.log("Successfully sent goal request: ", docRef.id);
+    } catch (e) {
+      console.error("Error adding doc: ", e);
+    }
+  }
 }
 
 export async function addPoints(user_token, category, points) {
