@@ -35,8 +35,8 @@ export class PointsProgressBar extends React.Component {
     const userDocRef = doc(db, "users", this.props.id);
     const res = onSnapshot(userDocRef, (doc) => {
       if (res != null) {
-        this.setState({ schoolPoints: doc.data().points["school"] });
-        this.setState({ fitnessPoints: doc.data().points["fitness"] });
+        this.setState({ schoolPoints: doc.data().points["SCHOOLCOURSE"] });
+        this.setState({ fitnessPoints: doc.data().points["FITNESS"] });
       } else {
         console.log("No such document!");
       }
