@@ -244,6 +244,23 @@ export async function addGoal(user_token, id, points, category, deadline) {
   }
 }
 
+export async function removeGoal(user_token, id) {
+  const userDocRef = doc(db, "goals", user_token);
+  const res = await getGoals(user_token);
+  for (let i = 0; i < res["goal_list"].length; i++) {
+    if (res["goal_list"][i]["id"] == id) {
+      console.log("match")
+      await updateDoc(userDocRef, { goal_list: arrayRemove(res["goal_list"][i]) })
+        .then(() => {
+          console.log("Successfully removed goal.");
+        })
+        .catch((error) => {
+          console.error("Error removing goal", error);
+        });
+      break;
+    }
+  }
+}
 export async function addEvent_maybe(
   user_token,
   title,
@@ -293,7 +310,7 @@ export async function addEvent_maybe(
   }
 }
 
-export async function updateEventPrivacy (user_token, id, privacy) {
+export async function updateEventField (user_token, field, id, newValue) {
   const userDocRef = doc(db, "events", user_token);
   const res = await getUserEvents(user_token);
   console.log(res)
@@ -309,14 +326,19 @@ export async function updateEventPrivacy (user_token, id, privacy) {
           console.error("Error removing old event", error);
         });
       let tempItem = res["event"][i];
-      tempItem.details.audienceLevel = privacy;
+      if (field == "privacy") {
+        tempItem.details.audienceLevel = newValue;
+      }
+      else if (field == "category") {
+        tempItem.details.category = newValue;
+      }
       tempItem.id = uuid.v4();
       await updateDoc(userDocRef, { event: arrayUnion(tempItem) })
         .then(() => {
-          console.log("Successfully updated event privacy.");
+          console.log("Successfully updated event",field);
         })
         .catch((error) => {
-          console.error("Error updating event privacy", error);
+          console.error("Error updating event",field,error);
         });
       break;
     }
@@ -719,6 +741,32 @@ export async function to_request(own, to_user, type, message) {
         from_request: arrayUnion(own + "/" + message + "/" + type),
       });
       console.log("Successfully sent event request: ", docRef.id);
+    } catch (e) {
+      console.error("Error adding doc: ", e);
+    }
+  }
+  else if (type == "goal") {
+    try {
+      updateDoc(docRef, {
+        to_request: arrayUnion(to_user + "/" + message + "/" + type),
+      });
+      updateDoc(docRef_to, {
+        from_request: arrayUnion(own + "/" + message + "/" + type),
+      });
+      console.log("Successfully sent goal request: ", docRef.id);
+    } catch (e) {
+      console.error("Error adding doc: ", e);
+    }
+  }
+  else if (type == "message") {
+    try {
+      updateDoc(docRef, {
+        to_request: arrayUnion(to_user + "/" + message + "/" + type),
+      });
+      updateDoc(docRef_to, {
+        from_request: arrayUnion(own + "/" + message + "/" + type),
+      });
+      console.log("Successfully sent goal request: ", docRef.id);
     } catch (e) {
       console.error("Error adding doc: ", e);
     }

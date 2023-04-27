@@ -18,7 +18,7 @@ const theme = {
     background: "black",
     fontColor: "white",
     calendarUIBackground: "black",
-    calendarUIInnerBackground: "grey",
+    calendarUIInnerBackground: "#1b1d21",
     plusModalColor: "white",
     borderColor: "white",
     statusBarColor: "light",

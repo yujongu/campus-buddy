@@ -10,6 +10,7 @@ import {
   Text,
   StatusBar,
   ScrollView,
+  Platform
 } from "react-native";
 
 import ThemeContext from "../components/ui/ThemeContext";
@@ -70,17 +71,19 @@ export default function FeedScreen({ navigation, route }) {
           alignItems: "center",
         }}
       >
-        <RadioButton
-          value={item.category}
-          status={category === item.category ? "checked" : "unchecked"}
-          onPress={() => {
-            if (category === item.category) {
-              setCategory(null);
-            } else {
-              setCategory(item.category);
-            }
-          }}
-        />
+        <View style={ Platform.OS === 'ios' ? {borderWidth: 1, borderRadius: 100, margin: 5} : null}>
+          <RadioButton
+            value={item.category}
+            status={category === item.category ? "checked" : "unchecked"}
+            onPress={() => {
+              if (category === item.category) {
+                setCategory(null);
+              } else {
+                setCategory(item.category);
+              }
+            }}
+          />
+        </View>
         <Text style={{ fontSize: 15 }}>{item.category}</Text>
       </View>
     );

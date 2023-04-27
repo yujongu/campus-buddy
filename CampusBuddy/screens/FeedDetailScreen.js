@@ -489,7 +489,7 @@ export default function FeedDetailScreen({ navigation, route }) {
             </View>
           </View>
           <Button
-            style={{ position: "absolute", bottom: 0 }}
+            style={{}}
             title="close"
             onPress={() => setModal(!modal)}
           />
