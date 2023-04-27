@@ -27,7 +27,7 @@ export class PointsProgressBar extends React.Component {
       fitnessPoints: 0,
       likes: 0,
       liked: false,
-      numLike: 30,
+      numLike: 0,
     };
   }
 
