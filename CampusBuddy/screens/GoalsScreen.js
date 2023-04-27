@@ -12,7 +12,7 @@ import {
   Pressable
 } from "react-native";
 import Icon from "react-native-vector-icons/FontAwesome";
-import { auth, db, addGoal, getGoals, to_request, removeGoal } from "../firebaseConfig";
+import { auth, db, addGoal, getGoals, to_request, removeGoal, getCompletedGoals } from "../firebaseConfig";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { Dropdown, MultiSelect } from "react-native-element-dropdown";
 import AntDesign from "react-native-vector-icons/AntDesign";
@@ -41,6 +41,7 @@ export default function ProfileScreen({ navigation, route }) {
   const [deadlineTime, setDeadlineTime] = useState(new Date());
   const [selectTime, setSelectTime] = useState(false);
   const [goalList, setGoalList] = useState([]);
+  const [completedGoalList, setCompletedGoalList] = useState([]);
   const [searched, setSearched] = useState([]);
   const [selected, setSelected] = useState([]);
   const [friend_list, setFriendList] = useState([]);
@@ -83,6 +84,26 @@ export default function ProfileScreen({ navigation, route }) {
     } else {
       console.log("No such document!");
     }
+    const res2 = await getCompletedGoals(auth.currentUser?.uid);
+    result2 = []
+    if (res2 != null) {
+      for (let i = 0; i < res2["goal_list"].length; i++) {
+        const temp = {
+          category: res2["goal_list"][i]["category"],
+          dateCompleted: new Date(
+            res2["goal_list"][i]["dateCompleted"].seconds * 1000
+          ), //multiply 1000 since Javascript uses milliseconds. Timestamp to date.
+          id: res2["goal_list"][i]["id"],
+          points: res2["goal_list"][i]["points"]
+        };
+        result2.push(temp);
+      }
+      setCompletedGoalList(result2);
+      console.log(result2)
+    } else {
+      console.log("No such document!");
+    }
+  
   }
 
   const categories = [
@@ -206,14 +227,35 @@ export default function ProfileScreen({ navigation, route }) {
             <Goal
               category={item.category}
               points={item.points}
-              progress={5}
+              progress={item.progress}
               deadline={item.deadline}
+              completed={false}
             />
             </Pressable>
           )}
           keyExtractor={(item) => item.id}
         />
         </View>
+             <View>
+            <View  style= {styles.row}>
+              <Text style={{paddingTop:30, fontSize:20, paddingBottom:10}}>Completed Goals</Text>
+            </View>
+            <View style= {styles.row}>
+            <FlatList
+              data={completedGoalList}
+              renderItem={({ item }) => (
+                <Goal
+                  deadline={item.dateCompleted}
+                  completed={true}
+                  category={item.category}
+                  points={item.points}
+                />
+              )}
+              keyExtractor={(item) => item.id}
+            />
+            </View>
+            </View>
+
         <View style= {{top:30}}>
         <TouchableOpacity
             activeOpacity={0.7}

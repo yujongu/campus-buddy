@@ -110,7 +110,7 @@ const data = [
     value: EventRepetitionType.WEEKLY.value,
   },
 ];
-const category = [
+const categories = [
   {
     label: EventCategory.SPORTS,
     value: EventCategory.SPORTS,
@@ -299,7 +299,7 @@ export default class App extends Component {
     if (events != null && events["event"] != undefined) {
       for (let i = 0; i < events["event"].length; i++) {
         const temp = {
-          category: EventCategory.EVENT,
+          category: events["event"][i]["details"]["category"],
           title: events["event"][i]["details"]["title"],
           startTime: new Date(
             events["event"][i]["details"]["startTime"].seconds * 1000
@@ -687,6 +687,7 @@ export default class App extends Component {
       }
 
       const eventId = uuid.v4();
+      console.log(this.state.eventRepetition, this.state.selectedCategory)
       switch (this.state.eventRepetition) {
         case 0:
           addEvent(
@@ -706,7 +707,7 @@ export default class App extends Component {
           );
 
           this.state.calendarEventList.push({
-            category: EventCategory.EVENT,
+            category: this.state.selectedCategory,
             title: this.title,
             startTime: eventSTime,
             endTime: eventETime,
@@ -718,7 +719,7 @@ export default class App extends Component {
             audienceLevel: selectedAudienceLevel,
           });
           this.state.totalCalendarList.push({
-            category: EventCategory.EVENT,
+            category: this.state.selectedCategory,
             title: this.title,
             startTime: eventSTime,
             endTime: eventETime,
@@ -733,7 +734,7 @@ export default class App extends Component {
           addBoardData(auth.currentUser?.uid, this.points, EventCategory.EVENT);
 
           const message =
-            EventCategory.EVENT +
+            this.state.selectedCategory +
             ";" +
             this.title +
             ";" +
@@ -767,7 +768,7 @@ export default class App extends Component {
             eventETime,
             this.location,
             this.description,
-            EventCategory.EVENT,
+            this.state.selectedCategory,
             this.points,
             eventColor,
             this.state.eventRepetition,
@@ -1458,6 +1459,7 @@ export default class App extends Component {
   };
 
   handleEventCompletion = async (category, id, completePoints) => {
+    console.log("category completed:", category)
     if (category == EventCategory.SCHOOLCOURSE) {
       const userDocRef = doc(db, "schedule", auth.currentUser.uid);
       const res = await userSchedule(auth.currentUser?.uid);
@@ -1473,7 +1475,7 @@ export default class App extends Component {
               console.error("Error removing class from schedule", error);
             });
           if (completePoints) {
-            addPoints(auth.currentUser?.uid, "school", 10);
+            addPoints(auth.currentUser?.uid, "SCHOOLCOURSE", 10);
           }
         }
       }
@@ -1490,9 +1492,29 @@ export default class App extends Component {
               console.error("Error removing event from event list", error);
             });
           if (completePoints) {
+            console.log("CATEGORY", category)
+            var category_name = "EVENT";
+            switch (category) {
+              case "School Course":
+                category_name = "SCHOOLCOURSE";
+                break;
+              case "Sports Event":
+                category_name = "SPORTS";
+                break;
+              case "Arts":
+                category_name = "ARTS";
+                break;
+              case "Social":
+                category_name = "SOCIAL";
+                break;
+              case "Career":
+                category_name = "CAREER";
+              default:
+                break;
+            }
             addPoints(
               auth.currentUser?.uid,
-              "school",
+              category_name,
               parseInt(res["event"][i]["details"]["point_value"], 10)
             );
           }
@@ -1949,12 +1971,12 @@ export default class App extends Component {
                         placeholder="Select a Category"
                         labelField="label"
                         valueField="value"
-                        data={category}
+                        data={categories}
                         value={this.state.selectedCategory}
                         onChange={(item) => {
-                          this.setState({ selectedCategory: item.label });
+                          this.setState({ selectedCategory: item.value });
                           if (this.title == "" || this.title == undefined) {
-                            switch (item.label) {
+                            switch (item.value) {
                               case "School Course":
                                 this.setTitle(defaultTitle.SCHOOLCOURSE);
                                 break;
@@ -1981,7 +2003,7 @@ export default class App extends Component {
                             this.location == "" ||
                             this.location == undefined
                           ) {
-                            switch (item.label) {
+                            switch (item.value) {
                               case "School Course":
                                 this.setLocation(defaultLocation.SCHOOLCOURSE);
                                 break;
@@ -3142,7 +3164,7 @@ const visibilityFilter = (event, filterValues) => {
       }
       break;
     default:
-      return false;
+      return true; //changed to true to show new categories (career, arts, etc.)
   }
 };
 
