@@ -34,7 +34,7 @@ export default function GroupDetailsScreen({ navigation, route }) {
           <View>
             <Text style={{ fontSize: 25 }}>Members:</Text>
           </View>
-          <ScrollView style={{ height: "50%" }}>
+          <ScrollView style={{ height: "50%"}}>
             {groupMembers.map((item) => {
               return (
                 <View
@@ -54,6 +54,10 @@ export default function GroupDetailsScreen({ navigation, route }) {
               );
             })}
           </ScrollView>
+          <View style={styles.container}>
+            <Text style={{ fontSize: 25 }}>Group Events</Text>
+          </View>
+          <ScrollView></ScrollView>
         </View>
       </View>
     </SafeAreaView>
@@ -63,7 +67,5 @@ export default function GroupDetailsScreen({ navigation, route }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
   },
 });
