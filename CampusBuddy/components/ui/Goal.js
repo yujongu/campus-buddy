@@ -3,11 +3,13 @@ import { Button, StyleSheet, Text, View, Image } from "react-native";
 import ThemeContext from "./ThemeContext";
 import theme from "./theme";
 import { getMonthName } from "../../helperFunctions/dateFunctions";
+import { EventCategory } from "../../constants/eventCategory";
 export default function Goal({
   category,
   points,
   progress,
   deadline,
+  completed,
 }) {
   const theme = useContext(ThemeContext);
 
@@ -24,7 +26,29 @@ export default function Goal({
     <View
       style={[styles.container, { backgroundColor: theme.feedItemBackground }]}
     >
+      { completed ? (
       <View style={styles.mainContainer}>
+        <View style={styles.startDateContainer}>
+          <Text style={[{ fontSize: 15, color: theme.color, textAlign:"center" }]}>
+            Date{"\n"}Completed
+          </Text>
+          <Text style={{ fontSize: 20, color: theme.color, textAlign:"center" }}>{getMonthName(month)} {date}</Text>
+        </View>
+        <View style={{flexDirection:"column",}}>
+          <Text
+            style={{ fontSize: 15, color: theme.color, fontStyle:"italic", textAlign:"center", paddingBottom:5 }}
+          >
+            {points} points
+          </Text>
+          <Text
+            style={{ fontSize: 15, color: theme.color, paddingLeft:10, paddingRight:10, fontWeight:"bold", textAlign:"center" }}
+          >
+            {EventCategory[category]}{"\n"}Goal
+          </Text>
+         
+          </View>
+      </View>) : 
+      ( <View style={styles.mainContainer}>
         <View style={styles.startDateContainer}>
           <Text style={[{ fontSize: 15, color: theme.color, textAlign:"center" }]}>
             Finish by
@@ -64,6 +88,7 @@ export default function Goal({
         </View>
       </View>
       </View>
+    )}
 
     </View>
   );

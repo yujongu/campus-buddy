@@ -34,6 +34,7 @@ import uuid from "react-native-uuid";
 import { FieldValue } from "firebase/firestore";
 import { AudienceLevelType } from "./constants/AudienceLevelType";
 import { JSGetDateClock } from "./helperFunctions/dateFunctions";
+import { EventCategory } from "./constants/eventCategory";
 
 // TODO: Add SDKs for Firebase products that you want to use
 // https://firebase.google.com/docs/web/setup#available-libraries
@@ -118,8 +119,14 @@ export async function createUser(username, first, last, email, password) {
           email: email,
           password: password,
           points: {
-            school: 0,
-            fitness: 0,
+            SCHOOLCOURSE: 0,
+            EVENT:0,
+            SPORTS: 0,
+            GROUP: 0,
+            ARTS: 0,
+            SOCIAL: 0,
+            CAREER: 0,
+            FITNESS: 0,
           },
           points_privacy: false,
           calendar_privacy: false,
@@ -261,6 +268,55 @@ export async function removeGoal(user_token, id) {
     }
   }
 }
+
+export async function getCompletedGoals(user_token) {
+  try {
+    const querySnapShot = await getDoc(doc(db, "completed_goals", user_token));
+    if (querySnapShot.exists()) {
+      const result = querySnapShot.data();
+      return result;
+    } else {
+      return null;
+    }
+  } catch (error) {
+    alert("Error retrieving completed user goals " + error);
+  }
+}
+
+export async function addCompletedGoal(user_token, id, category, dateCompleted, points) {
+  const docRef = doc(db, "completed_goals", user_token);
+  try {
+    const querySnapShot = await getDoc(doc(db, "completed_goals", user_token));
+    if (!querySnapShot.exists()) {
+      setDoc(docRef, {
+        goal_list: [],
+      });
+    }
+    const data = {
+      id: id,
+      category: category,
+      dateCompleted: dateCompleted,
+      points: points,
+    };
+    console.log(data)
+    updateDoc(docRef, { goal_list: arrayUnion(data) });
+    console.log("Completed goal written with ID: ", docRef.id);
+  } catch (e) {
+    console.error("Error adding completed goal: ", e);
+  }
+
+  const querySnapShot = await getDoc(doc(db, "friend_list", auth.currentUser?.email));
+  if (querySnapShot != null) {
+    const friends = querySnapShot.data()["friends"];
+    console.log(friends)
+    var message =  auth.currentUser?.email + " has completed their " + EventCategory[category] + " point goal!";
+    for (let i = 0; i < friends.length; i++) {
+      to_request(auth.currentUser?.email, friends[i]["user"], "message", message);
+    }
+  }
+  
+}
+
 export async function addEvent_maybe(
   user_token,
   title,
@@ -766,7 +822,7 @@ export async function to_request(own, to_user, type, message) {
       updateDoc(docRef_to, {
         from_request: arrayUnion(own + "/" + message + "/" + type),
       });
-      console.log("Successfully sent goal request: ", docRef.id);
+      console.log("Successfully sent message: ", docRef.id);
     } catch (e) {
       console.error("Error adding doc: ", e);
     }
@@ -776,7 +832,7 @@ export async function to_request(own, to_user, type, message) {
 export async function addPoints(user_token, category, points) {
   const docRef = doc(db, "users", user_token);
   const querySnapShot = await getDoc(doc(db, "users", user_token));
-  const oldPoints = querySnapShot.data().points.school;
+  const oldPoints = querySnapShot.data().points[category];
   console.log("snapshot", category, points);
   try {
     updateDoc(docRef, {
@@ -786,6 +842,48 @@ export async function addPoints(user_token, category, points) {
   } catch (e) {
     console.error("Error updating points: ", e);
   }
+
+  const res = await getGoals(user_token);
+  const userDocRef = doc(db, "goals", user_token);
+  if (res!= null) {
+    for (let i = 0; i < res["goal_list"].length; i++) {
+      if (res["goal_list"][i]["category"] == EventCategory[category]) {
+        await updateDoc(userDocRef, { goal_list: arrayRemove(res["goal_list"][i]) })
+        .then(() => {
+          console.log("Successfully removed old goal progress.");
+        })
+        .catch((error) => {
+          console.error("Error removing old goal progress", error);
+        });
+      let tempItem = res["goal_list"][i];
+      tempItem.progress += points;
+      if (tempItem.progress >= tempItem.points) {
+        var data = new Date()
+        var completedDate = new Date(
+          data.getFullYear(),
+          data.getMonth(),
+          data.getDate(),
+          data.getHours(),
+          data.getMinutes()
+        );
+        addCompletedGoal(user_token, res["goal_list"][i]["id"], category, completedDate, tempItem.points)
+      }
+      else {
+        tempItem.id = uuid.v4();
+        await updateDoc(userDocRef, { goal_list: arrayUnion(tempItem) })
+          .then(() => {
+            console.log("Successfully updated goal progress",field);
+          })
+          .catch((error) => {
+            console.error("Error updating goal progress",field,error);
+          });
+      }
+      }
+      
+    }
+
+  }
+
 }
 
 export async function getLeaderboard() {
