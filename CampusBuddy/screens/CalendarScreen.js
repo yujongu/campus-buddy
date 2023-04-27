@@ -1970,6 +1970,9 @@ export default class App extends Component {
                               case "Career":
                                 this.setTitle(defaultTitle.CAREER);
                                 break;
+                              case "Event":
+                                this.setTitle(defaultTitle.EVENT);
+                                break;
                               default:
                                 break;
                             }
@@ -1993,6 +1996,9 @@ export default class App extends Component {
                                 break;
                               case "Career":
                                 this.setLocation(defaultLocation.CAREER);
+                                break;
+                              case "Event":
+                                this.setLocation(defaultLocation.EVENT);
                                 break;
                               default:
                                 break;
