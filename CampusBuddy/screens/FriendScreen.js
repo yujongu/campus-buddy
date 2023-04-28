@@ -503,16 +503,29 @@ export default class FriendScreen extends Component {
             <Text numberOfLines={1} style={{ fontSize: 20 }}>
               {group + ":"}
             </Text>
-            <Pressable
-              style={{
-                padding: 10,
-                backgroundColor: Colors.grey,
-                borderRadius: 10,
-              }}
-              onPress={() => this.navigateToGroupDetailsScreen(group)}
-            >
-              <AntDesign color="black" name="arrowright" size={20} />
-            </Pressable>
+            <View style={{flexDirection: 'row'}}>
+              {/* <TouchableOpacity
+                style={{
+                  padding: 10,
+                  backgroundColor: Colors.grey,
+                  borderRadius: 10,
+                  margin: 5
+                }}
+                onPress={() => this.followGroup(group) }>
+                <AntDesign color="black" name="pluscircleo" size={20} />
+              </TouchableOpacity> */}
+              <Pressable
+                style={{
+                  padding: 10,
+                  backgroundColor: Colors.grey,
+                  borderRadius: 10,
+                  margin: 5
+                }}
+                onPress={() => this.navigateToGroupDetailsScreen(group)}
+              >
+                <AntDesign color="black" name="arrowright" size={20} />
+              </Pressable>
+            </View>
           </View>
 
           {/* <FlatList 

@@ -595,6 +595,29 @@ export async function addGroup(groupName, groupAuthor) {
   }
 }
 
+export async function followUserGroup(groupName, user_email) {
+  try {
+    const q = query(collection(db, "groups"), where("groupName", "==", groupName));
+    const querySnapshot = await getDocs(q);
+
+    let gid = "";
+    let memList = [];
+
+    querySnapshot.forEach((doc) => {
+      gid = doc.id;
+      memList = doc.data().memberList;
+      console.log(doc.id, "=>", doc.data().memberList);
+
+      // update new member as 'user_email' to memberList
+      memList.push(user_email);
+      console.log(memList);
+      updateDoc(doc.ref, {memberList: memList});
+    });
+  } catch (e) {
+    return null;
+  }
+}
+
 export async function addMembersToGroup(gid, memberList) {
   try {
     const docRef = await doc(db, "groups", gid);
@@ -720,21 +743,6 @@ export async function getGroupsWithUser(user_email) {
       myGroups[gName] = gName;
     });
     
-    // const groupsWithMeee = onSnapshot(q, (querySnapshot) => {
-    //   let myGroups = {};
-    //   let all_groups = [];
-
-    //   querySnapshot.forEach((doc) => {
-    //     // doc.data() is never undefined for query doc snapshots
-    //     let gName = doc.data().groupName;
-    //     if (!all_groups.includes(gName)) {
-    //       all_groups.push(gName);
-    //     }
-    //     myGroups[gName] = gName;
-    //   });
-
-    //   return Object.keys(myGroups);
-    // });
     return Object.keys(myGroups);
   } catch (e) {
     console.log("get groups error");

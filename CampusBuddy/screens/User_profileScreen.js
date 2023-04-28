@@ -11,6 +11,7 @@ import React, { useState, useEffect } from "react";
 import Icon from "react-native-vector-icons/FontAwesome";
 import Octicons from "react-native-vector-icons/Octicons";
 import { IconButton } from "@react-native-material/core";
+import AntDesign from "react-native-vector-icons/AntDesign";
 import {
   getMonthName,
   getWeekDayName,
@@ -20,7 +21,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import EventItem from "../components/ui/EventItem";
 import { PointsProgressBar } from "../components/ui/PointsProgressBar";
-import { auth, db, userSchedule, getUserEvents, getUserId, getGroupsWithUser, useGroupsWithUser } from "../firebaseConfig";
+import { auth, db, userSchedule, getUserEvents, getUserId, getGroupsWithUser, useGroupsWithUser, followUserGroup } from "../firebaseConfig";
 
 
 export default function User_profile({ navigation, route }) {
@@ -140,6 +141,21 @@ export default function User_profile({ navigation, route }) {
       console.error(error);
     }
 
+  }
+
+  followGroup = (gName) => {
+    console.log("follow Group");
+
+    // Alert for following
+    Alert.alert(
+      'Follow Group',
+      'Would you like to follow this group?',
+      [
+        {text: 'OK', onPress: () => followUserGroup(gName, auth.currentUser?.email)},
+        {text: 'Cancel', onPress: () => console.log('Cancel Pressed'), style: 'cancel'},
+      ],
+      {cancelable: false},
+    );
   }
 
   //modified from CalendarScreen.js
@@ -525,6 +541,16 @@ export default function User_profile({ navigation, route }) {
                   {userGroups.map((groupName) => (
                       <View style={styles.groupsContainer}>
                         <Text key={groupName} style={styles.groupNameText}>{groupName}</Text>
+                        <TouchableOpacity
+                          style={{
+                            padding: 10,
+                            backgroundColor: Colors.primary,
+                            borderRadius: 10,
+                            margin: 5
+                          }}
+                          onPress={() => this.followGroup(groupName) }>
+                          <AntDesign color="black" name="pluscircleo" size={20} />
+                        </TouchableOpacity> 
                       </View>
                   ))}
                 </ScrollView>
@@ -572,10 +598,13 @@ const styles = StyleSheet.create({
   },
   scrollViewContainer: {
     flex: 1, 
-    width: '70%',
+    width: '110%',
   },
   groupsContainer: {
     backgroundColor: Colors.secondary,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     padding: 8,
     margin: 10,
     borderRadius: 10,
