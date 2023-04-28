@@ -499,7 +499,8 @@ export default function User_profile({ navigation, route }) {
                   <Icon name="mail-reply" size={30} color="black" />
             </TouchableOpacity>
           </View> }
-        </Modal>   
+        </Modal>  
+         
         <Modal
           animationType="slide"
           visible={groupVisible}
