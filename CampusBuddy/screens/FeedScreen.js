@@ -10,7 +10,7 @@ import {
   Text,
   StatusBar,
   ScrollView,
-  Platform
+  Platform,
 } from "react-native";
 
 import ThemeContext from "../components/ui/ThemeContext";
@@ -26,6 +26,7 @@ import { ActivityIndicator } from "react-native";
 import { RadioButton } from "react-native-paper";
 import { doc, onSnapshot } from "firebase/firestore";
 import AntDesignicons from "react-native-vector-icons/AntDesign";
+import { reverseJSGetDateClock } from "../helperFunctions/dateFunctions";
 
 export default function FeedScreen({ navigation, route }) {
   const theme = useContext(ThemeContext);
@@ -36,19 +37,22 @@ export default function FeedScreen({ navigation, route }) {
 
   const LogoImg = theme.theme == "light" ? LogoBanner : LogoBannerWhite;
 
-
   const [feedData, setFeedData] = useState([]);
 
-  
-  
   useEffect(() => {
     const docRef = doc(db, "events_maybe", auth.currentUser?.uid);
     const getFeedData = async (currUserUid, currUserEmail) => {
       const fData = await getFeed(currUserUid, currUserEmail);
+      fData.sort((a, b) => {
+        return (
+          reverseJSGetDateClock(b.startTime) -
+          reverseJSGetDateClock(a.startTime)
+        );
+      });
       setFeedData(fData);
       return fData;
     };
-    const snap = onSnapshot(docRef, (doc) => console.log(doc.data()))
+    const snap = onSnapshot(docRef, (doc) => console.log(doc.data()));
     const getMaybeData = async (currUserUid, currUserEmail) => {
       const fData = await getMaybe(currUserUid, currUserEmail);
       setMaybe(fData);
@@ -58,7 +62,6 @@ export default function FeedScreen({ navigation, route }) {
 
     getMaybeData(auth.currentUser?.uid, auth.currentUser?.email);
     getFeedData(auth.currentUser?.uid, auth.currentUser?.email);
-    
   }, []);
 
   const renderItem = ({ item }) => {
@@ -71,7 +74,13 @@ export default function FeedScreen({ navigation, route }) {
           alignItems: "center",
         }}
       >
-        <View style={ Platform.OS === 'ios' ? {borderWidth: 1, borderRadius: 100, margin: 5} : null}>
+        <View
+          style={
+            Platform.OS === "ios"
+              ? { borderWidth: 1, borderRadius: 100, margin: 5 }
+              : null
+          }
+        >
           <RadioButton
             value={item.category}
             status={category === item.category ? "checked" : "unchecked"}
@@ -87,7 +96,7 @@ export default function FeedScreen({ navigation, route }) {
         <Text style={{ fontSize: 15 }}>{item.category}</Text>
       </View>
     );
-  }
+  };
   const navigateToLeaderboardPage = () => {
     navigation.navigate("LeaderboardScreen");
     // navigation.navigate("FeedDetails", {
@@ -147,28 +156,27 @@ export default function FeedScreen({ navigation, route }) {
               Pending Event
             </Text>
             <FlatList
-              style={{width: '80%', height: '100%'}}
+              style={{ width: "80%", height: "100%" }}
               data={maybe.filter(
                 (id, index, self) =>
-                  index ===
-                  self.findIndex((p) => p.id === id.id)
+                  index === self.findIndex((p) => p.id === id.id)
               )}
               renderItem={({ item }) => (
                 <FeedItem
-                navigation={navigation}
-                eventId={item.id}
-                userId={item.userId}
-                profilePic={item.profilePic}
-                title={item.title}
-                description={item.description}
-                location={item.location}
-                startTime={item.startTime}
-                endTime={item.endTime}
-                color={item.color}
-                pointValue={item.pointValue}
-                category={item.category}
-                eventMandatory={item.eventMandatory}
-              />
+                  navigation={navigation}
+                  eventId={item.id}
+                  userId={item.userId}
+                  profilePic={item.profilePic}
+                  title={item.title}
+                  description={item.description}
+                  location={item.location}
+                  startTime={item.startTime}
+                  endTime={item.endTime}
+                  color={item.color}
+                  pointValue={item.pointValue}
+                  category={item.category}
+                  eventMandatory={item.eventMandatory}
+                />
               )}
               keyExtractor={(item) => item.id}
             />
@@ -188,7 +196,7 @@ export default function FeedScreen({ navigation, route }) {
           </View>
         </View>
       </Modal>
-      <View style={{flexDirection: 'row', justifyContent: 'space-between'}}>
+      <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
         <Image
           source={LogoImg}
           style={{
@@ -200,7 +208,7 @@ export default function FeedScreen({ navigation, route }) {
             alignSelf: "center",
           }}
         />
-        <View style={{flexDirection: 'row'}}>
+        <View style={{ flexDirection: "row" }}>
           <TouchableOpacity
             onPress={() => {
               setFilter(!filter);
@@ -305,22 +313,21 @@ export default function FeedScreen({ navigation, route }) {
         renderItem={({ item }) =>
           category !== null ? (
             category === item.category ? (
-              
-                <FeedItem
-                  navigation={navigation}
-                  eventId={item.id}
-                  userId={item.userId}
-                  profilePic={item.profilePic}
-                  title={item.title}
-                  description={item.description}
-                  location={item.location}
-                  startTime={item.startTime}
-                  endTime={item.endTime}
-                  color={item.color}
-                  pointValue={item.pointValue}
-                  category={item.category}
-                  eventMandatory={item.eventMandatory}
-                />
+              <FeedItem
+                navigation={navigation}
+                eventId={item.id}
+                userId={item.userId}
+                profilePic={item.profilePic}
+                title={item.title}
+                description={item.description}
+                location={item.location}
+                startTime={item.startTime}
+                endTime={item.endTime}
+                color={item.color}
+                pointValue={item.pointValue}
+                category={item.category}
+                eventMandatory={item.eventMandatory}
+              />
             ) : null
           ) : (
             <FeedItem
@@ -345,7 +352,6 @@ export default function FeedScreen({ navigation, route }) {
     </SafeAreaView>
   );
 }
-
 
 const styles = StyleSheet.create({
   container: {
