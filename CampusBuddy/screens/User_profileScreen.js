@@ -3,7 +3,7 @@ import { Button, StyleSheet, Text, Pressable, TextInput, View, Modal, Alert, Tou
 import { EmailAuthProvider } from "firebase/auth";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { signOut } from "firebase/auth"
-import { updateDoc, doc, arrayRemove, onSnapshot, arrayUnion } from "firebase/firestore";
+import { updateDoc, doc, arrayRemove, onSnapshot, arrayUnion, query, collection, where } from "firebase/firestore";
 import { Colors } from "../constants/colors";
 import TopHeaderDays from "../components/ui/TopHeaderDays";
 import { EventCategory } from "../constants/eventCategory";
@@ -20,7 +20,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import EventItem from "../components/ui/EventItem";
 import { PointsProgressBar } from "../components/ui/PointsProgressBar";
-import { auth, db, userSchedule, getUserEvents, getUserId } from "../firebaseConfig";
+import { auth, db, userSchedule, getUserEvents, getUserId, getGroups } from "../firebaseConfig";
 
 
 export default function User_profile({ navigation, route }) {
@@ -34,6 +34,7 @@ export default function User_profile({ navigation, route }) {
   const [eventList, setEventList] = useState([]);
   const [weekViewStartDate,setStartDate] = useState(new Date());
   const [friendId,setId] = useState("");
+  const [myGroups, setMyGroups] = useState("");
 
   useEffect(() => {
     const fetchData = async () => {
@@ -85,7 +86,7 @@ export default function User_profile({ navigation, route }) {
   };
 
   const getPoints = async () => {
-    setPoints(true)
+    setPoints(true);
   }
   
   const getEvents = async () => {
@@ -126,7 +127,6 @@ export default function User_profile({ navigation, route }) {
 
   const getGroups = async () => {
     // TODO 
-    //console.log('Testing getGroups');
     setGroup(true);
   }
 
@@ -495,22 +495,26 @@ export default function User_profile({ navigation, route }) {
         >   
         { groupPublic ?
             <View style={{ flex: 1, margin: 60 }}>
-            <TouchableOpacity
-              activeOpacity={0.7}
-              onPress={()=>setPoints(false)}
-              style={{left:275}}
-            >
-              <Icon name="mail-reply" size={20} color="black" />
-            </TouchableOpacity>
-            <Text style={{fontSize:25, textAlign:"center"}}>{email}'s{'\n'}Groups</Text>
-            <View style={{flex:1, top:-200}}>
-              <PointsProgressBar id={friendId}/>
+              <TouchableOpacity
+                activeOpacity={0.7}
+                onPress={()=>setGroup(false)}
+                style={{left:275}}
+              >
+                <Icon name="mail-reply" size={20} color="black" />
+              </TouchableOpacity>
+              <Text style={{fontSize:25, textAlign:"center"}}>{email}'s{'\n'}Groups</Text>
+            <View style={{flex:1}}>
+              {/* <ScrollView>
+                {myGroups.map((name) => (
+                  <Text>{name}</Text>
+                ))}
+              </ScrollView> */}
             </View>
           </View>
           
           :
 
-          <View style = {{flex:1, justifyContent:"center" }}>
+          <View style = {{flex:1, justifyContent:"center"}}>
             <Text style = {{fontSize:20, textAlign:"center"}}> {email}'s groups are private.</Text>
             <TouchableOpacity
                   activeOpacity={0.7}

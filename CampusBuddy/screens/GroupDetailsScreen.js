@@ -26,8 +26,8 @@ export default function GroupDetailsScreen({ navigation, route }) {
     const fetchEvents = async () => {
       const events = await getGroupEvents(route.params.groupName);
       setGroupEvents(events);
-      console.log(groupEvents);
-      console.log(groupMembers);
+      // console.log(groupEvents);
+      // console.log(groupMembers);
     };
     fetchEvents();
   }, [groupName]);
@@ -79,7 +79,7 @@ export default function GroupDetailsScreen({ navigation, route }) {
           <View style={styles.container}>
             <Text style={{ fontSize: 25 }}>Group Events</Text>
           </View>
-          {/* <View>
+          <View>
             <ScrollView >
               {groupEvents.map((item) => {
                 return (
@@ -100,7 +100,7 @@ export default function GroupDetailsScreen({ navigation, route }) {
               title='Add group event'
               onPress={handleAddEvent}
             />
-          </View> */}
+          </View>
         </View>
       </View>
     </SafeAreaView>

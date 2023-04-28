@@ -699,6 +699,39 @@ export async function addGroupEvent(
   }
 }
 
+export async function getGroups(user_email) {
+  try {
+    const q = query(
+      collection(db, "groups"),
+      where("memberList", "array-contains", user_email)
+    );
+
+    const groupsWithMeee = onSnapshot(q, (querySnapshot) => {
+      let myGroups = { ...[] };
+      // let all_groups = this.state.all_groups;
+      let all_groups = [];
+
+      querySnapshot.forEach((doc) => {
+        // doc.data() is never undefined for query doc snapshots
+        let gName = doc.data().groupName;
+        if (!all_groups.includes(gName)) {
+          all_groups.push(gName);
+        }
+        myGroups[gName] = [];
+      });
+      setMyGroups(Object.keys(myGroups));
+      console.log(myGroups);
+    });
+    return () => {
+      groupsWithMeee();
+      subscriber();
+    };
+  } catch (e) {
+    console.log("get groups error");
+    console.log(e);
+  }
+}
+
 export async function getGroupEvents(groupName) {
   try {
     const docRef = doc(db, "group_events", groupName);
