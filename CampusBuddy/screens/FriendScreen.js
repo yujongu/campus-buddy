@@ -68,6 +68,7 @@ export default class FriendScreen extends Component {
       all_groups: [],
       all: [],
       data: [],
+      groupEvents: [],
     };
   }
 
@@ -473,7 +474,7 @@ export default class FriendScreen extends Component {
   navigateToGroupDetailsScreen = (groupName) => {
     this.props.navigation.navigate("GroupDetailsScreen", {
       groupName: groupName,
-      groupMembers: this.state.data[groupName],
+      groupMembers: this.state.data[groupName]
     });
   };
 

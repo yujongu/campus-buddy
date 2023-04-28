@@ -27,8 +27,10 @@ export default function User_profile({ navigation, route }) {
   const { email } = route.params;
   const [calendarVisible, setCalendar] = useState(false);
   const [pointsVisible, setPoints] = useState(false);
+  const [groupVisible, setGroup] = useState(false);
   const [calendarPublic, setCalendarPublic] = useState(false);
   const [pointsPublic, setPointsPublic] = useState(false);
+  const [groupPublic, setGroupPublic] = useState(false);
   const [eventList, setEventList] = useState([]);
   const [weekViewStartDate,setStartDate] = useState(new Date());
   const [friendId,setId] = useState("");
@@ -40,8 +42,10 @@ export default function User_profile({ navigation, route }) {
       const userDocRef = doc(db, "users", id[0]);
       const res = onSnapshot(userDocRef, (doc) => {
         if (res != null) {
-          setCalendarPublic(doc.data().calendar_privacy)
-          setPointsPublic(doc.data().points_privacy)
+          setCalendarPublic(doc.data().calendar_privacy);
+          setPointsPublic(doc.data().points_privacy);
+          setGroupPublic(doc.data().group_privacy);
+          // console.log(groupPublic);
         } else {
           console.log("No such document!");
         }
@@ -118,6 +122,12 @@ export default function User_profile({ navigation, route }) {
       }
     }
     checkList(result)
+  }
+
+  const getGroups = async () => {
+    // TODO 
+    //console.log('Testing getGroups');
+    setGroup(true);
   }
 
   //modified from CalendarScreen.js
@@ -217,6 +227,7 @@ export default function User_profile({ navigation, route }) {
         <Text>{email}'s profile page</Text>
         <Button title="View calendar" onPress={async ()=>{getEvents()}}/>
         <Button title="View points" onPress={async()=>{getPoints()}}/>
+        <Button title="View groups" onPress={async()=>{getGroups()}}/>
         <Button title="Go back" onPress={() => navigation.goBack()}/>
         <Modal
           animationType="slide"
@@ -476,8 +487,41 @@ export default function User_profile({ navigation, route }) {
                   <Icon name="mail-reply" size={30} color="black" />
             </TouchableOpacity>
           </View> }
+        </Modal>   
+        <Modal
+          animationType="slide"
+          visible={groupVisible}
+          transparent={false}
+        >   
+        { groupPublic ?
+            <View style={{ flex: 1, margin: 60 }}>
+            <TouchableOpacity
+              activeOpacity={0.7}
+              onPress={()=>setPoints(false)}
+              style={{left:275}}
+            >
+              <Icon name="mail-reply" size={20} color="black" />
+            </TouchableOpacity>
+            <Text style={{fontSize:25, textAlign:"center"}}>{email}'s{'\n'}Groups</Text>
+            <View style={{flex:1, top:-200}}>
+              <PointsProgressBar id={friendId}/>
+            </View>
+          </View>
+          
+          :
+
+          <View style = {{flex:1, justifyContent:"center" }}>
+            <Text style = {{fontSize:20, textAlign:"center"}}> {email}'s groups are private.</Text>
+            <TouchableOpacity
+                  activeOpacity={0.7}
+                  onPress={()=>setGroup(false)}
+                  style={{alignItems:"center", margin:30}}
+                >
+                  <Icon name="mail-reply" size={30} color="black" />
+            </TouchableOpacity>
+          </View>
+          }
         </Modal>
-        
       </SafeAreaView>
 
     

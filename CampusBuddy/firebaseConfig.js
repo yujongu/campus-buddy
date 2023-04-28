@@ -34,7 +34,6 @@ import uuid from "react-native-uuid";
 import { FieldValue } from "firebase/firestore";
 import { AudienceLevelType } from "./constants/AudienceLevelType";
 import { JSGetDateClock } from "./helperFunctions/dateFunctions";
-import { EventCategory } from "./constants/eventCategory";
 
 // TODO: Add SDKs for Firebase products that you want to use
 // https://firebase.google.com/docs/web/setup#available-libraries
@@ -119,14 +118,8 @@ export async function createUser(username, first, last, email, password) {
           email: email,
           password: password,
           points: {
-            SCHOOLCOURSE: 0,
-            EVENT:0,
-            SPORTS: 0,
-            GROUP: 0,
-            ARTS: 0,
-            SOCIAL: 0,
-            CAREER: 0,
-            FITNESS: 0,
+            school: 0,
+            fitness: 0,
           },
           points_privacy: false,
           calendar_privacy: false,
@@ -251,72 +244,6 @@ export async function addGoal(user_token, id, points, category, deadline) {
   }
 }
 
-export async function removeGoal(user_token, id) {
-  const userDocRef = doc(db, "goals", user_token);
-  const res = await getGoals(user_token);
-  for (let i = 0; i < res["goal_list"].length; i++) {
-    if (res["goal_list"][i]["id"] == id) {
-      console.log("match")
-      await updateDoc(userDocRef, { goal_list: arrayRemove(res["goal_list"][i]) })
-        .then(() => {
-          console.log("Successfully removed goal.");
-        })
-        .catch((error) => {
-          console.error("Error removing goal", error);
-        });
-      break;
-    }
-  }
-}
-
-export async function getCompletedGoals(user_token) {
-  try {
-    const querySnapShot = await getDoc(doc(db, "completed_goals", user_token));
-    if (querySnapShot.exists()) {
-      const result = querySnapShot.data();
-      return result;
-    } else {
-      return null;
-    }
-  } catch (error) {
-    alert("Error retrieving completed user goals " + error);
-  }
-}
-
-export async function addCompletedGoal(user_token, id, category, dateCompleted, points) {
-  const docRef = doc(db, "completed_goals", user_token);
-  try {
-    const querySnapShot = await getDoc(doc(db, "completed_goals", user_token));
-    if (!querySnapShot.exists()) {
-      setDoc(docRef, {
-        goal_list: [],
-      });
-    }
-    const data = {
-      id: id,
-      category: category,
-      dateCompleted: dateCompleted,
-      points: points,
-    };
-    console.log(data)
-    updateDoc(docRef, { goal_list: arrayUnion(data) });
-    console.log("Completed goal written with ID: ", docRef.id);
-  } catch (e) {
-    console.error("Error adding completed goal: ", e);
-  }
-
-  const querySnapShot = await getDoc(doc(db, "friend_list", auth.currentUser?.email));
-  if (querySnapShot != null) {
-    const friends = querySnapShot.data()["friends"];
-    console.log(friends)
-    var message =  auth.currentUser?.email + " has completed their " + EventCategory[category] + " point goal!";
-    for (let i = 0; i < friends.length; i++) {
-      to_request(auth.currentUser?.email, friends[i]["user"], "message", message);
-    }
-  }
-  
-}
-
 export async function addEvent_maybe(
   user_token,
   title,
@@ -366,7 +293,7 @@ export async function addEvent_maybe(
   }
 }
 
-export async function updateEventField (user_token, field, id, newValue) {
+export async function updateEventPrivacy (user_token, id, privacy) {
   const userDocRef = doc(db, "events", user_token);
   const res = await getUserEvents(user_token);
   console.log(res)
@@ -382,19 +309,14 @@ export async function updateEventField (user_token, field, id, newValue) {
           console.error("Error removing old event", error);
         });
       let tempItem = res["event"][i];
-      if (field == "privacy") {
-        tempItem.details.audienceLevel = newValue;
-      }
-      else if (field == "category") {
-        tempItem.details.category = newValue;
-      }
+      tempItem.details.audienceLevel = privacy;
       tempItem.id = uuid.v4();
       await updateDoc(userDocRef, { event: arrayUnion(tempItem) })
         .then(() => {
-          console.log("Successfully updated event",field);
+          console.log("Successfully updated event privacy.");
         })
         .catch((error) => {
-          console.error("Error updating event",field,error);
+          console.error("Error updating event privacy", error);
         });
       break;
     }
@@ -658,7 +580,12 @@ export async function addGroup(groupName, groupAuthor) {
         memberList: [groupAuthor],
         privacy: true
       });
-      // console.log("Group created with docref id: ", docRef.id);
+      //console.log("Group created with docref id: ", docRef.id);
+      setDoc(doc(db, "group_events", groupName), {
+        event: [],
+      });
+
+      // initialize group_events database
       return docRef.id;
     } else {
       return null;
@@ -738,14 +665,50 @@ export async function addNicknameInGroup(
   }
 }
 
-export async function getGroupSchedule(groupName) {
+export async function addGroupEvent(
+  groupName,
+  title,
+  startTime,
+  endTime,
+  description,
+  location) {
+  const docRef = doc(db, "group_events", groupName);
+  const x = {
+    title: title,
+    startTime: startTime,
+    endTime: endTime,
+    description: description,
+    location: location,
+  };
+  try{
+    const querySnapShot = await getDoc(doc(db, "group_events", groupName));
+    if (!querySnapShot.exists()) {
+      setDoc(docRef, {
+        event: [],
+      });
+    }
+    const data = {
+      details: x,
+    };
+    updateDoc(docRef, { event: arrayUnion(data) });
+    //console.log("Group Event doc written with ID: ", docRef.id);
+  } catch (e) {
+    console.log(e);
+    console.log("Error adding group event");
+    return false;
+  }
+}
+
+export async function getGroupEvents(groupName) {
   try {
-    const q = query(collection(db, "groups"), where("groupName", "==", groupName));
-    const querySnapshot = await getDocs(q);
-    if (querySnapshot.size == 1) {
-      const data = querySnapshot.docs[0].data();
-      return data.schedule || [];
+    const docRef = doc(db, "group_events", groupName);
+    const docSnap = await getDoc(docRef);
+
+    if (docSnap.exists()) {
+      const data = docSnap.data();
+      return data.event || [];
     } else {
+      console.log("No such document!");
       return [];
     }
   } catch (e) {
@@ -753,6 +716,7 @@ export async function getGroupSchedule(groupName) {
     return [];
   }
 }
+
 
 export async function getUserId(email) {
   var res = [];
@@ -801,38 +765,12 @@ export async function to_request(own, to_user, type, message) {
       console.error("Error adding doc: ", e);
     }
   }
-  else if (type == "goal") {
-    try {
-      updateDoc(docRef, {
-        to_request: arrayUnion(to_user + "/" + message + "/" + type),
-      });
-      updateDoc(docRef_to, {
-        from_request: arrayUnion(own + "/" + message + "/" + type),
-      });
-      console.log("Successfully sent goal request: ", docRef.id);
-    } catch (e) {
-      console.error("Error adding doc: ", e);
-    }
-  }
-  else if (type == "message") {
-    try {
-      updateDoc(docRef, {
-        to_request: arrayUnion(to_user + "/" + message + "/" + type),
-      });
-      updateDoc(docRef_to, {
-        from_request: arrayUnion(own + "/" + message + "/" + type),
-      });
-      console.log("Successfully sent message: ", docRef.id);
-    } catch (e) {
-      console.error("Error adding doc: ", e);
-    }
-  }
 }
 
 export async function addPoints(user_token, category, points) {
   const docRef = doc(db, "users", user_token);
   const querySnapShot = await getDoc(doc(db, "users", user_token));
-  const oldPoints = querySnapShot.data().points[category];
+  const oldPoints = querySnapShot.data().points.school;
   console.log("snapshot", category, points);
   try {
     updateDoc(docRef, {
@@ -842,48 +780,6 @@ export async function addPoints(user_token, category, points) {
   } catch (e) {
     console.error("Error updating points: ", e);
   }
-
-  const res = await getGoals(user_token);
-  const userDocRef = doc(db, "goals", user_token);
-  if (res!= null) {
-    for (let i = 0; i < res["goal_list"].length; i++) {
-      if (res["goal_list"][i]["category"] == EventCategory[category]) {
-        await updateDoc(userDocRef, { goal_list: arrayRemove(res["goal_list"][i]) })
-        .then(() => {
-          console.log("Successfully removed old goal progress.");
-        })
-        .catch((error) => {
-          console.error("Error removing old goal progress", error);
-        });
-      let tempItem = res["goal_list"][i];
-      tempItem.progress += points;
-      if (tempItem.progress >= tempItem.points) {
-        var data = new Date()
-        var completedDate = new Date(
-          data.getFullYear(),
-          data.getMonth(),
-          data.getDate(),
-          data.getHours(),
-          data.getMinutes()
-        );
-        addCompletedGoal(user_token, res["goal_list"][i]["id"], category, completedDate, tempItem.points)
-      }
-      else {
-        tempItem.id = uuid.v4();
-        await updateDoc(userDocRef, { goal_list: arrayUnion(tempItem) })
-          .then(() => {
-            console.log("Successfully updated goal progress",field);
-          })
-          .catch((error) => {
-            console.error("Error updating goal progress",field,error);
-          });
-      }
-      }
-      
-    }
-
-  }
-
 }
 
 export async function getLeaderboard() {

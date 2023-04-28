@@ -135,6 +135,10 @@ const categories = [
     label: EventCategory.EVENT,
     value: EventCategory.EVENT,
   },
+  // {
+  //   label: EventCategory.GROUP,
+  //   value: EventCategory.GROUP,
+  // }
 ];
 const repetitionHasEndData = [
   {
@@ -2157,6 +2161,7 @@ export default class App extends Component {
                       )}
                     />
                   </View>
+
                   <Button
                     title="Create new event"
                     onPress={() => {

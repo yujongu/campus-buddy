@@ -6,11 +6,33 @@ import { getLeaderboard } from "../firebaseConfig";
 import LeaderboardItem from "../components/ui/LeaderboardItem";
 import { Colors } from "../constants/colors";
 import { ScrollView } from "react-native";
+import { addGroupEvent, getGroupEvents } from "../firebaseConfig";
 
 export default function GroupDetailsScreen({ navigation, route }) {
-  useEffect(() => {}, []);
+  // useEffect(() => {}, []);
 
   const { groupName, groupMembers } = route.params;
+  const [ groupEvents, setGroupEvents ] = useState([]);
+
+  // const groupEvents = getGroupEvents(groupName);
+
+  const handleAddEvent = () => {
+    // console.log('Hello world');
+    addGroupEvent(groupName, "Testsdf event", 'test start', 'test end', 'desc', 'location')
+
+  }
+
+  useEffect(() => {
+    const fetchEvents = async () => {
+      const events = await getGroupEvents(route.params.groupName);
+      setGroupEvents(events);
+      console.log(groupEvents);
+      console.log(groupMembers);
+    };
+    fetchEvents();
+  }, [groupName]);
+
+
   return (
     <SafeAreaView
       style={{
@@ -34,7 +56,7 @@ export default function GroupDetailsScreen({ navigation, route }) {
           <View>
             <Text style={{ fontSize: 25 }}>Members:</Text>
           </View>
-          <ScrollView style={{ height: "50%"}}>
+          <ScrollView style={{ height: "45%"}}>
             {groupMembers.map((item) => {
               return (
                 <View
@@ -57,7 +79,28 @@ export default function GroupDetailsScreen({ navigation, route }) {
           <View style={styles.container}>
             <Text style={{ fontSize: 25 }}>Group Events</Text>
           </View>
-          <ScrollView></ScrollView>
+          {/* <View>
+            <ScrollView >
+              {groupEvents.map((item) => {
+                return (
+                  <View
+                    style={{
+                      backgroundColor: Colors.secondary,
+                      padding: 8,
+                      margin: 10,
+                      borderRadius: 10,
+                  }}>
+                    <Text>Title: {item.details.title}</Text>
+                    <Text>Description: {item.details.description}</Text>
+                  </View>
+                )
+              })}
+            </ScrollView>
+            <Button 
+              title='Add group event'
+              onPress={handleAddEvent}
+            />
+          </View> */}
         </View>
       </View>
     </SafeAreaView>
