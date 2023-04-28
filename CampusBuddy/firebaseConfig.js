@@ -699,33 +699,43 @@ export async function addGroupEvent(
   }
 }
 
-export async function getGroups(user_email) {
+export async function getGroupsWithUser(user_email) {
+  // Modified from friendScreen getGroupsWithMee
   try {
     const q = query(
       collection(db, "groups"),
       where("memberList", "array-contains", user_email)
     );
 
-    const groupsWithMeee = onSnapshot(q, (querySnapshot) => {
-      let myGroups = { ...[] };
-      // let all_groups = this.state.all_groups;
-      let all_groups = [];
+    const querySnapshot = await getDocs(q);
+    let myGroups = {};
+    let all_groups = [];
+    let keys_obj = {};
 
-      querySnapshot.forEach((doc) => {
-        // doc.data() is never undefined for query doc snapshots
-        let gName = doc.data().groupName;
-        if (!all_groups.includes(gName)) {
-          all_groups.push(gName);
-        }
-        myGroups[gName] = [];
-      });
-      setMyGroups(Object.keys(myGroups));
-      console.log(myGroups);
+    querySnapshot.forEach((doc) => {
+      let gName = doc.data().groupName;
+      if (!all_groups.includes(gName)) {
+        all_groups.push(gName);
+      }
+      myGroups[gName] = gName;
     });
-    return () => {
-      groupsWithMeee();
-      subscriber();
-    };
+    
+    // const groupsWithMeee = onSnapshot(q, (querySnapshot) => {
+    //   let myGroups = {};
+    //   let all_groups = [];
+
+    //   querySnapshot.forEach((doc) => {
+    //     // doc.data() is never undefined for query doc snapshots
+    //     let gName = doc.data().groupName;
+    //     if (!all_groups.includes(gName)) {
+    //       all_groups.push(gName);
+    //     }
+    //     myGroups[gName] = gName;
+    //   });
+
+    //   return Object.keys(myGroups);
+    // });
+    return Object.keys(myGroups);
   } catch (e) {
     console.log("get groups error");
     console.log(e);

@@ -20,7 +20,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import EventItem from "../components/ui/EventItem";
 import { PointsProgressBar } from "../components/ui/PointsProgressBar";
-import { auth, db, userSchedule, getUserEvents, getUserId, getGroups } from "../firebaseConfig";
+import { auth, db, userSchedule, getUserEvents, getUserId, getGroupsWithUser, useGroupsWithUser } from "../firebaseConfig";
 
 
 export default function User_profile({ navigation, route }) {
@@ -34,7 +34,7 @@ export default function User_profile({ navigation, route }) {
   const [eventList, setEventList] = useState([]);
   const [weekViewStartDate,setStartDate] = useState(new Date());
   const [friendId,setId] = useState("");
-  const [myGroups, setMyGroups] = useState("");
+  const [userGroups, setUserGroups] = useState([]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -53,7 +53,7 @@ export default function User_profile({ navigation, route }) {
       });
     }
    
-    fetchData()
+    fetchData();
   }, []);
 
   const leftHeaderWidth = 50;
@@ -86,6 +86,7 @@ export default function User_profile({ navigation, route }) {
   };
 
   const getPoints = async () => {
+    // console.log("get points")
     setPoints(true);
   }
   
@@ -128,6 +129,17 @@ export default function User_profile({ navigation, route }) {
   const getGroups = async () => {
     // TODO 
     setGroup(true);
+
+    // get groupsWithUser
+    try {
+      const groups = await getGroupsWithUser(email);
+      //console.log(groups); // This should log an array of group names
+      // TODO: Set state or do something else with the group names
+      setUserGroups(groups);
+    } catch (error) {
+      console.error(error);
+    }
+
   }
 
   //modified from CalendarScreen.js
@@ -494,23 +506,29 @@ export default function User_profile({ navigation, route }) {
           transparent={false}
         >   
         { groupPublic ?
-            <View style={{ flex: 1, margin: 60 }}>
-              <TouchableOpacity
-                activeOpacity={0.7}
-                onPress={()=>setGroup(false)}
-                style={{left:275}}
-              >
-                <Icon name="mail-reply" size={20} color="black" />
-              </TouchableOpacity>
-              <Text style={{fontSize:25, textAlign:"center"}}>{email}'s{'\n'}Groups</Text>
-            <View style={{flex:1}}>
-              {/* <ScrollView>
-                {myGroups.map((name) => (
-                  <Text>{name}</Text>
-                ))}
-              </ScrollView> */}
+            <View style={styles.groupPublic}>
+              
+              <View style={{flexDirection: 'row'}}>
+                <TouchableOpacity
+                  activeOpacity={0.7}
+                  onPress={()=>setGroup(false)}
+                  style={{margin: 10, left: -10}}
+                >
+                  <Icon name="mail-reply" size={20} color="black" />
+                </TouchableOpacity>
+                <Text style={{fontSize:25, textAlign:"center"}}>{email}'s{'\n'}Groups</Text>
+              </View>
+
+              <View style={styles.scrollViewContainer}>
+                <ScrollView>
+                  {userGroups.map((groupName) => (
+                      <View style={styles.groupsContainer}>
+                        <Text key={groupName} style={styles.groupNameText}>{groupName}</Text>
+                      </View>
+                  ))}
+                </ScrollView>
+              </View>
             </View>
-          </View>
           
           :
 
@@ -544,4 +562,24 @@ const styles = StyleSheet.create({
     zIndex: 1,
     fontSize: 10
   },
+  groupPublic: {
+    flex: 1,
+    marginTop: '40%',
+    margin: 60,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  scrollViewContainer: {
+    flex: 1, 
+    width: '70%',
+  },
+  groupsContainer: {
+    backgroundColor: Colors.secondary,
+    padding: 8,
+    margin: 10,
+    borderRadius: 10,
+  },
+  groupNameText: {
+    fontSize: 24,
+  }
 });
